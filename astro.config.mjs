@@ -11,13 +11,16 @@ const validarConfiguracion = {
   hooks: {
     "astro:config:setup": ({ command }) => {
       if (command !== "dev" && command !== "build") return;
-      const raw = { ...loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), ""), ...process.env };
+      const raw = {
+        ...loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), ""),
+        ...process.env,
+      };
       try {
         loadConfig(raw);
       } catch (error) {
         if (error instanceof ConfigError) {
           // Solo nombres de variable y reglas; nunca valores.
-          throw new Error(error.message);
+          throw new Error(error.message, { cause: error });
         }
         throw error;
       }
