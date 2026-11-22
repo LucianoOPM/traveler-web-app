@@ -20,7 +20,7 @@ const validarConfiguracion = {
       } catch (error) {
         if (error instanceof ConfigError) {
           // Solo nombres de variable y reglas; nunca valores.
-          throw new Error(error.message);
+          throw new Error(error.message, { cause: error });
         }
         throw error;
       }
