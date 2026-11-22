@@ -10,7 +10,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "start": "bun scripts/start.ts"
   },
   "dependencies": {
     "@astrojs/node": "11.1.14",
