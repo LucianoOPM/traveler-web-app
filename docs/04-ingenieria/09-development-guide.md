@@ -8,12 +8,13 @@ Docker con Compose, Git, Bun y Node.js. Versiones validadas juntas el 2026-11-22
 | Bun | 1.4.4 | Runtime del servidor y gestor de paquetes |
 | Node.js | >= 22.23.4 | Requisito `engines` de Astro 7 y `@astrojs/react` 7. Validado solo con v24.22.0 (no se probó el mínimo 22.23.4). `bun run <script>` ejecuta las CLI de Astro con Node (Bun respeta el shebang); con `bun --bun run <script>` corren con Bun; solo se probó `dev` con `--bun` y respondió 200 (issue #2); `build`, `preview` y `check` no se probaron con `--bun` |
 | astro | 7.4.13 | `output: 'server'` |
-| @astrojs/node | 11.1.14 | Adaptador en modo `standalone`; el build se sirve con `bun run preview` (issue #2) o con `bun ./dist/server/entry.mjs` (PEN-11) |
+| @astrojs/node | 11.1.14 | Adaptador en modo `standalone`; el build se sirve con `bun run start` (valida la configuración antes de escuchar). **No lanzar `bun ./dist/server/entry.mjs` directamente**: escucha aunque la configuración sea inválida y cada petición devuelve 500 (verificado) |
 | @astrojs/react | 7.1.9 | Islands React |
 | react / react-dom | 19.3.1 | Sin `compiler` en `@astrojs/react`; no instalar `oxc-transform-react` |
 | typescript | 6.0.3 | devDependency. **No usar 7.x** (latest en el registro): `@astrojs/check` exige `typescript ^5 \|\| ^6` |
 | @astrojs/check | 0.9.12 | devDependency; habilita `astro check` (`bun run check`) |
 | @types/react / @types/react-dom | 19.3.0 | devDependencies (tipos de React) |
+| @types/bun | 1.4.5 | devDependency (tipos de `bun:test`); declarado con `"types": ["bun"]` en `tsconfig.json` porque TypeScript 6 no incluye `@types/*` solo. Nota: esos tipos también aplican al código de las islas |
 | drizzle-orm | 0.45.4 | Estable; no usar 1.0 RC. Driver `drizzle-orm/bun-sql` |
 | drizzle-kit | 0.31.11 | Migraciones (`generate`/`migrate`); necesita `pg` instalado |
 | pg | 8.23.1 | Solo devDependency, requerida por `drizzle-kit` (la app usa `bun-sql`) |
@@ -43,7 +44,7 @@ No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `
 - `DATABASE_URL` y `DEMO_DATABASE_URL`: URL `postgres://` o `postgresql://`, con **nombres de base distintos**.
 - `AUTH_SECRET`: mínimo 32 caracteres y no puede ser un valor de ejemplo (`GENERATE_A_LONG_RANDOM_SECRET`, `CHANGE_ME`).
 - `APP_ORIGIN`: origen http(s) sin ruta, parámetros ni credenciales (se normaliza).
-- `AGENCY_TIMEZONE`: zona IANA válida.
+- `AGENCY_TIMEZONE`: zona IANA canónica con formato `Región/Ciudad` (sensible a mayúsculas) o `UTC`. Se rechazan offsets (`+03:00`) y abreviaturas (`EST`): PostgreSQL interpreta los offsets numéricos con el signo POSIX invertido.
 - `PRIVATE_STORAGE_DIR` / `DEMO_STORAGE_DIR`: bajo `<raíz>/storage` o fuera del repositorio; nunca en `public/` ni en otras carpetas del repo; distintas y no anidadas entre sí.
 
 Los errores nombran la variable y la regla, **nunca el valor**. En servidor se lee con `getConfig()` (`src/lib/config.runtime.ts`, usa `getSecret()` de `astro:env/server`; no puede importarse desde código de cliente). **No leer secretos con `import.meta.env`**: Astro incrusta su valor dentro de `dist/` (verificado). Se valida al iniciar `astro dev`, `astro build` y `bun run start`; `astro check` no valida, para poder comprobar tipos sin secretos. Consecuencia: **`bun run dev` y `bun run build` exigen un `.env` válido o variables de entorno reales** (en CI hay que definir valores ficticios válidos).
@@ -63,12 +64,12 @@ Los scripts `db:migrate`, `admin:create` y `demo:seed` se crearán en H1/H6; **n
 |---|---|---|
 | `bun run dev` | `astro dev` | Sirve en `http://localhost:4321/` |
 | `bun run build` | `astro build` | No comprueba tipos |
-| `bun run preview` | `astro preview` | Sirve el build con el adaptador Node en `http://localhost:4321/` |
+| `bun run preview` | `bun scripts/start.ts` | Igual que `start`. **No es `astro preview`**: esa CLI corre con Node, que no carga `.env`, y devolvía 500 en todas las peticiones (verificado). El puerto se cambia con `PORT` (por defecto 4321), no con `--port` |
 | `bun run check` | `astro check` | Comprueba tipos con `tsconfig` estricto; falla ante errores; no exige `.env` |
 | `bun run start` | `bun scripts/start.ts` | Producción (tras `build`): valida la configuración y, si es inválida, sale con código 1 sin escuchar; si es válida lanza `dist/server/entry.mjs`. Bun carga `.env` solo |
-| `bun test tests/unit` | — | Pruebas unitarias de `loadConfig` (13). La infraestructura formal de pruebas llega con la issue #7 |
+| `bun test tests/unit` | — | Pruebas unitarias de `loadConfig` (16). La infraestructura formal de pruebas llega con la issue #7 |
 
-Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bun.lock`; `dev` (con Node y con `bun --bun`) y `preview` responden 200 y el HTML incluye el marcado de la island React (`astro-island`); la hidratación en un navegador no se comprobó. Desde la issue #4, `bun run dev` requiere antes `cp .env.example .env` y reemplazar `AUTH_SECRET`; sin eso falla a propósito. Hoy los únicos pasos del bloque anterior que funcionan son `bun install`, esa copia del `.env` y `bun run dev`.
+Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bun.lock`; `dev` (con Node y con `bun --bun`) y `astro preview` respondían 200 (antes de la validación de la issue #4; hoy `preview` es `scripts/start.ts`) y el HTML incluye el marcado de la island React (`astro-island`); la hidratación en un navegador no se comprobó. Desde la issue #4, `bun run dev` requiere antes `cp .env.example .env` y reemplazar `AUTH_SECRET`; sin eso falla a propósito. Hoy los únicos pasos del bloque anterior que funcionan son `bun install`, esa copia del `.env` y `bun run dev`.
 
 ## Estructura
 ```text

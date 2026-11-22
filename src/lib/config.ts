@@ -48,22 +48,28 @@ function parseUrl(value: string): URL | null {
 function postgresDatabaseName(value: string): string | null {
   const url = parseUrl(value);
   if (!url || !["postgres:", "postgresql:"].includes(url.protocol)) return null;
-  const name = decodeURIComponent(url.pathname.replace(/^\//, ""));
+  let name: string;
+  try {
+    name = decodeURIComponent(url.pathname.replace(/^\//, ""));
+  } catch {
+    return null; // % mal codificado: se reporta como regla incumplida de la variable
+  }
   return name.length > 0 ? name : null;
 }
 
+// Zonas canónicas IANA ("Region/Ciudad") más "UTC". `Intl.DateTimeFormat` por sí solo
+// acepta también offsets ("+03:00"), abreviaturas ("EST") y minúsculas, y PostgreSQL
+// interpreta los offsets numéricos con el signo POSIX invertido.
+const IANA_TIME_ZONES = new Set<string>([...Intl.supportedValuesOf("timeZone"), "UTC"]);
+
 function isIanaTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
+  return IANA_TIME_ZONES.has(value);
 }
 
 function isInside(parent: string, child: string): boolean {
   const relative = path.relative(parent, child);
-  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+  const escapes = relative === ".." || relative.startsWith(`..${path.sep}`);
+  return relative === "" || (!escapes && !path.isAbsolute(relative));
 }
 
 function storageProblem(resolved: string, root: string): string | null {

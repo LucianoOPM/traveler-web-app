@@ -107,6 +107,34 @@ describe("loadConfig", () => {
     expect(anidados.some((i) => i.startsWith("DEMO_STORAGE_DIR:"))).toBe(true);
   });
 
+  test("reporta como ConfigError un nombre de base con % mal codificado", () => {
+    const issues = issuesDe({
+      DEMO_DATABASE_URL: "postgresql://traveltech:clave-db@localhost:5432/demo%E0%A4%A",
+    });
+    expect(issues.some((i) => i.startsWith("DEMO_DATABASE_URL:"))).toBe(true);
+  });
+
+  test("trata las carpetas que empiezan por .. como parte del repo", () => {
+    const dentroDelRepo = issuesDe({ PRIVATE_STORAGE_DIR: "./..cache" });
+    expect(dentroDelRepo.some((i) => i.startsWith("PRIVATE_STORAGE_DIR:"))).toBe(true);
+    const anidados = issuesDe({
+      PRIVATE_STORAGE_DIR: "./storage/a",
+      DEMO_STORAGE_DIR: "./storage/a/..b",
+    });
+    expect(anidados.some((i) => i.startsWith("DEMO_STORAGE_DIR:"))).toBe(true);
+  });
+
+  test("rechaza zonas horarias que no son IANA aunque Intl las acepte", () => {
+    for (const valor of ["+03:00", "EST", "america/mexico_city"]) {
+      const issues = issuesDe({ AGENCY_TIMEZONE: valor });
+      expect(issues.some((i) => i.startsWith("AGENCY_TIMEZONE:"))).toBe(true);
+    }
+    expect(cargar({ AGENCY_TIMEZONE: "UTC" }).agencyTimezone).toBe("UTC");
+    expect(cargar({ AGENCY_TIMEZONE: "America/Argentina/Buenos_Aires" }).agencyTimezone).toBe(
+      "America/Argentina/Buenos_Aires",
+    );
+  });
+
   test("ningún mensaje de error contiene valores de secretos", () => {
     const secreto = "corto-secreto-XYZ";
     const clave = "p4ssw0rd-XYZ";
