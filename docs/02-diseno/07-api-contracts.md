@@ -26,6 +26,9 @@
 | GET | `/api/v1/demo/tickets/validate` | Validación ficticia de solo lectura | Visitante demo |
 | GET | `/api/v1/demo/departures/:id/manifest` | Manifiesto ficticio | Visitante demo |
 
+## Salud
+`GET /api/health` (fuera de `/api/v1/`, implementado en la issue #8): `200` con `{ "status": "ok" }` y `Cache-Control: no-store`; sin efectos secundarios y sin exponer configuración, secretos ni versiones. Indica que el servidor arrancó con configuración válida; con configuración inválida responde `500 internal_error` (ver [ADR-019](../05-decisiones/11-decisions-and-risks.md)). No comprueba la base de datos: si la salud la incluirá o habrá un endpoint de *readiness* aparte (H1) **no está decidido**.
+
 ## Ejemplo de validación de boleto
 Solicitud `GET /api/v1/demo/tickets/validate?code=...` (código ficticio opaco, sin datos personales).
 
