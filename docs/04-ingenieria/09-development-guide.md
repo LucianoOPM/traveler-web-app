@@ -6,11 +6,13 @@ Docker con Compose, Git, Bun y Node.js. Versiones validadas juntas el 2026-11-22
 | Componente | Versión | Notas |
 |---|---|---|
 | Bun | 1.4.4 | Runtime del servidor y gestor de paquetes |
-| Node.js | >= 22.23.4 | Requisito `engines` de Astro 7 y `@astrojs/react` 7. Validado solo con v24.22.0; `astro build` corrió sobre Node; `astro dev` no se probó |
+| Node.js | >= 22.23.4 | Requisito `engines` de Astro 7 y `@astrojs/react` 7. Validado solo con v24.22.0 (no se probó el mínimo 22.23.4). `bun run <script>` ejecuta las CLI de Astro con Node (Bun respeta el shebang); con `bun --bun run <script>` corren con Bun y `dev` también funcionó (issue #2) |
 | astro | 7.4.13 | `output: 'server'` |
 | @astrojs/node | 11.1.14 | Adaptador en modo `standalone`; se ejecuta con `bun ./dist/server/entry.mjs` |
 | @astrojs/react | 7.1.9 | Islands React |
-| react / react-dom | 19.3.1 | |
+| react / react-dom | 19.3.1 | Sin `compiler` en `@astrojs/react`; no instalar `oxc-transform-react` |
+| typescript | 6.0.3 | devDependency. **No usar 7.x** (latest en el registro): `@astrojs/check` exige `typescript ^5 \|\| ^6` |
+| @astrojs/check | 0.9.12 | devDependency; habilita `astro check` (`bun run check`) |
 | drizzle-orm | 0.45.4 | Estable; no usar 1.0 RC. Driver `drizzle-orm/bun-sql` |
 | drizzle-kit | 0.31.11 | Migraciones (`generate`/`migrate`); necesita `pg` instalado |
 | pg | 8.23.1 | Solo devDependency, requerida por `drizzle-kit` (la app usa `bun-sql`) |
@@ -43,6 +45,16 @@ bun run admin:create
 bun run dev
 ```
 Los scripts `db:migrate`, `admin:create` y `demo:seed` se crearán en H1/H6; **no se afirma que existan todavía**.
+
+### Scripts que sí existen (issue #2)
+| Script | Comando | Notas |
+|---|---|---|
+| `bun run dev` | `astro dev` | Sirve en `http://localhost:4321/` |
+| `bun run build` | `astro build` | No comprueba tipos |
+| `bun run preview` | `astro preview` | Sirve el build con el adaptador Node en `http://localhost:4321/` |
+| `bun run check` | `astro check` | Comprueba tipos con `tsconfig` estricto; falla ante errores |
+
+Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bun.lock`; `dev` (con Node y con `bun --bun`) y `preview` responden 200 con la island React hidratada. Hoy el único paso del bloque anterior que funciona es `bun install` + `bun run dev`.
 
 ## Estructura
 ```text

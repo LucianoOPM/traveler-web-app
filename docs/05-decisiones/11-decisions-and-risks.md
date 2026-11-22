@@ -29,6 +29,7 @@ Decisión: fijar exactas Bun 1.4.4, Astro 7.4.13, @astrojs/node 11.1.14, @astroj
 Validación (proyecto desechable, PostgreSQL 17 en Docker): instalación sin advertencias de peers; `astro build` con island React y adaptador Node; servidor responde 200 en Bun y Node; `drizzle-kit generate/migrate` con el esquema de Better Auth + plugin `admin`; registro por `/api/auth/sign-up/email` correcto con `node-postgres` (Bun y Node) y con `bun-sql` (Bun).
 Alternativas consideradas: Node + `pg` y Bun + `pg` (también pasaron la prueba; descartadas por coherencia con ADR-002 y porque el driver nativo de Bun evita `pg` en tiempo de ejecución, aunque `pg` sigue siendo necesario para `drizzle-kit`); Drizzle 1.0 RC (soportado por Better Auth pero pre-release y no probado).
 Consecuencias: actualizar versiones requiere repetir la validación y un nuevo ADR; el esquema generado por `auth generate` debe pasarse a `drizzle()`; el comportamiento de `bun-sql` bajo carga y transacciones concurrentes (reservas atómicas, P0) debe cubrirse con pruebas en H3.
+Actualización (issue #2, 2026-11-22): se añaden `typescript` **6.0.3** y `@astrojs/check` **0.9.12** (devDependencies, `astro check`). No se usa `typescript` 7.x (latest) porque `@astrojs/check` 0.9.12 exige `typescript ^5 || ^6`. Verificado desde un clon limpio: `bun install --frozen-lockfile`, `astro check`, `dev` (Node y `bun --bun`), `build` y `preview` correctos.
 Fecha: 2026-11-22
 
 ### ADR-016 — Estrategia de ramas

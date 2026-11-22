@@ -3,14 +3,14 @@
 **Última actualización:** 2026-11-22
 
 ## Resumen
-Solo existe documentación. **No hay código ni scripts** en el directorio del proyecto (el repositorio git existe; ver issues del hito H0).
+Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`). Aún no hay lógica de negocio, base de datos ni autenticación.
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 
 | Hito | Descripción | Estado |
 |---|---|---|
-| H0 | Preparación y disciplina | Pendiente |
+| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2) |
 | H1 | Plataforma y autenticación | Pendiente |
 | H2 | Catálogo y capacidad | Pendiente |
 | H3 | Reservaciones | Pendiente |
