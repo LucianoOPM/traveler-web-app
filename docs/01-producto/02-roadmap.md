@@ -8,7 +8,7 @@
 
 ## H1 — Plataforma y autenticación
 **Entregables:** Astro full-stack, React islands, Bun, PostgreSQL Docker con volumen, Drizzle/migraciones, Better Auth con Admin plugin, administrador inicial por script, rutas protegidas, layout administrativo.
-**Salida:** login de administrador; usuario no autenticado no accede a `/admin`; primera migración y rollback probados.
+**Salida:** login de administrador; usuario no autenticado no accede a `/admin`; primera migración y rollback probados; si se activan pruebas de integración con PostgreSQL, validación explícita que impide operaciones destructivas sobre las bases privada o demo (PEN-15).
 
 ## H2 — Catálogo y capacidad
 **Entregables:** paquetes CRUD, salidas CRUD, tarifas por categoría, puntos de abordaje, imágenes locales, catálogo público, validaciones y transacciones de inventario.

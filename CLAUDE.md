@@ -3,7 +3,7 @@
 Plataforma para **una sola agencia de viajes**: catálogo, salidas, reservaciones, pagos SPEI/efectivo, boletos QR, abordaje y marketing (flyers). Dos experiencias: **privada** (admin/operador) y **demo de visitantes** (solo lectura sobre datos ficticios).
 
 ## Estado
-Hay documentación en `docs/` y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`). Aún no hay lógica de negocio, base de datos ni autenticación. Consultar `docs/00-estado.md` antes de asumir que algo existe. Los ejemplos de API/SQL/rutas son propuestas.
+Hay documentación en `docs/` y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`). Aún no hay lógica de negocio, base de datos ni autenticación. Consultar `docs/00-estado.md` antes de asumir que algo existe. Los ejemplos de API/SQL/rutas son propuestas.
 
 ## Stack (confirmado)
 Astro full-stack + React islands · Bun · PostgreSQL + Drizzle (Docker solo para la BD) · Better Auth + Admin plugin · monolito modular · archivos privados en disco local.
