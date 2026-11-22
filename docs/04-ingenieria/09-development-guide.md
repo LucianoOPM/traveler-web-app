@@ -35,7 +35,18 @@ PRIVATE_STORAGE_DIR=./storage/private
 DEMO_STORAGE_DIR=./storage/demo
 AGENCY_TIMEZONE=America/Mexico_City
 ```
-No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` solo contiene valores ilustrativos.
+No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` solo contiene valores ilustrativos y **no arranca tal cual**: hay que copiarlo a `.env` y reemplazar `AUTH_SECRET` (y las contraseñas `CHANGE_ME`).
+
+### Validación de la configuración (issue #4, [ADR-017](../05-decisiones/11-decisions-and-risks.md))
+`src/lib/config.ts` exporta `loadConfig(raw, options?)` (función pura, con `astro/zod`), `Config` y `ConfigError`. Reglas:
+- Todas las variables son obligatorias; `NODE_ENV` ∈ `development` | `test` | `production`.
+- `DATABASE_URL` y `DEMO_DATABASE_URL`: URL `postgres://` o `postgresql://`, con **nombres de base distintos**.
+- `AUTH_SECRET`: mínimo 32 caracteres y no puede ser un valor de ejemplo (`GENERATE_A_LONG_RANDOM_SECRET`, `CHANGE_ME`).
+- `APP_ORIGIN`: origen http(s) sin ruta, parámetros ni credenciales (se normaliza).
+- `AGENCY_TIMEZONE`: zona IANA válida.
+- `PRIVATE_STORAGE_DIR` / `DEMO_STORAGE_DIR`: bajo `<raíz>/storage` o fuera del repositorio; nunca en `public/` ni en otras carpetas del repo; distintas y no anidadas entre sí.
+
+Los errores nombran la variable y la regla, **nunca el valor**. En servidor se lee con `getConfig()` (`src/lib/config.runtime.ts`, usa `getSecret()` de `astro:env/server`; no puede importarse desde código de cliente). **No leer secretos con `import.meta.env`**: Astro incrusta su valor dentro de `dist/` (verificado). Se valida al iniciar `astro dev`, `astro build` y `bun run start`; `astro check` no valida, para poder comprobar tipos sin secretos. Consecuencia: **`bun run dev` y `bun run build` exigen un `.env` válido o variables de entorno reales** (en CI hay que definir valores ficticios válidos).
 
 ## Inicio recomendado (comandos orientativos)
 ```bash
@@ -53,9 +64,11 @@ Los scripts `db:migrate`, `admin:create` y `demo:seed` se crearán en H1/H6; **n
 | `bun run dev` | `astro dev` | Sirve en `http://localhost:4321/` |
 | `bun run build` | `astro build` | No comprueba tipos |
 | `bun run preview` | `astro preview` | Sirve el build con el adaptador Node en `http://localhost:4321/` |
-| `bun run check` | `astro check` | Comprueba tipos con `tsconfig` estricto; falla ante errores |
+| `bun run check` | `astro check` | Comprueba tipos con `tsconfig` estricto; falla ante errores; no exige `.env` |
+| `bun run start` | `bun scripts/start.ts` | Producción (tras `build`): valida la configuración y, si es inválida, sale con código 1 sin escuchar; si es válida lanza `dist/server/entry.mjs`. Bun carga `.env` solo |
+| `bun test tests/unit` | — | Pruebas unitarias de `loadConfig` (13). La infraestructura formal de pruebas llega con la issue #7 |
 
-Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bun.lock`; `dev` (con Node y con `bun --bun`) y `preview` responden 200 y el HTML incluye el marcado de la island React (`astro-island`); la hidratación en un navegador no se comprobó. Hoy el único paso del bloque anterior que funciona es `bun install` + `bun run dev`.
+Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bun.lock`; `dev` (con Node y con `bun --bun`) y `preview` responden 200 y el HTML incluye el marcado de la island React (`astro-island`); la hidratación en un navegador no se comprobó. Desde la issue #4, `bun run dev` requiere antes `cp .env.example .env` y reemplazar `AUTH_SECRET`; sin eso falla a propósito. Hoy los únicos pasos del bloque anterior que funcionan son `bun install`, esa copia del `.env` y `bun run dev`.
 
 ## Estructura
 ```text

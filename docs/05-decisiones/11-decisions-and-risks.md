@@ -21,6 +21,7 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-014 | QR de visitante consultable, solo lectura | Confirmada |
 | ADR-015 | Versiones del stack (Bun 1.4.4, Astro 7.4.13, React 19.3.1, Drizzle 0.45.4, Better Auth 1.7.27; paquetes exactos) y driver `bun-sql` | Confirmada |
 | ADR-016 | Estrategia de ramas: `main` = despliegue, `dev` = desarrollo (predeterminada) | Confirmada |
+| ADR-017 | Validación de configuración con `loadConfig` (`astro/zod`), lectura con `getSecret()` y script `start` que falla antes de escuchar | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -38,6 +39,14 @@ Contexto: se quiere separar el código en desarrollo del que se despliega.
 Decisión: `main` es la rama de despliegue y `dev` la rama predeterminada de desarrollo. Las ramas de trabajo (`feat/`, `fix/`, `chore/`, `docs/`) salen de `dev` y vuelven a ella por PR. `dev` se fusiona a `main` por PR cuando un hito esté listo o se vaya a desplegar, con *merge commit* (no *squash*) para que no diverjan. Los hotfix salen de `main` y se devuelven a `dev`. Protección de `dev` y `main` (rulesets de GitHub): exigir PR, **sin aprobaciones obligatorias**, y bloquear force-push y borrado; sin checks de CI obligatorios hasta que exista la CI (issue #10).
 Alternativas consideradas: trabajo directo sobre `main`; exigir aprobación en `main` (descartado: un único responsable no puede aprobar sus propios PR).
 Consecuencias: `Closes #N` solo cierra issues al fusionar en `dev` (la predeterminada); al fusionar `dev` → `main` hay que cerrar a mano las que queden abiertas. Cuando exista CI, añadirla como check requerido. El despliegue desde `main` depende de PEN-08.
+Fecha: 2026-11-22
+
+### ADR-017 — Validación de configuración de entorno
+Estado: confirmada
+Contexto: la issue #4 exige que la aplicación no arranque con configuración inválida y que ningún secreto llegue al cliente, a logs ni al build. Midiendo en un proyecto desechable se verificó que `import.meta.env.X` incrusta el valor del `.env` dentro de `dist/`; que en `astro dev` (CLI sobre Node) `process.env` no ve el `.env`; que el middleware de Astro se carga en la primera petición y no al arrancar; y que `getSecret()` de `astro:env/server` lee el `.env` en dev, no lo incrusta en `dist/`, lee las variables reales en producción y, con Bun, el `.env` se autocarga.
+Decisión: `loadConfig(raw, options?)` puro en `src/lib/config.ts`, escrito con `astro/zod` (re-export de Zod 4 incluido en Astro; sin dependencia nueva). Lectura en servidor con `getSecret()` en `src/lib/config.runtime.ts` (módulo solo servidor: importarlo desde una isla React rompe el build con `ServerOnlyModule`). Se valida al iniciar `astro dev` y `astro build` (hook `astro:config:setup`, no en `check`/`sync`) y en el script `bun run start`, que sale con código 1 antes de escuchar; el middleware lo comprueba de nuevo como defensa. Reglas detalladas en [09-development-guide](../04-ingenieria/09-development-guide.md). Para tipar `bun:test` se añade `@types/bun` 1.4.5 y `"types": ["bun"]` en `tsconfig.json` (TypeScript 6 ya no incluye `@types/*` automáticamente).
+Alternativas consideradas: solo `envField`/`astro:env` (no se prueba con `bun test`, valida secretos solo en ejecución y no expresa reglas entre variables); validar solo en el middleware (el servidor arrancaría con configuración inválida); Valibot o validación manual.
+Consecuencias: `bun run dev` y `bun run build` exigen un `.env` válido o variables reales (CI debe definir valores ficticios válidos); el `.env.example` falla a propósito hasta generar `AUTH_SECRET`. Elegir `astro/zod` para la configuración **no resuelve PEN-10** (validación de la API), que sigue abierto con `astro/zod` como candidato natural. Exigir https en producción para `APP_ORIGIN` no está decidido (PEN-12). No se probó `astro preview` con la validación ni Node 22.23.4.
 Fecha: 2026-11-22
 
 ## Recomendaciones adoptadas para arrancar
