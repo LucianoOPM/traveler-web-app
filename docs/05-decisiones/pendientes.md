@@ -23,4 +23,3 @@
 | PEN-08 | Estrategia final de hosting, correo, IA, almacenamiento cloud y procesos programados | Despliegue (posterior a la demo local) |
 | PEN-09 | Política de conservación de evidencias, registros de auditoría e invitaciones en producción | Despliegue |
 | PEN-10 | Biblioteca de validación de API (no fijada) | Endpoints (H1+) — ver [07-api-contracts](../02-diseno/07-api-contracts.md) |
-| PEN-11 | Versiones concretas de Astro, React, Drizzle y Better Auth | H0/H1 — ver [09-development-guide](../04-ingenieria/09-development-guide.md) |
