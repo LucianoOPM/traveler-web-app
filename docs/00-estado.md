@@ -3,14 +3,14 @@
 **Última actualización:** 2026-11-22
 
 ## Resumen
-Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`). Aún no hay lógica de negocio, base de datos ni autenticación.
+Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`). Aún no hay lógica de negocio, base de datos ni autenticación.
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 
 | Hito | Descripción | Estado |
 |---|---|---|
-| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2; estructura de carpetas, issue #3; validación de configuración, issue #4; formato y lint, issue #5; errores tipados, issue #6; infraestructura de pruebas, issue #7) |
+| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2; estructura de carpetas, issue #3; validación de configuración, issue #4; formato y lint, issue #5; errores tipados, issue #6; infraestructura de pruebas, issue #7; endpoint de salud, issue #8) |
 | H1 | Plataforma y autenticación | Pendiente |
 | H2 | Catálogo y capacidad | Pendiente |
 | H3 | Reservaciones | Pendiente |
@@ -24,4 +24,4 @@ Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 `db:migrate`, `admin:create`, `demo:seed`: **no existen todavía** (se crean en H1/H6).
 
 ## Siguiente paso sugerido
-Continuar H0 con la issue #8 (endpoint de salud y prueba de salud local). PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
+Continuar H0 con la issue #9 (convención de commits con verificación). PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).

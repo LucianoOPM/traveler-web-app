@@ -13,6 +13,7 @@
     "check": "astro check",
     "test:unit": "bun test ./tests/unit",
     "test:integration": "bun test ./tests/integration",
+    "test:health": "bun test ./tests/integration/health.test.ts",
     "test": "bun run test:unit && bun run test:integration",
     "start": "bun scripts/start.ts",
     "format": "prettier . --write",

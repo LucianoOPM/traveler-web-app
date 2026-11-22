@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { createServer } from "node:net";
 import path from "node:path";
+import {
+  construirAstro,
+  esperarRespuesta,
+  lanzar,
+  puertoLibre,
+  type ProcesoPrueba,
+} from "../support/servidor";
 
 const raiz = path.resolve(import.meta.dir, "../..");
 const fixture = "tests/fixtures/api-errors";
@@ -16,42 +22,16 @@ const entornoValido = {
   AGENCY_TIMEZONE: "America/Mexico_City",
 };
 
-type Servidor = {
-  base: string;
-  salida: () => string;
-  detener: () => Promise<void>;
-};
+type Servidor = ProcesoPrueba & { base: string };
 
 const servidores: Servidor[] = [];
 let produccion!: Servidor;
 let desarrollo!: Servidor;
 
-function puertoLibre(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const probe = createServer();
-    probe.once("error", reject);
-    probe.listen(0, "127.0.0.1", () => {
-      const direccion = probe.address();
-      const puerto = typeof direccion === "object" && direccion ? direccion.port : 0;
-      probe.close(() => resolve(puerto));
-    });
-  });
-}
-
-async function acumular(
-  flujo: ReadableStream<Uint8Array> | number | undefined,
-  agregar: (texto: string) => void,
-): Promise<void> {
-  if (!flujo || typeof flujo === "number") return;
-  const decodificador = new TextDecoder();
-  for await (const trozo of flujo) agregar(decodificador.decode(trozo));
-}
-
 async function arrancar(nodeEnv: "production" | "development"): Promise<Servidor> {
   const puerto = await puertoLibre();
   const base = `http://127.0.0.1:${puerto}`;
-  let salida = "";
-  const proceso = Bun.spawn(["bun", entrada], {
+  const proceso = lanzar(["bun", entrada], {
     cwd: raiz,
     env: {
       ...process.env,
@@ -60,51 +40,25 @@ async function arrancar(nodeEnv: "production" | "development"): Promise<Servidor
       HOST: "127.0.0.1",
       PORT: String(puerto),
     },
-    stdout: "pipe",
-    stderr: "pipe",
   });
-  const agregar = (texto: string) => {
-    salida += texto;
-  };
-  void acumular(proceso.stdout, agregar);
-  void acumular(proceso.stderr, agregar);
-  const servidor: Servidor = {
-    base,
-    salida: () => salida,
-    detener: async () => {
-      proceso.kill();
-      await proceso.exited;
-    },
-  };
+  const servidor: Servidor = { ...proceso, base };
   servidores.push(servidor);
-
-  const limite = Date.now() + 30_000;
-  while (Date.now() < limite) {
-    try {
-      if ((await fetch(`${base}/api/ok`)).status === 200) return servidor;
-    } catch {
-      // el servidor aún no escucha
-    }
-    await Bun.sleep(250);
+  try {
+    await esperarRespuesta(`${base}/api/ok`);
+  } catch {
+    throw new Error(`El servidor de prueba (${nodeEnv}) no arrancó a tiempo`);
   }
-  throw new Error(`El servidor de prueba (${nodeEnv}) no arrancó a tiempo`);
+  return servidor;
 }
 
 beforeAll(async () => {
   // El build hereda el NODE_ENV de `bun test` (test) a propósito: es el peor caso. Que los
   // frames dependan del entorno de EJECUCIÓN garantiza que ese build no los publica en producción.
-  const construccion = Bun.spawn(["bunx", "astro", "build", "--root", fixture], {
+  await construirAstro({
     cwd: raiz,
-    stdout: "pipe",
-    stderr: "pipe",
+    root: fixture,
+    registrar: (proceso) => servidores.push({ ...proceso, base: "" }),
   });
-  const textoConstruccion = new Response(construccion.stdout).text();
-  const errorConstruccion = new Response(construccion.stderr).text();
-  if ((await construccion.exited) !== 0) {
-    throw new Error(
-      `Falló la construcción del fixture:\n${await textoConstruccion}\n${await errorConstruccion}`,
-    );
-  }
   produccion = await arrancar("production");
   desarrollo = await arrancar("development");
 }, 180_000);
