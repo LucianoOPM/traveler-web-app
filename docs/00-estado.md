@@ -3,14 +3,14 @@
 **Última actualización:** 2026-11-22
 
 ## Resumen
-Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`). Aún no hay lógica de negocio, base de datos ni autenticación.
+Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`; configuración validada al arrancar en `src/lib/config.ts`). Aún no hay lógica de negocio, base de datos ni autenticación.
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 
 | Hito | Descripción | Estado |
 |---|---|---|
-| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2; estructura de carpetas, issue #3) |
+| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2; estructura de carpetas, issue #3; validación de configuración, issue #4) |
 | H1 | Plataforma y autenticación | Pendiente |
 | H2 | Catálogo y capacidad | Pendiente |
 | H3 | Reservaciones | Pendiente |
@@ -24,4 +24,4 @@ Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 `db:migrate`, `admin:create`, `demo:seed`: **no existen todavía** (se crean en H1/H6).
 
 ## Siguiente paso sugerido
-Continuar H0 con la issue #4 (variables de entorno, `.env.example` y validación de configuración). PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
+Continuar H0 con la issue #5 (formato y lint). PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
