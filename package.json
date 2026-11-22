@@ -16,6 +16,7 @@
     "test:health": "bun test ./tests/integration/health.test.ts",
     "test": "bun run test:unit && bun run test:integration",
     "start": "bun scripts/start.ts",
+    "prepare": "bun scripts/instalar-hooks.ts",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint . --max-warnings 0"
