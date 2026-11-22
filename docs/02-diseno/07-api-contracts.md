@@ -1,0 +1,49 @@
+# 07 — Contratos de API propuestos
+
+**Estado:** borrador orientativo; validar rutas, códigos y esquemas al implementar. JSON con validación de servidor. No se fija todavía biblioteca de validación.
+
+## Convenciones
+- Prefijo `/api/v1/` para endpoints de negocio.
+- Identificadores opacos; nunca exponer tokens de sesión o hashes.
+- Respuestas de error con `{ "error": { "code": "...", "message": "..." } }`.
+- Códigos: `400` entrada inválida, `401` sin sesión, `403` sin permiso, `404` no visible/no existe, `409` conflicto de estado/capacidad, `422` regla de negocio, `429` exceso de solicitudes.
+- Para acciones financieras y de abordaje: idempotencia, auditoría y transacción.
+
+## Endpoints iniciales
+| Método | Ruta | Uso | Actor |
+|---|---|---|---|
+| GET | `/api/v1/packages` | Catálogo | Público/según contexto |
+| GET | `/api/v1/departures/:id` | Salida y disponibilidad | Público/según contexto |
+| POST | `/api/v1/bookings` | Crear reserva | Comprador / admin |
+| GET | `/api/v1/bookings/access` | Consulta con credencial limitada | Comprador |
+| POST | `/api/v1/bookings/:id/cancel` | Cancelar | Admin |
+| POST | `/api/v1/payments/reports` | Reportar SPEI y evidencia | Comprador autorizado |
+| POST | `/api/v1/payments/:id/review` | Aprobar/rechazar | Admin |
+| POST | `/api/v1/payments/cash` | Registrar efectivo | Admin |
+| GET | `/api/v1/departures/:id/manifest` | Manifiesto | Admin/operador; demo ficticia por ruta separada |
+| POST | `/api/v1/boarding/check-in` | Abordaje atómico | Operador |
+| POST | `/api/v1/demo/invitations/redeem` | Consumir invitación | Visitante con token |
+| GET | `/api/v1/demo/tickets/validate` | Validación ficticia de solo lectura | Visitante demo |
+| GET | `/api/v1/demo/departures/:id/manifest` | Manifiesto ficticio | Visitante demo |
+
+## Ejemplo de validación de boleto
+Solicitud `GET /api/v1/demo/tickets/validate?code=...` (código ficticio opaco, sin datos personales).
+
+```json
+{
+  "ticketReference": "DEMO-T001",
+  "result": "valid",
+  "passenger": { "displayName": "Pasajero ficticio" },
+  "departure": { "reference": "DEMO-D008" },
+  "canRegisterBoarding": false
+}
+```
+
+Resultados posibles: `valid`, `already_boarded`, `not_eligible`, `invalid`, `expired`. La respuesta de demo nunca cambia el estado.
+
+## Reglas de diseño
+- No confiar en `role`, `demoMode` o `database` enviados por cliente.
+- No devolver datos financieros al operador ni al visitante.
+- Nunca usar GET para una mutación.
+- El check-in privado requiere token válido, autorización de operador, salida correcta y restricción única en BD.
+- Carga de evidencias: validar tamaño/tipo, almacenar en ruta privada, asociar a reserva autorizada.
