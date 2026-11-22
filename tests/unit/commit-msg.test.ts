@@ -127,6 +127,46 @@ describe("validarMensaje", () => {
     expect(validarMensaje(conEmoji)).toBeNull();
   });
 
+  test("una cabecera que empieza por # no se confunde con un comentario", () => {
+    // Git conserva estas líneas con \`-m\`: sin la opción, la línea siguiente haría válido el commit.
+    expect(validarMensaje("#123 arreglar", { ignorarComentarios: false })).toContain(
+      "#123 arreglar",
+    );
+    expect(validarMensaje("#123 arreglar\nfeat: y", { ignorarComentarios: false })).not.toBeNull();
+    expect(validarMensaje("# comentario\nfeat: x", { ignorarComentarios: false })).not.toBeNull();
+    // Con el comportamiento por defecto (hook local) los comentarios de Git se siguen ignorando.
+    expect(validarMensaje("# comentario\nfeat: x")).toBeNull();
+    // Y el mensaje de error explica el motivo en lugar de decir solo que está vacío.
+    expect(validarMensaje("#123 arreglar")).toContain("empieza por #");
+    expect(validarMensaje("# solo comentario")).toContain("empieza por #");
+  });
+
+  test("rechaza caracteres de control e invisibles en la cabecera", () => {
+    const invalidas = [
+      "feat: \u0001",
+      "feat: x\u0000",
+      "feat: \u007f",
+      "feat: x\ry",
+      "feat: a\tb",
+      "feat: \u200b",
+      "feat: \u00a0",
+      "\ufefffeat: x",
+    ];
+    for (const mensaje of invalidas) {
+      expect(validarMensaje(mensaje), "debía rechazar " + JSON.stringify(mensaje)).not.toBeNull();
+    }
+    // El BOM no se ve: el error lo muestra escapado para que se pueda diagnosticar.
+    expect(validarMensaje("\ufefffeat: x")).toContain("\\uFEFF");
+  });
+
+  test("acepta Reapply de Git y scopes con separadores documentados", () => {
+    expect(validarMensaje('Reapply "feat: añadir algo"')).toBeNull();
+    for (const scope of ["a/b", "a.b", "a_b", "api-v1"]) {
+      expect(validarMensaje("feat(" + scope + "): x")).toBeNull();
+    }
+    expect(validarMensaje("feat(A/b): x")).not.toBeNull();
+  });
+
   test("el error es comprensible", () => {
     const error = validarMensaje("mensaje malo");
     expect(error).not.toBeNull();
