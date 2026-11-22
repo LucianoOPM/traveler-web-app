@@ -1,7 +1,25 @@
 # 09 — Guía de desarrollo local
 
 ## Requisitos
-Bun, Docker con Compose y Git. Versiones concretas se fijarán en `package.json`, lockfile y documentación tras validar compatibilidad de Astro, React, Drizzle y Better Auth.
+Docker con Compose, Git, Bun y Node.js. Versiones validadas juntas el 2026-11-22 (ver [ADR-015](../05-decisiones/11-decisions-and-risks.md)); se fijan **exactas** (sin `^` ni `~`) en `package.json` y se respaldan con `bun.lock`:
+
+| Componente | Versión | Notas |
+|---|---|---|
+| Bun | 1.4.4 | Runtime del servidor y gestor de paquetes |
+| Node.js | >= 22.23.4 | Requisito `engines` de Astro 7 y `@astrojs/react` 7. Validado solo con v24.22.0; `astro build` corrió sobre Node; `astro dev` no se probó |
+| astro | 7.4.13 | `output: 'server'` |
+| @astrojs/node | 11.1.14 | Adaptador en modo `standalone`; se ejecuta con `bun ./dist/server/entry.mjs` |
+| @astrojs/react | 7.1.9 | Islands React |
+| react / react-dom | 19.3.1 | |
+| drizzle-orm | 0.45.4 | Estable; no usar 1.0 RC. Driver `drizzle-orm/bun-sql` |
+| drizzle-kit | 0.31.11 | Migraciones (`generate`/`migrate`); necesita `pg` instalado |
+| pg | 8.23.1 | Solo devDependency, requerida por `drizzle-kit` (la app usa `bun-sql`) |
+| auth (CLI de Better Auth) | 1.7.27 | devDependency; `auth generate` crea el esquema Drizzle |
+| better-auth | 1.7.27 | Plugin `admin`: `import { admin } from "better-auth/plugins"` |
+| @better-auth/drizzle-adapter | 1.7.27 | `import { drizzleAdapter } from "@better-auth/drizzle-adapter"`; `drizzleAdapter(db, { provider: "pg" })` |
+| PostgreSQL | 17.10 (`postgres:17-alpine` al validar) | Solo en Docker; fijar la etiqueta exacta al crear el `docker-compose` |
+
+Detalles verificados al validar: al crear la instancia de Drizzle hay que pasar `{ schema }` (el esquema generado con `auth generate`) o el adaptador de Better Auth falla con "Drizzle schema mismatch"; el handler se monta en `src/pages/api/auth/[...all].ts`.
 
 ## Variables propuestas
 ```dotenv

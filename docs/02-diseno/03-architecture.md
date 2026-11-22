@@ -1,7 +1,7 @@
 # 03 — Arquitectura
 
 ## Estilo
-**Monolito modular full-stack** en Astro con componentes React donde exista interacción. Bun ejecuta aplicación y scripts. PostgreSQL con Drizzle mantiene el estado persistente. Archivos privados se guardan en disco local fuera del directorio público.
+**Monolito modular full-stack** en Astro con componentes React donde exista interacción. Bun ejecuta la aplicación (servidor) y los scripts; las CLI de Astro y `drizzle-kit` requieren además Node.js (ver [ADR-015](../05-decisiones/11-decisions-and-risks.md)). PostgreSQL con Drizzle mantiene el estado persistente. Archivos privados se guardan en disco local fuera del directorio público.
 
 ```mermaid
 flowchart TB
