@@ -14,15 +14,19 @@ function esRutaApi(pathname: string): boolean {
 // (astro.config.mjs en dev/build y scripts/start.ts en producción).
 export const onRequest = defineMiddleware(async (context, next) => {
   const pathname = context.url.pathname;
+  // Los frames del registro dependen del entorno de EJECUCIÓN validado (NODE_ENV de la
+  // configuración), no del entorno del build: un build hecho con NODE_ENV=test no debe
+  // publicar frames en producción. Ante cualquier duda (p. ej. configuración inválida), sin frames.
+  let includeFrames = false;
   try {
-    getConfig();
+    includeFrames = getConfig().nodeEnv !== "production";
     return await next();
   } catch (error) {
     if (!esRutaApi(pathname)) throw error;
     return toErrorResponse(error, {
       method: context.request.method,
       path: pathname,
-      includeFrames: import.meta.env.DEV,
+      includeFrames,
     });
   }
 });

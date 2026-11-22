@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import type { Mock } from "bun:test";
 import {
+  AppError,
   BusinessRuleError,
   ConflictError,
   ForbiddenError,
@@ -131,6 +132,92 @@ describe("toErrorResponse con errores inesperados", () => {
   });
 });
 
+describe("toErrorResponse ante entradas hostiles", () => {
+  async function esGenerica(response: Response): Promise<void> {
+    expect(response.status).toBe(500);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(await response.json()).toEqual(GENERICO);
+  }
+
+  test("nunca lanza ni se sale del contrato con details mal formados", async () => {
+    const hostiles = [
+      null,
+      undefined,
+      5,
+      "texto",
+      [],
+      {
+        field: {
+          toString: () => {
+            throw new Error("SENTINELA-XYZ");
+          },
+        },
+        message: "m",
+      },
+    ];
+    for (const detalle of hostiles) {
+      const error = new ValidationError("Datos inválidos", { details: [detalle as never] });
+      const response = toErrorResponse(error, contexto);
+      // O bien un 400 válido con details saneados, o bien el 500 genérico: nunca una excepción.
+      expect([400, 500]).toContain(response.status);
+      const texto = await response.text();
+      expect(texto).not.toContain("SENTINELA");
+      expect(() => JSON.parse(texto)).not.toThrow();
+    }
+  });
+
+  test("los getters hostiles no rompen la respuesta ni el registro", async () => {
+    const conGetter = (propiedad: "name" | "code" | "message" | "stack") => {
+      const error = new Error("x");
+      Object.defineProperty(error, propiedad, {
+        get() {
+          throw new Error("SENTINELA-GETTER");
+        },
+      });
+      return error;
+    };
+    for (const propiedad of ["name", "code", "message", "stack"] as const) {
+      consola.mockClear();
+      const response = toErrorResponse(conGetter(propiedad), { ...contexto, includeFrames: true });
+      await esGenerica(response);
+      expect(JSON.stringify(consola.mock.calls)).not.toContain("SENTINELA");
+    }
+  });
+
+  test("un Proxy hostil se trata como error inesperado", async () => {
+    const proxy = new Proxy(
+      {},
+      {
+        getPrototypeOf() {
+          throw new Error("SENTINELA-PROXY");
+        },
+      },
+    );
+    await esGenerica(toErrorResponse(proxy, contexto));
+  });
+
+  test("si console.error lanza, la respuesta sigue siendo la genérica", async () => {
+    consola.mockImplementation(() => {
+      throw new Error("el registro falló");
+    });
+    await esGenerica(toErrorResponse(new Error("x"), contexto));
+  });
+
+  test("un AppError con estado o código inválidos se trata como inesperado", async () => {
+    const estados = [999, 200, 302, Number.NaN, 399];
+    for (const status of estados) {
+      consola.mockClear();
+      const error = new AppError("SENTINELA-XYZ", {}, { status, code: "mio" });
+      await esGenerica(toErrorResponse(error, contexto));
+    }
+    consola.mockClear();
+    const conCodigoAlterado = new ConflictError("x");
+    Object.defineProperty(conCodigoAlterado, "code", { value: "SENTINELA valor\nusuario" });
+    await esGenerica(toErrorResponse(conCodigoAlterado, contexto));
+    expect(JSON.stringify(consola.mock.calls)).not.toContain("SENTINELA");
+  });
+});
+
 describe("registro de errores inesperados", () => {
   test("registra una sola línea JSON controlada", () => {
     const error = new Error("SENTINELA-XYZ", { cause: new Error("SENTINELA-XYZ") });
@@ -210,6 +297,18 @@ describe("registro de errores inesperados", () => {
     for (const frame of frames) {
       expect(frame).toMatch(/^(\S+ \()?[\w$./@\-[\]+]+:\d+:\d+\)?$/);
     }
+  });
+
+  test("errorCode solo se toma de instancias de Error", () => {
+    toErrorResponse({ code: "ECONNREFUSED" }, contexto);
+    expect(registro().errorCode).toBeUndefined();
+  });
+
+  test("los frames conservan las rutas aunque el mensaje sea corto", () => {
+    const error = new Error("s");
+    toErrorResponse(error, { ...contexto, includeFrames: true });
+    const frames = (registro().frames ?? []) as string[];
+    expect(frames.some((frame) => frame.includes("tests/unit/error-response.test.ts"))).toBe(true);
   });
 
   test("los errores tipados no se registran", () => {

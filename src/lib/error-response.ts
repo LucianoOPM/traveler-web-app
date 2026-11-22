@@ -9,7 +9,7 @@
  * - Nunca se serializa ni se registra el mensaje, la `cause`, el objeto `Error`, la
  *   solicitud, cabeceras, cuerpo ni la query string.
  */
-import { AppError, ValidationError, type ErrorDetail } from "./errors";
+import { AppError, ERROR_CODE_PATTERN, ValidationError } from "./errors";
 
 export const INTERNAL_ERROR_MESSAGE = "Error interno del servidor";
 
@@ -29,9 +29,35 @@ const LOCATION_PATTERN = /^[\w$./@\-[\]+]{1,200}:\d+:\d+$/;
 const MAX_FRAMES = 5;
 const MAX_PATH_LENGTH = 200;
 
-function serializarDetalles(details: ErrorDetail[]): ErrorDetail[] {
-  // Solo field y message: se descarta cualquier otra propiedad en tiempo de ejecución.
-  return details.map(({ field, message }) => ({ field: String(field), message: String(message) }));
+/** Ejecuta `fn`; si lanza (getter o Proxy hostil, valor raro), devuelve `respaldo`. */
+function seguro<T>(fn: () => T, respaldo: T): T {
+  try {
+    return fn();
+  } catch {
+    return respaldo;
+  }
+}
+
+function serializarDetalles(details: readonly unknown[]): { field: string; message: string }[] {
+  // Solo field y message: se descarta cualquier otra propiedad y cualquier elemento que no sea objeto.
+  return details
+    .filter((detalle): detalle is { field: unknown; message: unknown } => {
+      return typeof detalle === "object" && detalle !== null;
+    })
+    .map(({ field, message }) => ({ field: String(field), message: String(message) }));
+}
+
+/** Un error tipado solo se serializa si su estado y su código siguen siendo válidos. */
+function esTipadoSerializable(error: unknown): error is AppError {
+  return (
+    error instanceof AppError &&
+    Number.isInteger(error.status) &&
+    error.status >= 400 &&
+    error.status <= 599 &&
+    error.status !== 500 &&
+    typeof error.code === "string" &&
+    ERROR_CODE_PATTERN.test(error.code)
+  );
 }
 
 function cuerpoTipado(error: AppError): { error: Record<string, unknown> } {
@@ -48,7 +74,8 @@ function nombreSeguro(error: unknown): string {
 }
 
 function codigoSeguro(error: unknown): string | undefined {
-  if (typeof error !== "object" || error === null) return undefined;
+  // Solo de instancias de Error: un objeto arbitrario no es una fuente de confianza.
+  if (!(error instanceof Error)) return undefined;
   const code = (error as { code?: unknown }).code;
   return typeof code === "string" && CODE_PATTERN.test(code) ? code : undefined;
 }
@@ -90,8 +117,9 @@ function sanearFrame(linea: string, cwd: string): string | undefined {
 
 function framesSaneados(error: unknown): string[] | undefined {
   if (!(error instanceof Error) || typeof error.stack !== "string") return undefined;
-  // El mensaje puede contener texto que parezca un frame: se retira antes de analizar.
-  const pila = error.message ? error.stack.split(error.message).join("") : error.stack;
+  // El mensaje puede contener texto que parezca un frame: se retira (solo su primera aparición,
+  // la de la cabecera) antes de analizar, sin dañar las rutas del resto de la pila.
+  const pila = error.message ? error.stack.replace(error.message, () => "") : error.stack;
   const cwd = process.cwd();
   const frames: string[] = [];
   for (const linea of pila.split("\n")) {
@@ -103,7 +131,12 @@ function framesSaneados(error: unknown): string[] | undefined {
 }
 
 function escribirRegistro(linea: string): void {
-  console.error(linea);
+  // El registro nunca debe romper la respuesta.
+  try {
+    console.error(linea);
+  } catch {
+    // sin otro canal de respaldo: el registro es solo informativo
+  }
 }
 
 function registrarInesperado(error: unknown, contexto: ErrorContext): void {
@@ -112,22 +145,35 @@ function registrarInesperado(error: unknown, contexto: ErrorContext): void {
     JSON.stringify({
       time: new Date().toISOString(),
       event: "unexpected_error",
-      errorName: nombreSeguro(error),
-      errorCode: codigoSeguro(error),
+      errorName: seguro(() => nombreSeguro(error), "Error"),
+      errorCode: seguro(() => codigoSeguro(error), undefined),
       method,
       path: rutaSegura(contexto.path),
-      frames: contexto.includeFrames ? framesSaneados(error) : undefined,
+      frames: contexto.includeFrames ? seguro(() => framesSaneados(error), undefined) : undefined,
     }),
   );
 }
 
-export function toErrorResponse(error: unknown, contexto: ErrorContext): Response {
-  if (error instanceof AppError && error.status !== 500) {
-    return Response.json(cuerpoTipado(error), { status: error.status });
-  }
-  registrarInesperado(error, contexto);
+function respuestaGenerica(): Response {
   return Response.json(
     { error: { code: "internal_error", message: INTERNAL_ERROR_MESSAGE } },
     { status: 500 },
   );
+}
+
+/** No lanza nunca: ante cualquier fallo al convertir o registrar, responde la 500 genérica. */
+export function toErrorResponse(error: unknown, contexto: ErrorContext): Response {
+  try {
+    if (esTipadoSerializable(error)) {
+      return Response.json(cuerpoTipado(error), { status: error.status });
+    }
+  } catch {
+    // un error tipado que no se puede serializar se trata como inesperado
+  }
+  try {
+    registrarInesperado(error, contexto);
+  } catch {
+    // el registro nunca debe romper la respuesta
+  }
+  return respuestaGenerica();
 }
