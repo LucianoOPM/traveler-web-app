@@ -26,7 +26,7 @@
 | SEED-02 | Validar 250 reservas y 30 flyers | Totales y referencias correctos |
 
 ## Calidad no funcional
-- Formularios con etiquetas, errores accesibles y navegación por teclado.
+- Formularios con etiquetas, errores accesibles y navegación por teclado. El lint estático (ADR-018) solo detecta parte (p. ej. `<label>` sin control, `<img>` sin `alt`); la garantía completa requiere pruebas E2E con axe, aún sin planificar.
 - UI adaptable a móvil para escáner y manifiestos.
 - Sin secretos en cliente, logs o QR.
 - Consultas paginadas para tablas de reservas y pagos.
