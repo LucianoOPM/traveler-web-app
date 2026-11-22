@@ -54,7 +54,7 @@ git commit -m "chore: inicializar proyecto Astro 7 con islands React y TypeScrip
 ### Task 2: Prueba de humo desde un clon limpio (dev, preview, runtimes)
 
 **Files:**
-- Create: `C:\Users\jesus\AppData\Local\Temp\claude\f11277bb7bb1d9fd\4179b91d-cbd8-482c-a3a1-30f74b87dddb\scratchpad\init-clone\` (clon desechable, no se commitea)
+- Create: `<scratchpad>/init-clone/` (clon desechable fuera del repo, no se commitea)
 
 **Interfaces:**
 - Consumes: scripts y archivos de la Task 1, ya commiteados.

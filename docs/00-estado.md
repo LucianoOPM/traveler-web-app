@@ -24,4 +24,4 @@ Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 `db:migrate`, `admin:create`, `demo:seed`: **no existen todavía** (se crean en H1/H6).
 
 ## Siguiente paso sugerido
-Iniciar H0. PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md) (siguiente: inicializar el proyecto, issue #2).
+Continuar H0 con la issue #3 (estructura de carpetas, `.gitignore` y storage privado). PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
