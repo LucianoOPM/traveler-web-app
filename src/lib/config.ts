@@ -87,11 +87,9 @@ function storageProblem(resolved: string, root: string): string | null {
 }
 
 function buildSchema(root: string) {
-  const postgresUrl = z
-    .string(REQUIRED)
-    .refine((value) => postgresDatabaseName(value) !== null, {
-      error: "debe ser una URL postgres:// o postgresql:// con nombre de base",
-    });
+  const postgresUrl = z.string(REQUIRED).refine((value) => postgresDatabaseName(value) !== null, {
+    error: "debe ser una URL postgres:// o postgresql:// con nombre de base",
+  });
 
   const storageDir = z
     .string(REQUIRED)
@@ -140,7 +138,9 @@ function buildSchema(root: string) {
       }),
     })
     .superRefine((data, ctx) => {
-      if (postgresDatabaseName(data.DATABASE_URL) === postgresDatabaseName(data.DEMO_DATABASE_URL)) {
+      if (
+        postgresDatabaseName(data.DATABASE_URL) === postgresDatabaseName(data.DEMO_DATABASE_URL)
+      ) {
         ctx.addIssue({
           code: "custom",
           path: ["DEMO_DATABASE_URL"],
