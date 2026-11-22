@@ -23,8 +23,8 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-016 | Estrategia de ramas: `main` = despliegue, `dev` = desarrollo (predeterminada) | Confirmada |
 | ADR-017 | Validación de configuración con `loadConfig` (`astro/zod`), lectura con `getSecret()` y script `start` que falla antes de escuchar | Confirmada |
 | ADR-018 | Formato con Prettier y lint con ESLint 10 (plugin Astro, accesibilidad `recommended`); typescript-eslint limita TypeScript a `<6.1.0` | Confirmada |
-| ADR-020 | Runner de pruebas `bun test` con scripts `test`, `test:unit` y `test:integration` | Confirmada |
 | ADR-019 | Errores tipados (`AppError` y 7 clases), respuesta `{ error: { code, message } }`, captura en el middleware de `/api/` y registro controlado de inesperados | Confirmada |
+| ADR-020 | Runner de pruebas `bun test` con scripts `test`, `test:unit` y `test:integration` | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -74,8 +74,8 @@ Fecha: 2026-11-22
 ### ADR-020 — Runner de pruebas: `bun test`
 Estado: confirmada
 Contexto: la issue #7 pide elegir el runner de pruebas unitarias (compatible con Bun), dejar las carpetas `tests/unit`, `tests/integration` y `tests/e2e`, los scripts `test` y `test:unit`, y documentar la integración con PostgreSQL y E2E.
-Decisión: `bun test` como runner oficial, sin dependencias nuevas, sin `bunfig.toml` y sin umbrales de cobertura. Scripts `test:unit` (`bun test tests/unit`), `test:integration` (`bun test tests/integration`) y `test` (ambos en secuencia, con rutas explícitas). Hechos verificados: `bun test` descubre y ejecuta hoy 49 pruebas (40 unitarias en ~0,1 s y 9 de integración en ~4 s) sin configuración; por defecto ejecuta los archivos en serie (`--parallel`, `--concurrent` y `--isolate` son opcionales); en un clon limpio, sin `.env`, con el entorno saneado y sin PostgreSQL, `bun run test`, `lint` y `format:check` pasan.
-Alternativas consideradas: Vitest (el que documenta Astro, con `getViteConfig()`; añade dependencias y configuración y hoy ningún código lo exige); Jest (más pesado y exige transformar TypeScript); `node:test` (menos herramientas de mocks y de ecosistema).
+Decisión: `bun test` como runner oficial, sin dependencias nuevas, sin `bunfig.toml` y sin umbrales de cobertura. Scripts `test:unit` (`bun test ./tests/unit`), `test:integration` (`bun test ./tests/integration`) y `test` (ambos en secuencia). El `./` es necesario: sin él, el argumento de `bun test` es un filtro por subcadena y recoge rutas ajenas (se comprobó con archivos señuelo: `bun test tests/unit` ejecutaba 43 pruebas en 6 archivos en lugar de 40 en 3). Hechos verificados: `bun test` descubre y ejecuta hoy 49 pruebas (40 unitarias en ~0,1 s y 9 de integración en ~4 s en caliente) sin configuración; por defecto ejecuta los archivos en serie (`--parallel`, `--concurrent` y `--isolate` son opcionales); en un clon limpio, sin `.env`, con el entorno saneado y sin PostgreSQL, `bun run test`, `lint` y `format:check` pasan.
+Alternativas consideradas: Vitest (el que documenta Astro, con `getViteConfig()`; añade dependencias y configuración y hoy ningún código lo exige); Jest (más pesado y exige transformar TypeScript); `node:test` (correcto técnicamente, pero el proyecto ejecuta todo con Bun, ADR-002, y daría un segundo runner sin ventaja clara). Ninguna alternativa se probó en este proyecto.
 Consecuencias: las pruebas quedan acopladas al runtime Bun (coherente con ADR-002); los módulos virtuales `astro:*` no se pueden importar en `bun test`, por eso la prueba de integración usa el proyecto de `tests/fixtures/api-errors/`; si algún día hace falta probar código que importe `astro:*` sin fixture, reconsiderar Vitest con `getViteConfig()` (no se probó). La estrategia de PostgreSQL para H1 queda como propuesta (PEN-15) y la herramienta E2E como pendiente (PEN-13); no se instaló nada de ello. Deuda conocida de la prueba de integración (carrera mínima del puerto libre y `sleep`) sin tocar.
 Fecha: 2026-11-22
 
