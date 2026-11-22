@@ -23,5 +23,6 @@
 | PEN-08 | Estrategia final de hosting, correo, IA, almacenamiento cloud y procesos programados | Despliegue (posterior a la demo local) |
 | PEN-09 | Política de conservación de evidencias, registros de auditoría e invitaciones en producción | Despliegue |
 | PEN-10 | Biblioteca de validación de API (no fijada; `astro/zod` es el candidato natural tras [ADR-017](11-decisions-and-risks.md), que solo lo usa para la configuración) | Endpoints (H1+) — ver [07-api-contracts](../02-diseno/07-api-contracts.md) |
+| PEN-14 | Biblioteca y estrategia de logging (hoy `console.error` en un único punto, `src/lib/error-response.ts`), identificador de solicitud (`requestId`) y observabilidad local (H8); ver [ADR-019](11-decisions-and-risks.md) | Observabilidad (H8) |
 | PEN-13 | Pruebas E2E de accesibilidad con axe: herramienta, alcance y en qué issue se planifican (el lint estático no detecta controles sin nombre accesible ni `for` a un `id` inexistente; ver [ADR-018](11-decisions-and-risks.md)) | Issue #7 (infraestructura E2E) / hito H8 |
 | PEN-12 | Exigir `https` en `APP_ORIGIN` cuando `NODE_ENV=production` (hoy se acepta http o https) | Despliegue y cookies seguras de sesión |
