@@ -20,6 +20,7 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-013 | Pagos variados y 3 cuentas ficticias con excepciones | Confirmada |
 | ADR-014 | QR de visitante consultable, solo lectura | Confirmada |
 | ADR-015 | Versiones del stack (Bun 1.4.4, Astro 7.4.13, React 19.3.1, Drizzle 0.45.4, Better Auth 1.7.27; paquetes exactos) y driver `bun-sql` | Confirmada |
+| ADR-016 | Estrategia de ramas: `main` = despliegue, `dev` = desarrollo (predeterminada) | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -28,6 +29,14 @@ Decisión: fijar exactas Bun 1.4.4, Astro 7.4.13, @astrojs/node 11.1.14, @astroj
 Validación (proyecto desechable, PostgreSQL 17 en Docker): instalación sin advertencias de peers; `astro build` con island React y adaptador Node; servidor responde 200 en Bun y Node; `drizzle-kit generate/migrate` con el esquema de Better Auth + plugin `admin`; registro por `/api/auth/sign-up/email` correcto con `node-postgres` (Bun y Node) y con `bun-sql` (Bun).
 Alternativas consideradas: Node + `pg` y Bun + `pg` (también pasaron la prueba; descartadas por coherencia con ADR-002 y porque el driver nativo de Bun evita `pg` en tiempo de ejecución, aunque `pg` sigue siendo necesario para `drizzle-kit`); Drizzle 1.0 RC (soportado por Better Auth pero pre-release y no probado).
 Consecuencias: actualizar versiones requiere repetir la validación y un nuevo ADR; el esquema generado por `auth generate` debe pasarse a `drizzle()`; el comportamiento de `bun-sql` bajo carga y transacciones concurrentes (reservas atómicas, P0) debe cubrirse con pruebas en H3.
+Fecha: 2026-11-22
+
+### ADR-016 — Estrategia de ramas
+Estado: confirmada
+Contexto: se quiere separar el código en desarrollo del que se despliega.
+Decisión: `main` es la rama de despliegue y `dev` la rama predeterminada de desarrollo. Las ramas de trabajo (`feat/`, `fix/`, `chore/`, `docs/`) salen de `dev` y vuelven a ella por PR. `dev` se fusiona a `main` por PR cuando un hito esté listo o se vaya a desplegar, con *merge commit* (no *squash*) para que no diverjan. Los hotfix salen de `main` y se devuelven a `dev`. Protección de `dev` y `main` (rulesets de GitHub): exigir PR, **sin aprobaciones obligatorias**, y bloquear force-push y borrado; sin checks de CI obligatorios hasta que exista la CI (issue #10).
+Alternativas consideradas: trabajo directo sobre `main`; exigir aprobación en `main` (descartado: un único responsable no puede aprobar sus propios PR).
+Consecuencias: `Closes #N` solo cierra issues al fusionar en `dev` (la predeterminada); al fusionar `dev` → `main` hay que cerrar a mano las que queden abiertas. Cuando exista CI, añadirla como check requerido. El despliegue desde `main` depende de PEN-08.
 Fecha: 2026-11-22
 
 ## Recomendaciones adoptadas para arrancar
