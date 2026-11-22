@@ -40,3 +40,10 @@ Desactivar reglas globalmente; que el reformateo mezcle cambios de lógica; que 
 
 ## A cargo del constructor
 Forma exacta de las configs de `eslint-plugin-jsx-a11y-x` para `.tsx` (Context7 no la documenta: leer el README del paquete instalado y registrar un `Ruling:`); arreglos mínimos en el código existente para que `lint` pase sin desactivar reglas; redacción de la guía y del ADR.
+
+## Cambios posteriores a este diseño (revisión independiente y decisiones del responsable)
+- `.prettierignore` incluye `*.md` además de `docs/` y `bun.lock` (se evita reformatear documentación y `CLAUDE.md`).
+- `endOfLine` pasó de `"auto"` a `"lf"` con `.gitattributes` (`* text=auto eol=lf`), para que el repositorio sea consistente aunque un colaborador tenga `core.autocrlf=false`.
+- El primer bloque de `eslint.config.mjs` incluye `.astro`: sin eso, el frontmatter no recibía las reglas base ni de TypeScript.
+- `engines` de Node: `^22.23.4 || ^24.16.0 || >=26.3.0` (el spec decía `>= 22.22.3` para `eslint-plugin-astro`; el rango real es `^22.22.3 || ^24.16.0 || >=26.3.0`).
+- Las pruebas E2E con axe no están asignadas a ninguna issue: se registra PEN-13.
