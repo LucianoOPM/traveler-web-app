@@ -9,7 +9,7 @@ import tseslint from "typescript-eslint";
 // Reglas no type-aware. No desactivar reglas globalmente: las excepciones son puntuales,
 // con `// eslint-disable-next-line <regla> -- <motivo>`.
 export default defineConfig([
-  globalIgnores(["dist/", ".astro/", "node_modules/"]),
+  globalIgnores(["**/dist/", "**/.astro/", "**/node_modules/"]),
   {
     linterOptions: { reportUnusedDisableDirectives: "error" },
   },
