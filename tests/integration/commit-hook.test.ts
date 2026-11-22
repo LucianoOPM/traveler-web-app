@@ -82,7 +82,8 @@ describe("hook commit-msg con Git real", () => {
     const base = await git(repo, "commit", "--allow-empty", "-m", "chore: base");
     expect(base.codigo).toBe(0);
 
-    // Revert automático de Git, con un cambio real que revertir.
+    // `git revert` y `git cherry-pick` NO ejecutan commit-msg (Git no lo invoca): esta parte no
+    // prueba el hook, solo que no rompe el flujo; el prefijo `Revert "` lo cubre la prueba unitaria.
     await Bun.write(path.join(repo, "a.txt"), "uno\n");
     await git(repo, "add", "a.txt");
     expect((await git(repo, "commit", "-m", "feat: añadir archivo")).codigo).toBe(0);
@@ -145,11 +146,12 @@ describe("el hook como archivo", () => {
     60_000,
   );
 
-  test("queda con modo ejecutable y saltos de línea LF en el índice", async () => {
-    const indice = await git(raiz, "ls-files", "-s", ".githooks/commit-msg");
-    expect(indice.codigo).toBe(0);
-    expect(indice.salida).toStartWith("100755");
-    expect(await Bun.file(hook).text()).not.toContain("\r");
+  test("el índice guarda el hook con modo ejecutable y saltos de línea LF", async () => {
+    const modo = await git(raiz, "ls-files", "-s", ".githooks/commit-msg");
+    expect(modo.codigo).toBe(0);
+    expect(modo.salida).toStartWith("100755");
+    const eol = await git(raiz, "ls-files", "--eol", ".githooks/commit-msg");
+    expect(eol.salida).toContain("i/lf");
   }, 60_000);
 });
 
@@ -184,5 +186,66 @@ describe("prepare (scripts/instalar-hooks.ts)", () => {
     expect(resultado.salida).toContain("otro-dir");
     const config = await git(repo, "config", "--local", "core.hooksPath");
     expect(config.salida.trim()).toBe("otro-dir");
+  }, 60_000);
+
+  test("prepare reconoce el hook ya instalado con barra final o ruta absoluta", async () => {
+    const repo = await crearRepo({ conHook: false });
+    for (const valor of [".githooks/", path.join(repo, ".githooks").replaceAll("\\", "/")]) {
+      await git(repo, "config", "--local", "core.hooksPath", valor);
+      const resultado = await ejecutar(["bun", instalador], repo);
+      expect(resultado.codigo).toBe(0);
+      expect(resultado.salida).not.toContain("no quedó activado");
+      expect(resultado.salida).toContain("ya está instalado");
+    }
+  }, 60_000);
+
+  test("prepare no toca un repositorio padre cuando el proyecto está dentro de otro", async () => {
+    const padre = await crearRepo({ conHook: false });
+    const proyecto = path.join(padre, "sub", "proyecto");
+    await Bun.write(path.join(proyecto, "marcador.txt"), "x\n");
+    // El límite de búsqueda de Git queda por encima del repositorio padre para que lo encuentre.
+    const resultado = await ejecutar(["bun", instalador], proyecto, {
+      GIT_CEILING_DIRECTORIES: path.dirname(padre),
+    });
+    expect(resultado.codigo).toBe(0);
+    expect(resultado.salida).toContain("no quedó activado");
+    const config = await git(padre, "config", "--local", "--get", "core.hooksPath");
+    expect(config.salida.trim()).toBe("");
+  }, 60_000);
+
+  test("prepare no anula un core.hooksPath global", async () => {
+    const repo = await crearRepo({ conHook: false });
+    const globalConfig = path.join(await directorioTemporal(), "gitconfig-global");
+    await Bun.write(globalConfig, "[core]\n\thooksPath = /hooks-corporativos\n");
+    const resultado = await ejecutar(["bun", instalador], repo, {
+      GIT_CONFIG_GLOBAL: globalConfig,
+    });
+    expect(resultado.codigo).toBe(0);
+    expect(resultado.salida).toContain("no quedó activado");
+    expect(resultado.salida).toContain("/hooks-corporativos");
+    const local = await git(repo, "config", "--local", "--get", "core.hooksPath");
+    expect(local.salida.trim()).toBe("");
+  }, 60_000);
+
+  test("prepare no desactiva hooks que ya existen en .git/hooks", async () => {
+    const repo = await crearRepo({ conHook: false });
+    await Bun.write(path.join(repo, ".git/hooks/pre-commit"), "#!/bin/sh\nexit 0\n");
+    await Bun.write(path.join(repo, ".git/hooks/pre-push.sample"), "#!/bin/sh\nexit 0\n");
+    const resultado = await ejecutar(["bun", instalador], repo);
+    expect(resultado.codigo).toBe(0);
+    expect(resultado.salida).toContain("no quedó activado");
+    expect(resultado.salida).toContain("pre-commit");
+    expect(resultado.salida).not.toContain("pre-push");
+    const config = await git(repo, "config", "--local", "--get", "core.hooksPath");
+    expect(config.salida.trim()).toBe("");
+  }, 60_000);
+
+  test("prepare instala el hook cuando solo hay archivos .sample en .git/hooks", async () => {
+    const repo = await crearRepo({ conHook: false });
+    await Bun.write(path.join(repo, ".git/hooks/pre-commit.sample"), "#!/bin/sh\nexit 0\n");
+    const resultado = await ejecutar(["bun", instalador], repo);
+    expect(resultado.codigo).toBe(0);
+    const config = await git(repo, "config", "--local", "--get", "core.hooksPath");
+    expect(config.salida.trim()).toBe(".githooks");
   }, 60_000);
 });
