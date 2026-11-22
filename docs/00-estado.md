@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-22
 
 ## Resumen
-Solo existe documentación. **No hay código, repositorio git ni scripts** en el directorio del proyecto (verificado al reorganizar la documentación).
+Solo existe documentación. **No hay código ni scripts** en el directorio del proyecto (el repositorio git existe; ver issues del hito H0).
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).

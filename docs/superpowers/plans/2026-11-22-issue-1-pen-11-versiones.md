@@ -1,5 +1,7 @@
 # Issue #1 — Resolver PEN-11 y fijar versiones: Plan de implementación
 
+> **Plan ejecutado (histórico).** Resultado y versiones definitivas: ADR-015. Dos afirmaciones de Context7 citadas abajo ("Astro 6" y "`bun-sql` solo en RC") quedaron **superadas** al contrastar con el registro y las pruebas.
+
 > **Para agentes:** SUB-SKILL REQUERIDA: usar superpowers:subagent-driven-development (recomendado) o superpowers:executing-plans. Los pasos usan checkboxes (`- [ ]`).
 
 **Goal:** Cerrar PEN-11 fijando, con evidencia verificada, las versiones de Bun, Astro, React, Drizzle y Better Auth, y dejarlas documentadas.
