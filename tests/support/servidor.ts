@@ -32,7 +32,9 @@ async function acumular(
 ): Promise<void> {
   if (!flujo || typeof flujo === "number") return;
   const decodificador = new TextDecoder();
-  for await (const trozo of flujo) agregar(decodificador.decode(trozo));
+  // `stream: true` evita partir un carácter multibyte que caiga en el borde de un trozo.
+  for await (const trozo of flujo) agregar(decodificador.decode(trozo, { stream: true }));
+  agregar(decodificador.decode());
 }
 
 export function lanzar(comando: string[], opciones: OpcionesLanzar): ProcesoPrueba {
@@ -46,11 +48,14 @@ export function lanzar(comando: string[], opciones: OpcionesLanzar): ProcesoPrue
   const agregar = (texto: string) => {
     salida += texto;
   };
-  void acumular(proceso.stdout, agregar);
-  void acumular(proceso.stderr, agregar);
+  const lecturas = [acumular(proceso.stdout, agregar), acumular(proceso.stderr, agregar)];
   return {
     salida: () => salida,
-    salio: proceso.exited,
+    // Resuelve cuando el proceso terminó Y se leyó toda su salida: así `salida()` no llega truncada.
+    salio: proceso.exited.then(async (codigo) => {
+      await Promise.all(lecturas);
+      return codigo;
+    }),
     detener: async () => {
       proceso.kill();
       await proceso.exited;
@@ -73,9 +78,16 @@ export async function esperarRespuesta(url: string, limiteMs = 30_000): Promise<
 }
 
 /** Ejecuta `astro build` (opcionalmente con `--root`) y falla con la salida si termina mal. */
-export async function construirAstro(opciones: OpcionesLanzar & { root?: string }): Promise<void> {
+export async function construirAstro(
+  opciones: OpcionesLanzar & {
+    root?: string;
+    /** Recibe el proceso de build para que quien llama lo cierre si la prueba se agota. */
+    registrar?: (proceso: ProcesoPrueba) => void;
+  },
+): Promise<void> {
   const comando = ["bunx", "astro", "build", ...(opciones.root ? ["--root", opciones.root] : [])];
   const proceso = lanzar(comando, { cwd: opciones.cwd, env: opciones.env });
+  opciones.registrar?.(proceso);
   const codigo = await proceso.salio;
   if (codigo !== 0) {
     throw new Error(`Falló astro build (código ${codigo}):\n${proceso.salida()}`);

@@ -54,7 +54,11 @@ async function arrancar(nodeEnv: "production" | "development"): Promise<Servidor
 beforeAll(async () => {
   // El build hereda el NODE_ENV de `bun test` (test) a propósito: es el peor caso. Que los
   // frames dependan del entorno de EJECUCIÓN garantiza que ese build no los publica en producción.
-  await construirAstro({ cwd: raiz, root: fixture });
+  await construirAstro({
+    cwd: raiz,
+    root: fixture,
+    registrar: (proceso) => servidores.push({ ...proceso, base: "" }),
+  });
   produccion = await arrancar("production");
   desarrollo = await arrancar("development");
 }, 180_000);

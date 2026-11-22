@@ -65,15 +65,27 @@ async function primeraRespuesta(url: string, limiteMs = 30_000): Promise<Respons
 }
 
 async function conLimite(promesa: Promise<number>, ms: number): Promise<number> {
-  return Promise.race([promesa, Bun.sleep(ms).then(() => -1)]);
+  let temporizador: ReturnType<typeof setTimeout> | undefined;
+  const limite = new Promise<number>((resolve) => {
+    temporizador = setTimeout(() => resolve(-1), ms);
+  });
+  try {
+    return await Promise.race([promesa, limite]);
+  } finally {
+    clearTimeout(temporizador);
+  }
 }
 
 beforeAll(async () => {
-  await construirAstro({ cwd: raiz, env: { ...process.env, ...entornoValido } });
+  await construirAstro({
+    cwd: raiz,
+    env: { ...process.env, ...entornoValido },
+    registrar: (proceso) => procesos.push(proceso),
+  });
   const puerto = await puertoLibre();
   base = `http://127.0.0.1:${puerto}`;
   servidor = iniciar(["bun", "scripts/start.ts"], puerto);
-  await esperarRespuesta(`${base}/`);
+  await esperarRespuesta(`${base}/api/health`);
 }, 180_000);
 
 afterAll(async () => {
