@@ -14,7 +14,7 @@ export default defineConfig([
     linterOptions: { reportUnusedDisableDirectives: "error" },
   },
   {
-    files: ["**/*.{js,mjs,ts,tsx}"],
+    files: ["**/*.{js,mjs,ts,tsx,astro}"],
     extends: [js.configs.recommended, tseslint.configs.recommended],
   },
   // Plantillas y frontmatter de `.astro`, con accesibilidad en nivel recommended.
