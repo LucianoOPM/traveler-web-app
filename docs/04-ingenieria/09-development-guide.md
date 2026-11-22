@@ -74,6 +74,7 @@ docs/
 - Evitar lógica financiera en React; los componentes solo muestran resultados.
 - Para cambiar reglas confirmadas, registrar una decisión en [11-decisions-and-risks](../05-decisiones/11-decisions-and-risks.md); si algo no está decidido, consultar [pendientes](../05-decisiones/pendientes.md).
 - No usar archivos privados en `public/`; rutas de storage configurables y validadas.
+- Ramas ([ADR-016](../05-decisiones/11-decisions-and-risks.md)): `main` es despliegue y `dev` es la predeterminada. Crear ramas `feat/`, `fix/`, `chore/` o `docs/` desde `dev`, y abrir PR hacia `dev`. `dev` → `main` por PR (merge commit) al cerrar un hito. Nunca hacer push directo a `main` ni a `dev`.
 
 ## Definición de terminado de una historia
 Código + prueba de éxito + prueba de error/permisos + migración (si aplica) + auditoría (si aplica) + documentación breve.
