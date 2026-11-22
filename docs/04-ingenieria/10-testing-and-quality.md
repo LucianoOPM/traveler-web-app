@@ -30,10 +30,10 @@ El runner oficial es `bun test` (integrado en Bun, TypeScript nativo, API compat
 
 | Script | Qué ejecuta | Hoy |
 |---|---|---|
-| `bun run test:unit` | `./tests/unit` | 41 pruebas (~0,7 s) |
-| `bun run test:integration` | `./tests/integration` | 15 pruebas (~10 s): las 9 de `api-errors` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad; la primera ejecución en un clon recién instalado tardó ~12 s) y las 6 de salud |
+| `bun run test:unit` | `./tests/unit` | 55 pruebas (~0,8 s) |
+| `bun run test:integration` | `./tests/integration` | 29 pruebas (~14 s): las 9 de `api-errors` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad; la primera ejecución en un clon recién instalado tardó ~12 s), las 6 de salud y las 14 del hook de commits (repositorios Git temporales reales) |
 | `bun run test:health` | `./tests/integration/health.test.ts` | 6 pruebas (~4 s): la prueba de salud local de la app real (`GET /api/health` y fallo con configuración inválida) |
-| `bun run test` | las dos anteriores, en ese orden | 56 pruebas (41 + 15); si falla la unitaria no se ejecuta la integración |
+| `bun run test` | las dos anteriores, en ese orden | 84 pruebas (55 + 29); si falla la unitaria no se ejecuta la integración |
 
 Ninguna prueba actual requiere `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado y sin PostgreSQL). Por defecto `bun test` ejecuta los archivos **en serie**, y las pruebas de un archivo una tras otra; `--parallel` (archivos en procesos) y `--concurrent` (pruebas dentro de un archivo) son opcionales y cambian lo que debe prever la estrategia de bases de datos de abajo. Según la documentación de Bun, `--isolate` aísla el estado global y los registros de módulos entre archivos, de modo que sin él todos los archivos los comparten (p. ej., un pool de conexiones creado como singleton se compartiría), y `test.concurrent` o `--randomize` cambian el orden de ejecución. `tests/e2e/` solo contiene un `.gitkeep`.
 

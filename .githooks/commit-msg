@@ -1,0 +1,11 @@
+#!/bin/sh
+# Hook commit-msg de TravelTech: valida Conventional Commits con scripts/commit-msg.ts.
+# Se instala solo con `bun install` (script `prepare`). Para saltarlo a propósito: git commit --no-verify
+
+if ! command -v bun >/dev/null 2>&1; then
+  echo "TravelTech: no se encontró Bun en el PATH, así que no se puede validar el mensaje del commit." >&2
+  echo "Instala Bun (https://bun.sh) o, solo si es deliberado, usa: git commit --no-verify" >&2
+  exit 1
+fi
+
+exec bun "$(dirname "$0")/../scripts/commit-msg.ts" "$1"
