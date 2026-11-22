@@ -79,6 +79,9 @@ storage/              # archivos privados ignorados por Git
 tests/                # unit, integration, e2e
 docs/
 ```
+Estado (issue #3): las carpetas de `src/modules/*`, `src/db`, `src/lib`, `scripts/` y `tests/*` existen y se versionan con un `.gitkeep` (Git no guarda carpetas vacías); se borrará el `.gitkeep` de cada una cuando reciba su primer archivo. Los módulos aún no tienen subcarpetas internas (`schema`, `domain`...): se crean con el primer código.
+
+`storage/` **no existe en el repositorio**: está en `.gitignore` y la aplicación creará `storage/private` y `storage/demo` en tiempo de ejecución (según `PRIVATE_STORAGE_DIR` y `DEMO_STORAGE_DIR`). `.gitignore` también excluye `.env` y `.env.*` (salvo `.env.example`), `node_modules/`, `dist/`, `.astro/` y `*.log`. `public/` no existe y no debe contener archivos privados (ver [06-security-and-access](../02-diseno/06-security-and-access.md)).
 
 ## Convenciones de trabajo
 - Caso de uso primero, endpoint delgado, servicio transaccional, pruebas del invariante.
