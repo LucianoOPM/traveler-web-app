@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verificar:
+    name: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2 # versión de Bun: campo packageManager de package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.22.0
+      - uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run format:check
+      - run: bun run lint
+      - run: bun run check
+      - run: bun run test
+      - name: build
+        run: bun run build
+        env:
+          NODE_ENV: production
+          DATABASE_URL: postgresql://traveltech:ci-sin-secreto@localhost:5432/traveltech_private
+          DEMO_DATABASE_URL: postgresql://traveltech:ci-sin-secreto@localhost:5432/traveltech_demo
+          AUTH_SECRET: ci-auth-secret-ficticio-solo-para-ci-0123456789
+          APP_ORIGIN: http://localhost:4321
+          PRIVATE_STORAGE_DIR: ./storage/private
+          DEMO_STORAGE_DIR: ./storage/demo
+          AGENCY_TIMEZONE: America/Mexico_City
+
+  commits:
+    name: commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - name: Validar los commits del PR
+        run: bun scripts/validar-commits.ts "$BASE_SHA" "$HEAD_SHA"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
