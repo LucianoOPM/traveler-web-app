@@ -1,6 +1,6 @@
 ---
-// Layout del catálogo público (visitantes sin sesión). Estilos mínimos: el diseño visual llegará
-// con Tailwind y shadcn (ADR-027). Cada página aporta su único `h1`.
+import "../styles/global.css";
+// Layout del catálogo público (visitantes sin sesión). Cada página aporta su único `h1`.
 const { titulo = "Catálogo" } = Astro.props;
 ---
 
@@ -11,38 +11,13 @@ const { titulo = "Catálogo" } = Astro.props;
     <title>{titulo} · TravelTech</title>
   </head>
   <body>
-    <header>
-      <a href="/">
+    <header class="border-b px-4 py-3">
+      <a href="/" class="rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
         <strong>TravelTech</strong>
       </a>
     </header>
-    <main>
+    <main class="mx-auto max-w-5xl p-4">
       <slot />
     </main>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        margin: 0;
-      }
-      header {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #ccc;
-      }
-      main {
-        max-width: 60rem;
-        margin: 0 auto;
-        padding: 1rem;
-      }
-      :global(table) {
-        border-collapse: collapse;
-        width: 100%;
-      }
-      :global(th),
-      :global(td) {
-        border: 1px solid #ccc;
-        padding: 0.4rem 0.6rem;
-        text-align: left;
-      }
-    </style>
   </body>
 </html>

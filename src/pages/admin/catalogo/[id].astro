@@ -30,38 +30,46 @@ const zona = process.env.AGENCY_TIMEZONE!;
 ---
 
 <AdminLayout titulo={paquete.name}>
-  <p>
-    <a href="/admin/catalogo">← Paquetes</a>
+  <p class="mb-4">
+    <a
+      href="/admin/catalogo"
+      class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+    >
+      ← Paquetes
+    </a>
   </p>
-  <h1>{paquete.name}</h1>
-  <p>Estado: {paquete.status}</p>
+  <h1 class="mb-2 text-2xl font-semibold">{paquete.name}</h1>
+  <p class="mb-4 text-muted-foreground">Estado: {paquete.status}</p>
   <PaqueteForm client:load paquete={paquete} />
 
-  <h2>Portada</h2>
+  <h2 class="mt-8 mb-3 text-xl font-semibold">Portada</h2>
   {paquete.coverAssetId && (
     <img
       src={`/api/media/${paquete.coverAssetId}`}
       alt={`Portada de ${paquete.name}`}
       width="320"
+      class="mb-3 rounded-lg"
     />
   )}
   {paquete.status !== "archivado" && (
     <PortadaForm client:load paqueteId={paquete.id} tienePortada={!!paquete.coverAssetId} />
   )}
 
-  <h2>Salidas</h2>
+  <h2 class="mt-8 mb-3 text-xl font-semibold">Salidas</h2>
   {salidas.length === 0 && <p>Este paquete aún no tiene salidas.</p>}
   {salidas.map((s) => (
-    <section>
-      <h3>
+    <section class="mb-4 grid gap-2 rounded-xl border p-4">
+      <h3 class="font-medium">
         {utcALocal(s.startsAt, zona)} → {utcALocal(s.endsAt, zona)} ({s.status})
       </h3>
-      <p>
+      <p class="text-sm text-muted-foreground">
         Capacidad {s.capacity} · adulto {centavosAPesos(s.adultPriceCents)} · menor{" "}
         {centavosAPesos(s.childPriceCents)} · infante {centavosAPesos(s.infantPriceCents)}
       </p>
       <details>
-        <summary>Editar salida</summary>
+        <summary class="cursor-pointer rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+          Editar salida
+        </summary>
         <SalidaForm client:load paqueteId={paquete.id} salida={s} zona={zona} />
       </details>
       <SalidaAcciones
@@ -76,11 +84,11 @@ const zona = process.env.AGENCY_TIMEZONE!;
 
   {paquete.status !== "archivado" && (
     <>
-      <h2>Nueva salida</h2>
+      <h2 class="mt-8 mb-3 text-xl font-semibold">Nueva salida</h2>
       <SalidaForm client:load paqueteId={paquete.id} zona={zona} />
     </>
   )}
 
-  <h2>Puntos de abordaje</h2>
+  <h2 class="mt-8 mb-3 text-xl font-semibold">Puntos de abordaje</h2>
   <NuevoPunto client:load />
 </AdminLayout>

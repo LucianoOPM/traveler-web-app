@@ -4,9 +4,14 @@ import PaqueteForm from "@components/catalogo/PaqueteForm";
 ---
 
 <AdminLayout titulo="Nuevo paquete">
-  <p>
-    <a href="/admin/catalogo">← Paquetes</a>
+  <p class="mb-4">
+    <a
+      href="/admin/catalogo"
+      class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+    >
+      ← Paquetes
+    </a>
   </p>
-  <h1>Nuevo paquete</h1>
+  <h1 class="mb-4 text-2xl font-semibold">Nuevo paquete</h1>
   <PaqueteForm client:load />
 </AdminLayout>
