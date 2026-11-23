@@ -1,10 +1,10 @@
 import type { APIRoute } from "astro";
 import { z } from "astro/zod";
-import { baseDelServidor } from "../../../db/servidor";
-import { NotFoundError } from "../../../lib/errors";
-import { esAdmin } from "../../../lib/guards";
-import { noEncontrado } from "../../../lib/no-encontrado";
-import { crearCatalogo } from "../../../modules/catalog/container";
+import { baseDelServidor } from "@db/servidor";
+import { NotFoundError } from "@lib/errors";
+import { esAdmin } from "@lib/guards";
+import { noEncontrado } from "@lib/no-encontrado";
+import { crearCatalogo } from "@modules/catalog/container";
 
 // Lectura de imágenes privadas (ADR-025: API Route porque devuelve bytes). GET no muta. El UUID se
 // resuelve a un registro; la ruta del disco nunca sale. Público solo si es la portada de un paquete

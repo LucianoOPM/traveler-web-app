@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
-import { ConflictError } from "../../src/lib/errors";
-import { PackageService } from "../../src/modules/catalog/application/package-service";
-import { DrizzlePackageRepository } from "../../src/modules/catalog/infrastructure/drizzle-package-repository";
+import { ConflictError } from "@lib/errors";
+import { PackageService } from "@modules/catalog/application/package-service";
+import { DrizzlePackageRepository } from "@modules/catalog/infrastructure/drizzle-package-repository";
 import { readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { crearMedia } from "../../src/modules/media/container";
+import { crearMedia } from "@modules/media/container";
 import { jpeg, png } from "../support/imagenes";
 import { abrirBaseDePruebas, recrearEsquema } from "../support/base-de-pruebas";
 

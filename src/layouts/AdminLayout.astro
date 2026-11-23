@@ -1,5 +1,5 @@
 ---
-import { esAdmin } from "../lib/guards";
+import { esAdmin } from "@lib/guards";
 // Layout del área privada. Solo se usa en páginas bajo `/admin`, donde el middleware ya garantiza
 // que `Astro.locals.user` existe y es personal.
 const { titulo = "Panel" } = Astro.props;

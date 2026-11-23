@@ -1,12 +1,12 @@
 ---
 import { z } from "astro/zod";
-import PublicLayout from "../../layouts/PublicLayout.astro";
-import { baseDelServidor } from "../../db/servidor";
-import { NotFoundError } from "../../lib/errors";
-import { formatearFecha } from "../../lib/fechas";
-import { formatearPesos } from "../../lib/importes";
-import { noEncontrado } from "../../lib/no-encontrado";
-import { crearCatalogo } from "../../modules/catalog/container";
+import PublicLayout from "@layouts/PublicLayout.astro";
+import { baseDelServidor } from "@db/servidor";
+import { NotFoundError } from "@lib/errors";
+import { formatearFecha } from "@lib/fechas";
+import { formatearPesos } from "@lib/importes";
+import { noEncontrado } from "@lib/no-encontrado";
+import { crearCatalogo } from "@modules/catalog/container";
 
 // Fuera de `/api/` un error lanzado sería un 500: id inválido, inexistente y no publicado
 // responden lo mismo (`noEncontrado`) para no revelar que el paquete existe.

@@ -1,9 +1,9 @@
 ---
-import PublicLayout from "../layouts/PublicLayout.astro";
-import { baseDelServidor } from "../db/servidor";
-import { formatearFecha } from "../lib/fechas";
-import { formatearPesos } from "../lib/importes";
-import { crearCatalogo } from "../modules/catalog/container";
+import PublicLayout from "@layouts/PublicLayout.astro";
+import { baseDelServidor } from "@db/servidor";
+import { formatearFecha } from "@lib/fechas";
+import { formatearPesos } from "@lib/importes";
+import { crearCatalogo } from "@modules/catalog/container";
 
 const paquetes = await crearCatalogo(await baseDelServidor()).publico.list();
 const zona = process.env.AGENCY_TIMEZONE!;

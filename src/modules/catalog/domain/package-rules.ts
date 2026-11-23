@@ -1,6 +1,6 @@
 // Reglas de dominio del paquete: funciones puras que lanzan `BusinessRuleError` (422).
 // Los mensajes son públicos: no incluyen valores enviados por el cliente.
-import { BusinessRuleError } from "../../../lib/errors";
+import { BusinessRuleError } from "@lib/errors";
 import type { Package } from "../types";
 
 export type PackageContent = Pick<Package, "name" | "summary" | "description">;

@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
-import type * as schema from "../../../db/schema";
-import { ConflictError } from "../../../lib/errors";
+import type * as schema from "@db/schema";
+import { ConflictError } from "@lib/errors";
 import type { PackageRepository } from "../domain/package-repository";
 import { packages } from "../schema";
 import { esErrorPg } from "./errores-pg";

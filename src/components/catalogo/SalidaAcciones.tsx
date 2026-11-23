@@ -1,6 +1,6 @@
 import { actions } from "astro:actions";
 import { useState } from "react";
-import type { BoardingPoint, Departure, PackageStatus } from "../../modules/catalog/types";
+import type { BoardingPoint, Departure, PackageStatus } from "@modules/catalog/types";
 import { Campo, ErrorGeneral, useEnvio } from "./comun";
 
 type Props = {

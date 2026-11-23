@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { NotFoundError } from "../../../src/lib/errors";
-import { PublicCatalogService } from "../../../src/modules/catalog/application/public-catalog-service";
-import type { BoardingPointRepository } from "../../../src/modules/catalog/domain/boarding-point-repository";
-import type { DepartureRepository } from "../../../src/modules/catalog/domain/departure-repository";
-import type { PackageRepository } from "../../../src/modules/catalog/domain/package-repository";
+import { NotFoundError } from "@lib/errors";
+import { PublicCatalogService } from "@modules/catalog/application/public-catalog-service";
+import type { BoardingPointRepository } from "@modules/catalog/domain/boarding-point-repository";
+import type { DepartureRepository } from "@modules/catalog/domain/departure-repository";
+import type { PackageRepository } from "@modules/catalog/domain/package-repository";
 import type {
   BoardingPoint,
   DepartureStatus,
   Package,
   PackageStatus,
-} from "../../../src/modules/catalog/types";
+} from "@modules/catalog/types";
 
 const AHORA = new Date("2027-06-01T12:00:00Z");
 const DIA = 86_400_000;

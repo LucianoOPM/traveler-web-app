@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { auth } from "../../../modules/identity/auth";
+import { auth } from "@modules/identity/auth";
 
 export const ALL: APIRoute = ({ request, clientAddress }) => {
   // El límite de intentos de Better Auth usa `x-forwarded-for`. Nunca se confía en el del cliente:

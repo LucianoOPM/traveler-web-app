@@ -1,5 +1,5 @@
 import type { SQL } from "bun";
-import { abrirBase } from "../../src/db/conexion";
+import { abrirBase } from "@db/conexion";
 
 const BASE_DE_PRUEBAS = "traveltech_test";
 

@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
 import { createAccessControl } from "better-auth/plugins/access";
 import { adminAc, defaultStatements } from "better-auth/plugins/admin/access";
-import { abrirBase } from "../../db/conexion";
+import { abrirBase } from "@db/conexion";
 import * as schema from "./schema";
 
 const url = process.env.DATABASE_URL;

@@ -1,7 +1,7 @@
 // Reglas de dominio de la salida: funciones puras que lanzan `BusinessRuleError` (422).
 // Los mensajes son públicos: no incluyen valores enviados por el cliente. Las mismas invariantes
 // existen como CHECK en PostgreSQL (`departures_*_check`).
-import { BusinessRuleError } from "../../../lib/errors";
+import { BusinessRuleError } from "@lib/errors";
 import type { Departure, PackageStatus } from "../types";
 
 export type DepartureContent = Pick<

@@ -1,8 +1,8 @@
 import { actions } from "astro:actions";
 import { useState } from "react";
-import { utcALocal, localAUtc } from "../../lib/fechas";
-import { centavosAPesos, pesosACentavos } from "../../lib/importes";
-import type { Departure } from "../../modules/catalog/types";
+import { utcALocal, localAUtc } from "@lib/fechas";
+import { centavosAPesos, pesosACentavos } from "@lib/importes";
+import type { Departure } from "@modules/catalog/types";
 import { Campo, ErrorGeneral, useEnvio } from "./comun";
 
 type Props = { paqueteId: string; salida?: Departure; zona: string };

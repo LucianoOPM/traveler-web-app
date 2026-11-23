@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "../../../lib/errors";
+import { ConflictError, NotFoundError } from "@lib/errors";
 import type { PackageRepository } from "../domain/package-repository";
 import {
   comprobarArchivable,
@@ -8,7 +8,7 @@ import {
   comprobarPublicable,
   type PackageContent,
 } from "../domain/package-rules";
-import type { MediaService } from "../../media/application/media-service";
+import type { MediaService } from "@modules/media/application/media-service";
 import type { Package } from "../types";
 
 export class PackageService {

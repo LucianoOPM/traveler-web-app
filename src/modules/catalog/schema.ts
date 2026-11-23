@@ -9,7 +9,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { mediaAssets } from "../media/schema";
+import { mediaAssets } from "@modules/media/schema";
 
 // Fuente única de los estados: tipos y CHECK salen de aquí. H5 añadirá «en abordaje» y «finalizada».
 export const ESTADOS_PAQUETE = ["borrador", "publicado", "archivado"] as const;

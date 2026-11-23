@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { BoardingPointService } from "../../../src/modules/catalog/application/boarding-point-service";
-import { DepartureService } from "../../../src/modules/catalog/application/departure-service";
-import type { BoardingPointRepository } from "../../../src/modules/catalog/domain/boarding-point-repository";
-import type { DepartureRepository } from "../../../src/modules/catalog/domain/departure-repository";
-import { BusinessRuleError, ConflictError, NotFoundError } from "../../../src/lib/errors";
-import type { Departure, PackageStatus } from "../../../src/modules/catalog/types";
+import { BoardingPointService } from "@modules/catalog/application/boarding-point-service";
+import { DepartureService } from "@modules/catalog/application/departure-service";
+import type { BoardingPointRepository } from "@modules/catalog/domain/boarding-point-repository";
+import type { DepartureRepository } from "@modules/catalog/domain/departure-repository";
+import { BusinessRuleError, ConflictError, NotFoundError } from "@lib/errors";
+import type { Departure, PackageStatus } from "@modules/catalog/types";
 
 const SALIDA = "5f1c1c0e-0000-4000-8000-000000000001";
 const PAQUETE = "5f1c1c0e-0000-4000-8000-0000000000a1";

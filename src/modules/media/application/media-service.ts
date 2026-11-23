@@ -1,4 +1,4 @@
-import { BusinessRuleError, NotFoundError } from "../../../lib/errors";
+import { BusinessRuleError, NotFoundError } from "@lib/errors";
 import type { AlmacenArchivos } from "../domain/almacen-archivos";
 import { detectarTipoImagen, EXTENSION } from "../domain/firma";
 import type { MediaRepository } from "../domain/media-repository";

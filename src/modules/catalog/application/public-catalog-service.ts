@@ -1,4 +1,4 @@
-import { NotFoundError } from "../../../lib/errors";
+import { NotFoundError } from "@lib/errors";
 import type { BoardingPointRepository } from "../domain/boarding-point-repository";
 import type { DepartureRepository, DepartureWithPoints } from "../domain/departure-repository";
 import type { PackageRepository } from "../domain/package-repository";

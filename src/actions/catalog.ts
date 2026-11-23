@@ -1,8 +1,8 @@
 import { defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import { baseDelServidor } from "../db/servidor";
-import { exigirAdmin } from "../lib/guards";
-import { crearCatalogo } from "../modules/catalog/container";
+import { baseDelServidor } from "@db/servidor";
+import { exigirAdmin } from "@lib/guards";
+import { crearCatalogo } from "@modules/catalog/container";
 import { conErrores } from "./con-errores";
 
 // Las Actions son públicas: cada handler llama a `exigirAdmin` antes de tocar nada. Las reglas de

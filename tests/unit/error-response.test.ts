@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { ConflictError, InternalError, ValidationError } from "../../src/lib/errors";
-import { toErrorResponse } from "../../src/lib/error-response";
+import { ConflictError, InternalError, ValidationError } from "@lib/errors";
+import { toErrorResponse } from "@lib/error-response";
 
 const contexto = { method: "GET", path: "/api/prueba" };
 const GENERICO = { error: { code: "internal_error", message: "Error interno del servidor" } };

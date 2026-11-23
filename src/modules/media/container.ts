@@ -1,5 +1,5 @@
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
-import type * as schema from "../../db/schema";
+import type * as schema from "@db/schema";
 import { MediaService } from "./application/media-service";
 import { AlmacenEnDisco } from "./infrastructure/almacen-en-disco";
 import { DrizzleMediaRepository } from "./infrastructure/drizzle-media-repository";

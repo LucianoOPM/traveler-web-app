@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { centavosAPesos, formatearPesos, pesosACentavos } from "../../src/lib/importes";
+import { centavosAPesos, formatearPesos, pesosACentavos } from "@lib/importes";
 
 describe("formatearPesos", () => {
   // Bun debe aceptar el string decimal de `centavosAPesos` en `Intl.NumberFormat` sin pasar por `number`.

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
-import type * as schema from "../../../db/schema";
+import type * as schema from "@db/schema";
 import type { MediaRepository } from "../domain/media-repository";
 import { mediaAssets } from "../schema";
 

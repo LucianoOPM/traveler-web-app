@@ -1,6 +1,6 @@
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
-import type * as schema from "../../db/schema";
-import { crearMedia } from "../media/container";
+import type * as schema from "@db/schema";
+import { crearMedia } from "@modules/media/container";
 import { BoardingPointService } from "./application/boarding-point-service";
 import { DepartureService } from "./application/departure-service";
 import { PackageService } from "./application/package-service";

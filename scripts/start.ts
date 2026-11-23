@@ -3,7 +3,7 @@
  * configuración inválida termina con código 1 y no escucha en ningún puerto. Solo imprime
  * nombres de variable y reglas, nunca valores. Uso: `bun run start` (tras `bun run build`).
  */
-import { comprobarConfiguracion } from "../src/lib/config";
+import { comprobarConfiguracion } from "@lib/config";
 
 const problemas = comprobarConfiguracion(process.env);
 if (problemas.length > 0) {
