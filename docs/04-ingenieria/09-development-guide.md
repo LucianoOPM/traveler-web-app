@@ -107,6 +107,18 @@ Las carpetas se crean cuando reciben su primer archivo. Los archivos privados nu
 - **Pruebas:** reglas puras (unitarias); servicios con repositorios falsos o en memoria (unitarias); repositorios y transacciones contra PostgreSQL real (integración); permisos de cada Action con peticiones directas sin sesión y con rol insuficiente.
 - **No crear** interfaces, factories ni clases «por si acaso»: se añaden cuando hay una dependencia que abstraer o un segundo uso real.
 
+### Cómo escribir una Action (implementado con los paquetes, #51)
+Patrón de referencia: `src/actions/catalog.ts` y `src/modules/catalog/`.
+- **Handler:** `defineAction({ input, handler: conErrores("modulo.accion", async (input, { locals }) => { exigirAdmin(locals); … }) })`. `exigirAdmin` (`src/lib/guards.ts`) va en **cada** handler: sin sesión `401`, vetado o sin rol `admin` `403`. `conErrores` (`src/actions/con-errores.ts`) traduce `AppError` → `ActionError` con `toActionErrorData` (`src/lib/action-errors.ts`, función pura probada en unitarias); un error inesperado sale como `INTERNAL_SERVER_ERROR` con mensaje genérico y solo se registra su nombre.
+- **Códigos:** `400` `BAD_REQUEST`, `401` `UNAUTHORIZED`, `403` `FORBIDDEN`, `404` `NOT_FOUND`, `409` `CONFLICT`, `422` `UNPROCESSABLE_CONTENT` (verificado en Astro 7.4.13). El código estable del `AppError` no llega al cliente.
+- **Conexión:** `baseDelServidor()` (`src/db/servidor.ts`) abre perezosamente la base privada con `DATABASE_URL` e importa `bun` de forma dinámica (el build corre bajo Node). Quien la necesita llama a `crearCatalogo(db)` (`container.ts`); los servicios no importan la base.
+- **Middleware:** resuelve la sesión también en `/_actions/` (solo `locals`; no bloquea).
+- **Transiciones atómicas:** el repositorio actualiza con `where status = <origen>`; si otro cambio se adelantó, el servicio responde `409`. Las reglas de negocio (`422`) se comprueban en el dominio **antes** de cualquier escritura. La violación de FK `23503` al borrar se traduce a `409` en el repositorio.
+- **Pruebas de una Action:** permisos con peticiones directas `POST /_actions/<modulo>.<accion>` (JSON) usando `prepararAplicacion` (`tests/integration/acciones-paquetes.test.ts`). Esa prueba construye `dist/`: ejecutar las de integración en serie (`bun run test:integration` ya lo hace).
+
+#### Reglas de paquetes (`domain/package-rules.ts`)
+Estados `borrador → publicado → archivado`. Crear exige `name` no vacío (`summary` y `description` pueden ser `""`). Editar: borrador libre salvo `name`; publicado conserva los tres campos no vacíos; archivado no se edita. Publicar solo desde borrador y con los tres campos completos. Archivar solo desde publicado. Eliminar solo borradores (un borrador con salidas da `409`). Incumplir una regla de estado o contenido da `422`.
+
 ## Convención de commits
 Se recomienda [Conventional Commits](https://www.conventionalcommits.org/): `tipo(scope): descripción` con `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, etc. No hay hook ni validación en CI ([ADR-021](../05-decisiones/11-decisions-and-risks.md)).
 
