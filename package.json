@@ -21,8 +21,7 @@
     "lint": "eslint . --max-warnings 0",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:migrate:demo": "drizzle-kit migrate --config=drizzle.demo.config.ts",
-    "db:rollback": "bun scripts/db-rollback.ts"
+    "db:migrate:demo": "BASE=demo drizzle-kit migrate"
   },
   "dependencies": {
     "@astrojs/node": "11.1.14",

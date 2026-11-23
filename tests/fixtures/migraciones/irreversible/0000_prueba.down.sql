@@ -1,1 +1,0 @@
--- IRREVERSIBLE: ejemplo de migración que pierde datos
