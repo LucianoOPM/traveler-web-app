@@ -119,6 +119,17 @@ Patrón de referencia: `src/actions/catalog.ts` y `src/modules/catalog/`.
 #### Reglas de paquetes (`domain/package-rules.ts`)
 Estados `borrador → publicado → archivado`. Crear exige `name` no vacío (`summary` y `description` pueden ser `""`). Editar: borrador libre salvo `name`; publicado conserva los tres campos no vacíos; archivado no se edita. Publicar solo desde borrador y con los tres campos completos. Archivar solo desde publicado. Eliminar solo borradores (un borrador con salidas da `409`). Incumplir una regla de estado o contenido da `422`.
 
+#### Reglas de salidas y puntos de abordaje (#52; `domain/departure-rules.ts`)
+Actions en `src/actions/catalog.ts`: `createDeparture`, `editDeparture`, `publishDeparture`, `cancelDeparture`, `deleteDeparture`, `assignBoardingPoint`, `removeBoardingPoint`, `createBoardingPoint`, `editBoardingPoint` y `deleteBoardingPoint` (todas solo admin).
+- **Forma (Action):** `z.strictObject`; capacidad y tarifas con `z.int()` acotado a `integer` de PostgreSQL (centavos, nunca decimales); fechas con `z.iso.datetime()` (solo UTC, sin offset) convertidas a `Date`; identificadores con `z.uuid()`. Forma inválida: `400`.
+- **Invariantes (servicio y CHECK de la base):** `endsAt > startsAt`, capacidad y tarifas enteras `>= 0`. En edición se valida el resultado combinado con lo guardado. Incumplirlas da `422`.
+- **Estados:** `borrador → publicada → cancelada`. Publicar: solo desde borrador **y con el paquete `publicado`** (`422` si no; la inversa no se exige). Cancelar: solo desde publicada. Una cancelada no vuelve a publicarse. Eliminar: solo borradores (borra sus asignaciones por `cascade`). Las transiciones usan `update … where status = <origen>`; si otro cambio se adelantó, `409`.
+- **Edición:** se permite en borrador y publicada (fechas, capacidad y tarifas incluidas); la cancelada no se edita (`422`). **Revisión pendiente antes de H3:** una vez haya reservas, cambiar fechas, capacidad (no puede bajar de lo retenido) o tarifas de una salida publicada puede afectar reservas, inventario comprometido y precios confirmados.
+- **Puntos de abordaje:** asignar o quitar solo en salidas borrador o publicada (cancelada: `422`). Asignar dos veces el mismo punto: `409`; punto o asignación inexistente: `404`. Nombre vacío: `422`; duplicado: `409` (unique); eliminar un punto asignado a una salida: `409` (FK `restrict`).
+- **Plazas disponibles:** `DepartureService.availableSeats(id)` devuelve la capacidad total. **Provisional**: H3 restará plazas retenidas y ocupadas (infantes incluidos).
+- **Categorías:** las tarifas solo se etiquetan como adulto, menor e infante; no se validan edades (PEN-16).
+- **Pruebas:** `tests/unit/catalog/departure-service.test.ts`, `tests/integration/salidas-repositorio.test.ts` (CHECK, unique, FK, cascade) y `tests/integration/acciones-salidas.test.ts` (permisos `401`/`403`, formas y reglas con peticiones directas).
+
 ## Convención de commits
 Se recomienda [Conventional Commits](https://www.conventionalcommits.org/): `tipo(scope): descripción` con `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, etc. No hay hook ni validación en CI ([ADR-021](../05-decisiones/11-decisions-and-risks.md)).
 
