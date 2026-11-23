@@ -38,7 +38,7 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 Estado: confirmada
 Decisión: versiones exactas (sin `^`) de Bun 1.4.4, Astro 7.4.13, @astrojs/node 11.1.14, @astrojs/react 7.1.9, React y react-dom 19.3.1, drizzle-orm 0.45.4, drizzle-kit 0.31.11, better-auth y @better-auth/drizzle-adapter 1.7.27, TypeScript 6.0.3 y @astrojs/check 0.9.12 (TypeScript 7 no: `@astrojs/check` exige `^5 || ^6`). La aplicación corre con Bun y usa `drizzle-orm/bun-sql`; `pg` 8.23.1 es devDependency solo porque `drizzle-kit migrate` la necesita. Estas versiones se probaron juntas en un proyecto desechable (build, servidor, `drizzle-kit` y registro con Better Auth).
 Alternativas descartadas: Node + `pg` y Bun + `pg` (funcionan; se prefiere el driver nativo de Bun, ADR-002); Drizzle 1.0 RC (pre-release).
-Consecuencias: subir versiones exige repetir la validación. El comportamiento de `bun-sql` con transacciones concurrentes (reservas atómicas, P0) se prueba en H3.
+Consecuencias: subir versiones exige repetir la validación. Comprobado en #67 (2026-11-23, Bun 1.4.4 y PostgreSQL local): con `drizzle-orm/bun-sql`, `SELECT … FOR UPDATE` dentro de `db.transaction` serializa transacciones concurrentes que usan conexiones distintas del pool (la segunda espera al commit de la primera), y un rollback libera el bloqueo. 12 reservas simultáneas (más que el pool de 10 conexiones) sobre 5 lugares aceptaron exactamente 5, sin interbloqueos; sin el `FOR UPDATE` la misma prueba falla. Pruebas en `tests/integration/reservas-servicio.test.ts`. Queda por probar el aislamiento de las dos bases (H7).
 Fecha: 2026-11-22
 
 ### ADR-016 — Estrategia de ramas
@@ -196,7 +196,7 @@ Fecha: 2026-11-23
 | Seed envejecido | T0 registrado y regeneración manual |
 | Flyer con fecha incorrecta | Render desde datos de salida en cada seed |
 | Dependencia prematura de SaaS | Adaptadores y ejecución local |
-| Comportamiento de `drizzle-orm/bun-sql` con transacciones concurrentes y dos conexiones (privada/demo) no probado (ADR-015) | Pruebas de concurrencia de reserva en H3 y de aislamiento de bases en H7; alternativa probada: `pg` |
+| Comportamiento de `drizzle-orm/bun-sql` con transacciones concurrentes (ADR-015): **probado en #67**, el bloqueo `FOR UPDATE` serializa y el rollback lo libera; con dos conexiones (privada/demo) sigue sin probar | Prueba de concurrencia de reserva en CI (`reservas-servicio.test.ts`) y de aislamiento de bases en H7; alternativa probada: `pg` |
 | Una Action devuelve al cliente el mensaje de un error inesperado (comportamiento de Astro 7.4.13) | Adaptador único `AppError` → `ActionError` con mensaje genérico y prueba de que no filtra (ADR-025) |
 | Tratar una Action como privada por estar en el servidor | Cada handler comprueba el permiso y se prueba con peticiones directas sin sesión y con rol insuficiente (ADR-025) |
 
