@@ -1,0 +1,48 @@
+---
+// Layout del catálogo público (visitantes sin sesión). Estilos mínimos: el diseño visual llegará
+// con Tailwind y shadcn (ADR-027). Cada página aporta su único `h1`.
+const { titulo = "Catálogo" } = Astro.props;
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titulo} · TravelTech</title>
+  </head>
+  <body>
+    <header>
+      <a href="/">
+        <strong>TravelTech</strong>
+      </a>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+      }
+      header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ccc;
+      }
+      main {
+        max-width: 60rem;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      :global(table) {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      :global(th),
+      :global(td) {
+        border: 1px solid #ccc;
+        padding: 0.4rem 0.6rem;
+        text-align: left;
+      }
+    </style>
+  </body>
+</html>

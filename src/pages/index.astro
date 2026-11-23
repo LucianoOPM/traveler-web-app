@@ -1,15 +1,35 @@
 ---
-import Counter from "../components/Counter";
+import PublicLayout from "../layouts/PublicLayout.astro";
+import { baseDelServidor } from "../db/servidor";
+import { formatearFecha } from "../lib/fechas";
+import { formatearPesos } from "../lib/importes";
+import { crearCatalogo } from "../modules/catalog/container";
+
+const paquetes = await crearCatalogo(await baseDelServidor()).publico.list();
+const zona = process.env.AGENCY_TIMEZONE!;
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TravelTech</title>
-  </head>
-  <body>
-    <h1>TravelTech</h1>
-    <Counter client:load />
-  </body>
-</html>
+<PublicLayout titulo="Paquetes">
+  <h1>Paquetes de viaje</h1>
+  {paquetes.length === 0 && <p>Aún no hay paquetes publicados.</p>}
+  {paquetes.map((p) => (
+    <article>
+      <h2>
+        <a href={`/paquetes/${p.id}`}>{p.name}</a>
+      </h2>
+      <p>{p.summary}</p>
+      {p.salidas.length === 0 ? (
+        <p>Sin salidas próximas</p>
+      ) : (
+        <ul>
+          {p.salidas.map((s) => (
+            <li>
+              <time datetime={s.startsAt.toISOString()}>{formatearFecha(s.startsAt, zona)}</time>
+              {" · "}adulto {formatearPesos(s.adultPriceCents)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
+  ))}
+</PublicLayout>

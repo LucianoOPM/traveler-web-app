@@ -1,7 +1,19 @@
 import { describe, expect, test } from "bun:test";
-import { localAUtc, utcALocal } from "../../src/lib/fechas";
+import { formatearFecha, localAUtc, utcALocal } from "../../src/lib/fechas";
 
 const MX = "America/Mexico_City"; // UTC−6 fijo desde 2022
+
+describe("formatearFecha", () => {
+  test("muestra día y hora de pared en la zona de la agencia (cruce de día incluido)", () => {
+    const texto = formatearFecha("2027-01-11T04:00:00.000Z", MX);
+    expect(texto).toContain("10 de enero de 2027");
+    expect(texto).toContain("22:00");
+  });
+
+  test("acepta Date y respeta la zona indicada", () => {
+    expect(formatearFecha(new Date("2027-01-11T04:00:00.000Z"), "UTC")).toContain("11 de enero");
+  });
+});
 const NY = "America/New_York"; // con horario de verano: la agencia podría cambiar de zona
 
 describe("localAUtc", () => {

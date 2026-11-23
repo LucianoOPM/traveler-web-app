@@ -1,5 +1,18 @@
 import { describe, expect, test } from "bun:test";
-import { centavosAPesos, pesosACentavos } from "../../src/lib/importes";
+import { centavosAPesos, formatearPesos, pesosACentavos } from "../../src/lib/importes";
+
+describe("formatearPesos", () => {
+  // Bun debe aceptar el string decimal de `centavosAPesos` en `Intl.NumberFormat` sin pasar por `number`.
+  test.each([
+    [150050, "$1,500.50"],
+    [1999, "$19.99"],
+    [0, "$0.00"],
+    [1, "$0.01"],
+    [2_147_483_647, "$21,474,836.47"],
+  ])("%i centavos → %j", (centavos, texto) => {
+    expect(formatearPesos(centavos).replace(/\s/g, " ")).toBe(texto);
+  });
+});
 
 describe("pesosACentavos", () => {
   test.each([

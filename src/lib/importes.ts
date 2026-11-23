@@ -16,3 +16,13 @@ export function pesosACentavos(texto: string): number | null {
 export function centavosAPesos(centavos: number): string {
   return `${Math.trunc(centavos / 100)}.${String(centavos % 100).padStart(2, "0")}`;
 }
+
+const MXN = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+
+/**
+ * `150050` → `"$1,500.50"` para mostrar. `Intl.NumberFormat` recibe el string decimal exacto de
+ * `centavosAPesos` (nunca un `number`), así que no hay errores de punto flotante.
+ */
+export function formatearPesos(centavos: number): string {
+  return MXN.format(centavosAPesos(centavos) as `${number}`);
+}

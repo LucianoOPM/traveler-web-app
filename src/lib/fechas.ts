@@ -37,3 +37,16 @@ export function localAUtc(local: string, zona: string): string | null {
     .filter((t) => utcALocal(t, zona) === local);
   return candidatos.length ? new Date(Math.min(...candidatos)).toISOString() : null;
 }
+
+/** Fecha y hora para mostrar al público, en la zona de la agencia: `10 de enero de 2027, 22:00`. */
+export function formatearFecha(utc: Date | string | number, zona: string): string {
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: zona,
+    hourCycle: "h23",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(utc));
+}

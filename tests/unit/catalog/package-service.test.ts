@@ -25,6 +25,7 @@ function repositorioFalso(inicial: Partial<Package>[] = []) {
   const repo: PackageRepository = {
     find: async (id) => filas.get(id) ?? null,
     list: async () => [...filas.values()],
+    listPublished: async () => [...filas.values()].filter((p) => p.status === "publicado"),
     create: async (datos) => {
       escrituras.push("create");
       const fila: Package = {
