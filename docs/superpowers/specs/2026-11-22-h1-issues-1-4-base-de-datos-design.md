@@ -69,6 +69,7 @@ Que una prueba, un script o un `.env` mal configurado pueda borrar o migrar haci
 ### Issue 4 — Esquema de identidad y primera migración con rollback
 - Instalar `better-auth` y `@better-auth/drizzle-adapter` 1.7.27 y el CLI `auth` 1.7.27 (devDependency).
 - Módulo `identity`: configuración mínima de Better Auth con el Admin plugin y los roles `admin` y `operator`, **solo la necesaria para generar el esquema**; no se monta el handler (issue 6). Los permisos finos de negocio no van en Better Auth (doc 06).
+- **Regla del responsable (ADR-023): Drizzle hace siempre las migraciones; el CLI de Better Auth no migra** (`auth migrate` nunca; solo se admite `auth generate` como ayuda para obtener el esquema de Drizzle, que se revisa y se versiona; la migración la crea `drizzle-kit generate` y la aplica `drizzle-kit migrate`). Ninguna configuración de Better Auth crea ni altera tablas.
 - Esquema generado con `auth generate` y revisado a mano: identificadores **UUID** y fechas `timestamptz` (convención del proyecto). *Verificar al implementar* cómo lo admite Better Auth 1.7.27; si no se puede cumplir la convención, se detiene el trabajo y se consulta antes de decidir.
 - Se conservan los nombres de tablas por defecto de Better Auth (`user`, `session`, `account`, `verification`) para no depender de mapeos del adaptador. *Llamada del constructor.*
 - Primera migración `0000_identidad` con su `down.sql` (elimina tablas, que arrastran sus índices y restricciones, en orden inverso de dependencias).
