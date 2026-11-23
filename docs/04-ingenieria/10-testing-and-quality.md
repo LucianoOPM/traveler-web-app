@@ -30,22 +30,18 @@ El runner oficial es `bun test` (integrado en Bun, TypeScript nativo, API compat
 
 | Script | Qué ejecuta | Hoy |
 |---|---|---|
-| `bun run test:unit` | `./tests/unit` | 64 pruebas (~0,8 s) |
-| `bun run test:integration` | `./tests/integration` | 35 pruebas (~17 s): las 9 de `api-errors` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad; la primera ejecución en un clon recién instalado tardó ~12 s), las 6 de salud, las 14 del hook de commits y las 6 del CLI de validación de commits de un PR (ambas con repositorios Git temporales reales) |
-| `bun run test:health` | `./tests/integration/health.test.ts` | 6 pruebas (~4 s): la prueba de salud local de la app real (`GET /api/health` y fallo con configuración inválida) |
-| `bun run test` | las dos anteriores, en ese orden | 99 pruebas (64 + 35); si falla la unitaria no se ejecuta la integración |
+| `bun run test:unit` | `./tests/unit` | Configuración, errores y protección de la base de pruebas |
+| `bun run test:integration` | `./tests/integration` | Errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad), salud |
+| `bun run test:health` | `./tests/integration/health.test.ts` | Prueba de salud local de la app real (`GET /api/health` y fallo con configuración inválida) |
+| `bun run test` | las dos anteriores, en ese orden | Si falla la unitaria no se ejecuta la integración |
 
 Ninguna prueba actual requiere `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado y sin PostgreSQL). Por defecto `bun test` ejecuta los archivos **en serie**, y las pruebas de un archivo una tras otra; `--parallel` (archivos en procesos) y `--concurrent` (pruebas dentro de un archivo) son opcionales y cambian lo que debe prever la estrategia de bases de datos de abajo. Según la documentación de Bun, `--isolate` aísla el estado global y los registros de módulos entre archivos, de modo que sin él todos los archivos los comparten (p. ej., un pool de conexiones creado como singleton se compartiría), y `test.concurrent` o `--randomize` cambian el orden de ejecución. `tests/e2e/` solo contiene un `.gitkeep`.
 
-### Integración con PostgreSQL (propuesta para H1, [PEN-15](../05-decisiones/pendientes.md); **implementada en parte**)
-**Estado (issue #29, [ADR-023](../05-decisiones/11-decisions-and-risks.md)):** ya existen la base `traveltech_test` en Docker (issue #28), la guardia `asegurarBaseDePruebas` (`src/db/guardia.ts`: `select current_database()` en la propia conexión, exige exactamente `traveltech_test`), el soporte `tests/support/base-de-pruebas.ts` (`urlDePruebas`, `abrirBaseDePruebas`, `reiniciarEsquema`, siempre detrás de la guardia) y `tests/integration/db-rollback.test.ts`, que se omite con `describe.skipIf` si no hay `TEST_DATABASE_URL`. **Falta (issue #30):** que la CI ejecute PostgreSQL y que falle, en vez de omitir, si falta `TEST_DATABASE_URL` o la base no responde, y el ADR que cierre PEN-15. Los archivos con base de datos corren en serie; las pruebas de concurrencia llegan en H3.
-
-Propuesta original, pendiente de cerrar con la issue #30:
-- Una base `traveltech_test` independiente de la privada y la demo, en la misma instancia Docker (extiende REC-001 con una base solo de pruebas), con migraciones (`drizzle-kit migrate`) aplicadas sobre ella.
-- Una variable `TEST_DATABASE_URL` exclusiva de pruebas, fuera de las 8 obligatorias de la aplicación.
-- Las pruebas PostgreSQL se omiten (`describe.skipIf`) si no hay configuración de pruebas habilitada, de modo que `bun run test` siga pasando sin base de datos.
-- **Requisito obligatorio de H1:** no basta con que exista `TEST_DATABASE_URL` para permitir operaciones destructivas. Debe implementarse una validación explícita que impida ejecutar limpieza o migraciones de prueba sobre las bases privada o demo, siempre antes de cualquier operación destructiva. La comprobación fiable es exigir un nombre de base de pruebas reconocible y verificarlo **en la propia conexión** (p. ej. `SELECT current_database()`); comparar URLs es frágil (`localhost` frente a `127.0.0.1`, otro usuario, parámetros), `DATABASE_URL` y `DEMO_DATABASE_URL` pueden no existir en CI y `bun test` carga `.env`/`.env.test` automáticamente. Este requisito es parte de los criterios de salida de H1 (ver el roadmap).
-- **Aislamiento:** transacciones con reversión cuando sea viable; limpieza o recreación controlada para las pruebas de concurrencia (INV-01, BRD-01), que necesitan transacciones reales confirmadas en conexiones separadas. No limpiar tablas compartidas entre archivos que puedan ejecutarse en paralelo: produce resultados intermitentes.
+### Integración con PostgreSQL
+- Base `traveltech_test` independiente de la privada y la demo (Docker Compose, issue #28) y variable `TEST_DATABASE_URL`, solo de pruebas (fuera de las variables de la aplicación).
+- **Protección obligatoria:** `asegurarBaseDePruebas` (`tests/support/base-de-pruebas.ts`) comprueba `select current_database()` en la propia conexión y rechaza cualquier base que no sea `traveltech_test`; se llama antes de cualquier limpieza o recreación. Las bases privada y demo nunca se tocan en pruebas.
+- Las pruebas con PostgreSQL se omiten sin `TEST_DATABASE_URL` en local; en CI fallarán si falta (issue #30).
+- Aislamiento: recrear el esquema de `traveltech_test` (`recrearEsquema`) al empezar un archivo de pruebas; las pruebas de concurrencia (INV-01, BRD-01) usan conexiones separadas con transacciones reales.
 
 ### E2E (pendiente, [PEN-13](../05-decisiones/pendientes.md))
 No hay herramienta E2E instalada ni pruebas E2E. Candidatos recomendados: Playwright + `@axe-core/playwright`; la decisión definitiva se toma cuando exista la primera interfaz real (H1).

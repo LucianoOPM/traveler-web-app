@@ -18,8 +18,6 @@ export type AppErrorOptions = {
   cause?: unknown;
 };
 
-export const ERROR_CODE_PATTERN = /^[a-z][a-z0-9_]*$/;
-
 export class AppError extends Error {
   readonly code: string;
   readonly status: number;
@@ -30,13 +28,9 @@ export class AppError extends Error {
     defaults: { status: number; code: string } = { status: 500, code: "internal_error" },
   ) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause });
-    const code = options.code ?? defaults.code;
-    if (!ERROR_CODE_PATTERN.test(code)) {
-      throw new TypeError("El código de error debe estar en snake_case");
-    }
     this.name = new.target.name;
     this.status = defaults.status;
-    this.code = code;
+    this.code = options.code ?? defaults.code;
   }
 }
 

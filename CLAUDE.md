@@ -34,6 +34,6 @@ Astro full-stack + React islands · Bun · PostgreSQL + Drizzle (Docker solo par
 - Cifras del seed solo en `docs/03-demo/08-demo-seed-and-content.md`; no duplicarlas en otros docs.
 - Al cambiar una regla confirmada: registrar ADR. Al cerrar un hito: actualizar `docs/00-estado.md`.
 - Un hito no se cierra con capturas: exige funcionalidad, prueba automatizada, migración, errores controlados y docs al día.
-- **Migraciones: siempre Drizzle** (`drizzle-kit generate`/`migrate`, con `down.sql` por migración; ADR-023). Nunca `auth migrate` ni nada de Better Auth que cree o altere tablas; como mucho `auth generate` para obtener el esquema de Drizzle, que se revisa y se versiona.
+- **Migraciones: siempre Drizzle** (`drizzle-kit generate`/`migrate`, solo hacia adelante, sin `down.sql`; ADR-023). Nunca `auth migrate` ni nada de Better Auth que cree o altere tablas; como mucho `auth generate` para obtener el esquema de Drizzle, que se revisa y se versiona.
 - No existen aún los scripts `admin:create`, `demo:seed`; no afirmarlo.
 - Entorno del usuario: sin Python. Usar Node/Bun/bash. Commits en Conventional Commits. Responder en español.

@@ -8,7 +8,7 @@
 
 ## H1 — Plataforma y autenticación
 **Entregables:** Astro full-stack, React islands, Bun, PostgreSQL Docker con volumen, Drizzle/migraciones, Better Auth con Admin plugin, administrador inicial por script, rutas protegidas, layout administrativo.
-**Salida:** login de administrador; usuario no autenticado no accede a `/admin`; primera migración y rollback probados con el ciclo migrar → verificar → revertir → verificar → migrar sobre `traveltech_test`, con `down.sql` por migración y rollback solo en esa base ([ADR-023](../05-decisiones/11-decisions-and-risks.md)); si se activan pruebas de integración con PostgreSQL, validación explícita que impide operaciones destructivas sobre las bases privada o demo (PEN-15).
+**Salida:** login de administrador; usuario no autenticado no accede a `/admin`; primera migración (identidad) aplicada y verificada sobre `traveltech_test`; las pruebas destructivas solo pueden ejecutarse en esa base ([ADR-023](../05-decisiones/11-decisions-and-risks.md)).
 
 ## H2 — Catálogo y capacidad
 **Entregables:** paquetes CRUD, salidas CRUD, tarifas por categoría, puntos de abordaje, imágenes locales, catálogo público, validaciones y transacciones de inventario.

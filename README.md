@@ -2,7 +2,7 @@
 
 Plataforma para una sola agencia de viajes: catálogo, salidas, reservaciones, pagos, boletos QR, abordaje y marketing. Tiene una experiencia privada (admin/operador) y una demo de visitantes de solo lectura con datos ficticios.
 
-**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Hay Drizzle con migraciones reversibles (ADR-023), pero todavía **no hay** lógica de negocio, esquema, migraciones reales ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
+**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Hay Drizzle para las migraciones (ADR-023), pero todavía **no hay** lógica de negocio, esquema, migraciones reales ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
 
 ## Requisitos
 - [Git](https://git-scm.com/)
@@ -18,7 +18,7 @@ cd traveler-web-app
 bun install
 bun run test:health
 ```
-- `bun install` también activa el hook local de commits (`core.hooksPath=.githooks`). Para una instalación estrictamente reproducible, use `bun install --frozen-lockfile` (es lo que hace la CI).
+- Para una instalación estrictamente reproducible, use `bun install --frozen-lockfile` (es lo que hace la CI).
 - `bun run test:health` construye la aplicación, la arranca y comprueba `GET /api/health`. **No necesita `.env`**, PostgreSQL ni servicios externos. Genera el `dist/` de la raíz (ignorado por Git).
 - Todas las pruebas: `bun run test`.
 
@@ -47,7 +47,7 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 - Crea `traveltech_private`, `traveltech_demo` y `traveltech_test`.
 - **`POSTGRES_PASSWORD` (solo para Compose) debe coincidir con la contraseña de las URLs** de `DATABASE_URL` y `DEMO_DATABASE_URL`; sin ella, Compose se niega a arrancar.
 - El script de inicialización solo corre con el volumen vacío: para añadir una base a una instalación existente hay que recrear el volumen con `down -v`.
-- `TEST_DATABASE_URL` es opcional y está comentada en `.env.example`; con ella descomentada y la base en marcha, `bun run test` también ejecuta las pruebas de migraciones y rollback contra `traveltech_test` (sin ella se omiten).
+- `TEST_DATABASE_URL` es opcional y está comentada en `.env.example`: apunta a `traveltech_test` y la usarán las pruebas con PostgreSQL.
 - Más detalles y solución de problemas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
 
 ## Comandos disponibles
@@ -63,14 +63,13 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 | `bun run test:health` | Prueba de salud local |
 | `bun run db:generate` | Genera migraciones con `drizzle-kit` (aún no hay esquema) |
 | `bun run db:migrate` / `bun run db:migrate:demo` | `drizzle-kit migrate` sobre la base privada / la demo |
-| `bun run db:rollback` | Revierte la última migración **solo** en `traveltech_test` (`TEST_DATABASE_URL`) |
 
 **Aún no existen** `admin:create` ni `demo:seed` (se crearán en H1 y H6). `db:migrate` existe, pero todavía no hay migraciones reales. Lista completa y notas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
 
 ## Cómo trabajar
 - Ramas: `main` es la de despliegue y `dev` la de desarrollo. Las ramas de trabajo (`feat/`, `fix/`, `chore/`, `docs/`) salen de `dev` y vuelven por PR.
-- Commits en [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...); el hook local los valida.
-- La CI (GitHub Actions) ejecuta formato, lint, tipos, pruebas y build, y valida los commits de cada PR. Ambos checks (`verificar` y `commits`) son obligatorios para fusionar en `dev` y `main`.
+- Commits en [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...) como recomendación; no hay validación automática.
+- La CI (GitHub Actions) ejecuta formato, lint, tipos, pruebas y build. El check `verificar` es obligatorio para fusionar en `dev` y `main`.
 
 ## Documentación
 Índice por tarea en [docs/README.md](docs/README.md). Lo que aún no está decidido está en [docs/05-decisiones/pendientes.md](docs/05-decisiones/pendientes.md).

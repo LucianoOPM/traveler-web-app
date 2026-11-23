@@ -1,23 +1,14 @@
 /**
- * Arranque de producción: valida la configuración ANTES de levantar el
- * servidor. Con configuración inválida termina con código 1 y no escucha en
- * ningún puerto. Solo imprime nombres de variable y reglas, nunca valores.
- *
- * Uso: `bun run start` (después de `bun run build`).
- * Bun carga `.env` automáticamente; las variables reales del entorno tienen
- * prioridad sobre el archivo.
+ * Arranque de producción: comprueba la configuración ANTES de levantar el servidor. Con
+ * configuración inválida termina con código 1 y no escucha en ningún puerto. Solo imprime
+ * nombres de variable y reglas, nunca valores. Uso: `bun run start` (tras `bun run build`).
  */
-import { ConfigError, loadConfig } from "../src/lib/config";
+import { comprobarConfiguracion } from "../src/lib/config";
 
-try {
-  loadConfig(process.env);
-} catch (error) {
-  if (error instanceof ConfigError) {
-    console.error(error.message);
-    process.exit(1);
-  }
-  throw error;
+const problemas = comprobarConfiguracion(process.env);
+if (problemas.length > 0) {
+  console.error(`Configuración inválida:\n- ${problemas.join("\n- ")}`);
+  process.exit(1);
 }
 
-const entry = new URL("../dist/server/entry.mjs", import.meta.url).href;
-await import(entry);
+await import(new URL("../dist/server/entry.mjs", import.meta.url).href);

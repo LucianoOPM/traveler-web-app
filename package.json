@@ -16,14 +16,12 @@
     "test:health": "bun test ./tests/integration/health.test.ts",
     "test": "bun run test:unit && bun run test:integration",
     "start": "bun scripts/start.ts",
-    "prepare": "bun scripts/instalar-hooks.ts",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint . --max-warnings 0",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:migrate:demo": "drizzle-kit migrate --config=drizzle.demo.config.ts",
-    "db:rollback": "bun scripts/db-rollback.ts"
+    "db:migrate:demo": "BASE=demo drizzle-kit migrate"
   },
   "dependencies": {
     "@astrojs/node": "11.1.14",

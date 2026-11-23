@@ -43,12 +43,6 @@ describe("jerarquía de errores", () => {
     expect(abordado.status).toBe(422);
   });
 
-  test("rechaza códigos que no son snake_case", () => {
-    for (const code of ["CapacityExceeded", "capacity-exceeded", "", "1abc", "con espacio"]) {
-      expect(() => new ConflictError("x", { code })).toThrow(TypeError);
-    }
-  });
-
   test("es instancia de Error y de AppError, con cause opcional", () => {
     const causa = new Error("causa original");
     const error = new NotFoundError("No existe", { cause: causa });
