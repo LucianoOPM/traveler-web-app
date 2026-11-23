@@ -3,14 +3,14 @@
 **Última actualización:** 2026-11-22
 
 ## Resumen
-Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; workflow de CI en `.github/workflows/ci.yml` con los jobs `verificar` y `commits`, validado en el PR #22 hacia `dev`, aún no exigido por los rulesets). Aún no hay lógica de negocio, base de datos ni autenticación.
+Existe documentación y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; workflow de CI en `.github/workflows/ci.yml` con los jobs `verificar` y `commits`, fusionado en `dev` con el PR #22 y exigido por los rulesets de `dev` y `main`). Aún no hay lógica de negocio, base de datos ni autenticación.
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 
 | Hito | Descripción | Estado |
 |---|---|---|
-| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2; estructura de carpetas, issue #3; validación de configuración, issue #4; formato y lint, issue #5; errores tipados, issue #6; infraestructura de pruebas, issue #7; endpoint de salud, issue #8; convención de commits, issue #9; CI en GitHub Actions, issue #10: implementada; `verificar` y `commits` pasaron en el PR #22 hacia `dev`; pendiente de fusionar y de validar en `main`) |
+| H0 | Preparación y disciplina | En curso (proyecto Astro inicializado, issue #2; estructura de carpetas, issue #3; validación de configuración, issue #4; formato y lint, issue #5; errores tipados, issue #6; infraestructura de pruebas, issue #7; endpoint de salud, issue #8; convención de commits, issue #9; CI en GitHub Actions, issue #10: implementada y fusionada en `dev` (PR #22, issue cerrada); `verificar` y `commits` pasaron en ese PR y son checks requeridos en `dev` y `main`; pendiente de validar en `main`) |
 | H1 | Plataforma y autenticación | Pendiente |
 | H2 | Catálogo y capacidad | Pendiente |
 | H3 | Reservaciones | Pendiente |
@@ -24,4 +24,4 @@ Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 `db:migrate`, `admin:create`, `demo:seed`: **no existen todavía** (se crean en H1/H6).
 
 ## Siguiente paso sugerido
-Fusionar el PR #22 en `dev` (cierra la issue #10); después proponer al responsable añadir `verificar` y `commits` como checks requeridos en `proteger-dev` y `proteger-main` (solo con su aprobación expresa). La validación del workflow en `main` queda pendiente hasta la integración `dev → main` al cierre de H0; H0 no se da por cerrado hasta cumplir sus criterios de salida. Después, la issue #11 (README de arranque y cierre de H0). PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
+Continuar H0 con la issue #11 (README de arranque y cierre de H0). Desde la issue #10, todo PR hacia `dev` o `main` necesita que `verificar` y `commits` pasen. La validación del workflow en `main` queda pendiente hasta la integración `dev → main` al cierre de H0; H0 no se da por cerrado hasta cumplir sus criterios de salida. PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
