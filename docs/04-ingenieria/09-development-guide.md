@@ -20,6 +20,7 @@ BETTER_AUTH_URL=http://localhost:4321
 PRIVATE_STORAGE_DIR=./storage/private
 DEMO_STORAGE_DIR=./storage/demo
 AGENCY_TIMEZONE=America/Mexico_City
+BOOKING_HOLD_HOURS=24
 # Solo para Docker Compose; debe coincidir con la contraseña de las URLs
 POSTGRES_PASSWORD=CHANGE_ME
 # Opcional (pruebas con PostgreSQL), comentada en .env.example
@@ -28,7 +29,8 @@ POSTGRES_PASSWORD=CHANGE_ME
 No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` **no arranca tal cual**: hay que copiarlo a `.env` y reemplazar `BETTER_AUTH_SECRET`.
 
 `comprobarConfiguracion(env)` en `src/lib/config.ts` ([ADR-017](../05-decisiones/11-decisions-and-risks.md)) se ejecuta al iniciar `astro dev`, `astro build` y `bun run start` (no en `astro check`). Reglas:
-- Todas las variables de arriba (menos `NODE_ENV`, `POSTGRES_PASSWORD` y `TEST_DATABASE_URL`) son obligatorias.
+- Todas las variables de arriba (menos `NODE_ENV`, `POSTGRES_PASSWORD`, `TEST_DATABASE_URL` y `BOOKING_HOLD_HOURS`) son obligatorias.
+- `BOOKING_HOLD_HOURS` (opcional, 24 si se omite): horas que una reserva `pendiente` retiene lugares; solo afecta a reservas nuevas. Si está presente debe ser un entero positivo (`""`, `0`, `1.5` o `24h` impiden arrancar). Aún no la lee ningún código: la usará el servicio de reservas.
 - `DATABASE_URL` y `DEMO_DATABASE_URL`: URL `postgres://` o `postgresql://` con **nombres de base distintos**.
 - `BETTER_AUTH_SECRET`: mínimo 32 caracteres y no un valor de ejemplo.
 - `BETTER_AUTH_URL`: URL http(s).
