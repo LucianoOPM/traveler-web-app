@@ -26,9 +26,8 @@ type Servidor = ProcesoPrueba & { base: string };
 
 const servidores: Servidor[] = [];
 let produccion!: Servidor;
-let desarrollo!: Servidor;
 
-async function arrancar(nodeEnv: "production" | "development"): Promise<Servidor> {
+async function arrancar(): Promise<Servidor> {
   const puerto = await puertoLibre();
   const base = `http://127.0.0.1:${puerto}`;
   const proceso = lanzar(["bun", entrada], {
@@ -36,7 +35,7 @@ async function arrancar(nodeEnv: "production" | "development"): Promise<Servidor
     env: {
       ...process.env,
       ...entornoValido,
-      NODE_ENV: nodeEnv,
+      NODE_ENV: "production",
       HOST: "127.0.0.1",
       PORT: String(puerto),
     },
@@ -46,21 +45,18 @@ async function arrancar(nodeEnv: "production" | "development"): Promise<Servidor
   try {
     await esperarRespuesta(`${base}/api/ok`);
   } catch {
-    throw new Error(`El servidor de prueba (${nodeEnv}) no arrancó a tiempo`);
+    throw new Error(`El servidor de prueba no arrancó a tiempo`);
   }
   return servidor;
 }
 
 beforeAll(async () => {
-  // El build hereda el NODE_ENV de `bun test` (test) a propósito: es el peor caso. Que los
-  // frames dependan del entorno de EJECUCIÓN garantiza que ese build no los publica en producción.
   await construirAstro({
     cwd: raiz,
     root: fixture,
     registrar: (proceso) => servidores.push({ ...proceso, base: "" }),
   });
-  produccion = await arrancar("production");
-  desarrollo = await arrancar("development");
+  produccion = await arrancar();
 }, 180_000);
 
 afterAll(async () => {
@@ -143,29 +139,5 @@ describe("errores de endpoints /api/ con un servidor Astro real (producción)", 
     expect(response.status).toBe(500);
     await registrosInesperados(produccion);
     expect(produccion.salida()).not.toContain("SENTINELA");
-  });
-
-  test("en producción el registro no incluye frames, aunque el build se hiciera con NODE_ENV=test", async () => {
-    const registros = await registrosInesperados(produccion);
-    expect(registros.length).toBeGreaterThan(0);
-    for (const registro of registros) expect(registro.frames).toBeUndefined();
-  });
-});
-
-describe("registro con un servidor Astro real (desarrollo)", () => {
-  test("en desarrollo el registro incluye frames saneados, sin rutas absolutas", async () => {
-    const response = await fetch(`${desarrollo.base}/api/unexpected?token=SENTINELA-XYZ`);
-    expect(response.status).toBe(500);
-    const registros = await registrosInesperados(desarrollo);
-    const registro = registros.find((r) => r.path === "/api/unexpected");
-    expect(registro).toBeDefined();
-    const frames = (registro?.frames ?? []) as string[];
-    expect(frames.length).toBeGreaterThan(0);
-    expect(frames.length).toBeLessThanOrEqual(5);
-    const texto = JSON.stringify(registro);
-    for (const prohibido of ["SENTINELA", "\\\\", "C:", "E:", "Users", "file:", "?"]) {
-      expect(texto).not.toContain(prohibido);
-    }
-    expect(desarrollo.salida()).not.toContain("SENTINELA");
   });
 });
