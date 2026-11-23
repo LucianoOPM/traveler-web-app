@@ -1,0 +1,37 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { baseDelServidor } from "../../../db/servidor";
+import { crearCatalogo } from "../../../modules/catalog/container";
+
+// El middleware ya exige rol `admin` en /admin/catalogo (403 al operador).
+const paquetes = await crearCatalogo(await baseDelServidor()).packages.list();
+---
+
+<AdminLayout titulo="Catálogo">
+  <h1>Paquetes</h1>
+  <p>
+    <a href="/admin/catalogo/nuevo">Nuevo paquete</a>
+  </p>
+  {paquetes.length === 0 ? (
+    <p>Aún no hay paquetes.</p>
+  ) : (
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {paquetes.map((p) => (
+          <tr>
+            <td>
+              <a href={`/admin/catalogo/${p.id}`}>{p.name}</a>
+            </td>
+            <td>{p.status}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</AdminLayout>

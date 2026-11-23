@@ -1,0 +1,73 @@
+---
+import { z } from "astro/zod";
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PaqueteForm from "../../../components/catalogo/PaqueteForm";
+import SalidaAcciones, { NuevoPunto } from "../../../components/catalogo/SalidaAcciones";
+import SalidaForm from "../../../components/catalogo/SalidaForm";
+import { baseDelServidor } from "../../../db/servidor";
+import { NotFoundError } from "../../../lib/errors";
+import { utcALocal } from "../../../lib/fechas";
+import { centavosAPesos } from "../../../lib/importes";
+import { crearCatalogo } from "../../../modules/catalog/container";
+
+// El middleware ya exige rol `admin` en /admin/catalogo (403 al operador).
+// Fuera de `/api/` un error lanzado sería un 500: un id inválido o inexistente se responde 404 aquí.
+const id = z.uuid().safeParse(Astro.params.id);
+if (!id.success) return new Response("No encontrado", { status: 404 });
+
+const catalogo = crearCatalogo(await baseDelServidor());
+let paquete;
+try {
+  paquete = await catalogo.packages.get(id.data);
+} catch (error) {
+  if (error instanceof NotFoundError) return new Response("No encontrado", { status: 404 });
+  throw error;
+}
+const salidas = await catalogo.departures.listByPackage(paquete.id);
+const puntos = await catalogo.boardingPoints.list();
+const zona = process.env.AGENCY_TIMEZONE!;
+---
+
+<AdminLayout titulo={paquete.name}>
+  <p>
+    <a href="/admin/catalogo">← Paquetes</a>
+  </p>
+  <h1>{paquete.name}</h1>
+  <p>Estado: {paquete.status}</p>
+  <PaqueteForm client:load paquete={paquete} />
+
+  <h2>Salidas</h2>
+  {salidas.length === 0 && <p>Este paquete aún no tiene salidas.</p>}
+  {salidas.map((s) => (
+    <section>
+      <h3>
+        {utcALocal(s.startsAt, zona)} → {utcALocal(s.endsAt, zona)} ({s.status})
+      </h3>
+      <p>
+        Capacidad {s.capacity} · adulto {centavosAPesos(s.adultPriceCents)} · menor{" "}
+        {centavosAPesos(s.childPriceCents)} · infante {centavosAPesos(s.infantPriceCents)}
+      </p>
+      <details>
+        <summary>Editar salida</summary>
+        <SalidaForm client:load paqueteId={paquete.id} salida={s} zona={zona} />
+      </details>
+      <SalidaAcciones
+        client:load
+        salida={s}
+        estadoPaquete={paquete.status}
+        puntos={puntos}
+        asignados={s.boardingPointIds}
+      />
+    </section>
+  ))}
+
+  {paquete.status !== "archivado" && (
+    <>
+      <h2>Nueva salida</h2>
+      <SalidaForm client:load paqueteId={paquete.id} zona={zona} />
+    </>
+  )}
+
+  <h2>Puntos de abordaje</h2>
+  <NuevoPunto client:load />
+</AdminLayout>
