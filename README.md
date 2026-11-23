@@ -2,7 +2,7 @@
 
 Plataforma para una sola agencia de viajes: catálogo, salidas, reservaciones, pagos, boletos QR, abordaje y marketing. Tiene una experiencia privada (admin/operador) y una demo de visitantes de solo lectura con datos ficticios.
 
-**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Hay Drizzle para las migraciones (ADR-023), pero todavía **no hay** lógica de negocio, esquema, migraciones reales ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
+**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Hay Drizzle para las migraciones (ADR-023), el esquema de identidad con Better Auth (migración `0000_identidad`) y `bun run admin:create`, pero todavía **no hay** lógica de negocio, handler de autenticación ni inicio de sesión. Detalle en [docs/00-estado.md](docs/00-estado.md).
 
 ## Requisitos
 - [Git](https://git-scm.com/)
@@ -61,10 +61,11 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 | `bun run format` / `bun run format:check` | Prettier: reescribe / comprueba |
 | `bun run test` | Pruebas unitarias y de integración |
 | `bun run test:health` | Prueba de salud local |
-| `bun run db:generate` | Genera migraciones con `drizzle-kit` (aún no hay esquema) |
+| `bun run db:generate` | Genera migraciones con `drizzle-kit` a partir del esquema |
 | `bun run db:migrate` / `bun run db:migrate:demo` | `drizzle-kit migrate` sobre la base privada / la demo |
+| `bun run admin:create` | Crea el administrador inicial en la base privada (contraseña interactiva; no uses `--password`) |
 
-**Aún no existen** `admin:create` ni `demo:seed` (se crearán en H1 y H6). `db:migrate` existe, pero todavía no hay migraciones reales. Lista completa y notas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
+**Aún no existe** `demo:seed` (se creará en H6). Lista completa y notas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
 
 ## Cómo trabajar
 - Ramas: `main` es la de despliegue y `dev` la de desarrollo. Las ramas de trabajo (`feat/`, `fix/`, `chore/`, `docs/`) salen de `dev` y vuelven por PR.

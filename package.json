@@ -21,7 +21,8 @@
     "lint": "eslint . --max-warnings 0",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:migrate:demo": "BASE=demo drizzle-kit migrate"
+    "db:migrate:demo": "BASE=demo drizzle-kit migrate",
+    "admin:create": "bunx --bun auth create-admin --config src/modules/identity/auth.ts"
   },
   "dependencies": {
     "@astrojs/node": "11.1.14",

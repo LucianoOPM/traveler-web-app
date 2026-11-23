@@ -46,7 +46,7 @@ bun run test:health         # prueba de salud local: NO necesita .env
 ```
 Para `bun run dev`, `build` o `start`: `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`) y reemplazar `AUTH_SECRET`. Un valor válido: `bun -e "console.log(require('node:crypto').randomBytes(48).toString('base64'))"`.
 
-Todavía **no existen** `bun run admin:create` (H1) ni `bun run demo:seed` (H6).
+**Administrador inicial:** con las migraciones aplicadas, `bun run admin:create` ejecuta `auth create-admin` (Better Auth) sobre la base privada (`DATABASE_URL`): pide correo y contraseña de forma interactiva y guarda la contraseña solo como hash. **No pases `--password`**: queda en el historial y en la lista de procesos. Si ya hay usuarios pide confirmación. Todavía **no existe** `bun run demo:seed` (H6).
 
 ## Base de datos local
 `docker-compose.yml` define el servicio `postgres` con el volumen `traveltech_pgdata` y `docker/postgres/init/01-crear-bases.sql`, que crea `traveltech_private`, `traveltech_demo` y `traveltech_test`.
