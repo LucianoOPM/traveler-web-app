@@ -1,45 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { migrate } from "drizzle-orm/bun-sql/migrator";
-import path from "node:path";
-import { abrirBaseDePruebas, recrearEsquema } from "../support/base-de-pruebas";
-import {
-  construirAstro,
-  esperarRespuesta,
-  lanzar,
-  puertoLibre,
-  type ProcesoPrueba,
-} from "../support/servidor";
+import { abrirBaseDePruebas } from "../support/base-de-pruebas";
+import { CONTRASENA, ORIGEN, prepararAplicacion } from "../support/aplicacion";
 
-// Prueba de autenticación con la app REAL (build de producción, como `bun run start`) sobre
-// `traveltech_test`. Como en producción, el límite de intentos de Better Auth está activo.
-// Igual que health.test.ts, genera el `dist/` de la raíz: no ejecutarla a la vez que otras.
+// Autenticación con la app REAL (build de producción) sobre `traveltech_test`; el límite de
+// intentos de Better Auth está activo, como en producción.
 
-const raiz = path.resolve(import.meta.dir, "../..");
-const ORIGEN = "http://localhost:4321"; // APP_ORIGIN: Better Auth rechaza otros `Origin`
 const CORREO = "admin@example.test";
-const CONTRASENA = "Contrasena-de-prueba-1";
-
 const base = abrirBaseDePruebas();
-const procesos: ProcesoPrueba[] = [];
 let origenServidor = "";
-
-function entornoDe(urlBase: string, puerto: number) {
-  const url = new URL(urlBase);
-  url.pathname = "/traveltech_demo"; // otra base: la configuración exige que difieran
-  return {
-    ...process.env,
-    NODE_ENV: "production",
-    DATABASE_URL: urlBase,
-    DEMO_DATABASE_URL: url.toString(),
-    AUTH_SECRET: "ci-auth-secret-ficticio-solo-para-ci-0123456789",
-    APP_ORIGIN: ORIGEN,
-    PRIVATE_STORAGE_DIR: "./storage/private",
-    DEMO_STORAGE_DIR: "./storage/demo",
-    AGENCY_TIMEZONE: "America/Mexico_City",
-    HOST: "127.0.0.1",
-    PORT: String(puerto),
-  };
-}
+let detener = async () => {};
 
 const post = (ruta: string, cuerpo: object, encabezados: Record<string, string> = {}) =>
   fetch(`${origenServidor}/api/auth${ruta}`, {
@@ -72,36 +41,13 @@ describe.skipIf(!base && !process.env.CI)("autenticación de personal", () => {
   }
 
   beforeAll(async () => {
-    await recrearEsquema(sql); // comprueba que la base es traveltech_test antes de borrar nada
-    await migrate(db, { migrationsFolder: "./src/db/migrations" });
-
-    const puerto = await puertoLibre();
-    origenServidor = `http://127.0.0.1:${puerto}`;
-    const entorno = entornoDe(process.env.TEST_DATABASE_URL!, puerto);
-
-    const crear = lanzar(
-      [
-        process.execPath,
-        "run",
-        "admin:create",
-        "--email",
-        CORREO,
-        "--password",
-        CONTRASENA,
-        "--yes",
-      ],
-      { cwd: raiz, env: entorno },
-    );
-    expect(await crear.salio, crear.salida()).toBe(0);
-
-    await construirAstro({ cwd: raiz, env: entorno, registrar: (p) => procesos.push(p) });
-    const servidor = lanzar([process.execPath, "scripts/start.ts"], { cwd: raiz, env: entorno });
-    procesos.push(servidor);
-    await esperarRespuesta(`${origenServidor}/api/health`);
+    const app = await prepararAplicacion(sql, db, [{ correo: CORREO, rol: "admin" }]);
+    origenServidor = app.origen;
+    detener = async () => void (await app.detener());
   }, 180_000);
 
   afterAll(async () => {
-    await Promise.all(procesos.map((p) => p.detener()));
+    await detener();
     await sql.close();
   });
 

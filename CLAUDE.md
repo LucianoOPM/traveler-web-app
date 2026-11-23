@@ -3,7 +3,7 @@
 Plataforma para **una sola agencia de viajes**: catálogo, salidas, reservaciones, pagos SPEI/efectivo, boletos QR, abordaje y marketing (flyers). Dos experiencias: **privada** (admin/operador) y **demo de visitantes** (solo lectura sobre datos ficticios).
 
 ## Estado
-Proyecto Astro mínimo con PostgreSQL local (Docker Compose) y Drizzle, sin lógica de negocio, esquema ni autenticación todavía. **Consultar `docs/00-estado.md` antes de asumir que algo existe.** Los ejemplos de API/SQL/rutas son propuestas.
+Proyecto Astro con PostgreSQL local (Docker Compose), Drizzle y autenticación de personal (Better Auth, `/login`, `/admin` protegida) ya cerrados (H1); aún sin lógica de negocio. **Consultar `docs/00-estado.md` antes de asumir que algo existe.** Los ejemplos de API/SQL/rutas son propuestas.
 
 **Filosofía:** la solución más sencilla que resuelva la necesidad actual; sin infraestructura preventiva ni abstracciones sin uso real; no conservar complejidad solo porque ya existe. Seguridad, integridad de datos y los invariantes P0 no se negocian.
 

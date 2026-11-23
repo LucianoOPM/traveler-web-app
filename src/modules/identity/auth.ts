@@ -12,7 +12,7 @@ if (!url) throw new Error("DATABASE_URL: es obligatoria");
 const ac = createAccessControl(defaultStatements);
 
 // Mínimo privilegio: `operator` no tiene permisos de administración de usuarios.
-const roles = { admin: ac.newRole(adminAc.statements), operator: ac.newRole({}) };
+export const roles = { admin: ac.newRole(adminAc.statements), operator: ac.newRole({}) };
 
 /** Better Auth solo para personal. Solo genera el esquema; el handler se monta en una issue posterior. */
 export const auth = betterAuth({
