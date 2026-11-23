@@ -2,6 +2,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "@db/schema";
 import { NotFoundError } from "@lib/errors";
+import { pasajerosRetenidos } from "@modules/bookings/infrastructure/reservas-retenidas";
 import type { DepartureRepository, ResultadoPunto } from "../domain/departure-repository";
 import { departureBoardingPoints, departures, packages } from "../schema";
 import { esErrorPg } from "./errores-pg";
@@ -55,13 +56,28 @@ export class DrizzleDepartureRepository implements DepartureRepository {
     id: string,
     esperado: Parameters<DepartureRepository["update"]>[1],
     cambios: Parameters<DepartureRepository["update"]>[2],
+    comprobar: Parameters<DepartureRepository["update"]>[3],
   ) {
-    const [salida] = await this.db
-      .update(departures)
-      .set(cambios)
-      .where(and(eq(departures.id, id), eq(departures.status, esperado)))
-      .returning();
-    return salida ?? null;
+    return this.db.transaction(async (tx) => {
+      // Si otro cambio de estado llegó antes, la fila ya no cumple el filtro tras esperar el bloqueo.
+      const [actual] = await tx
+        .select()
+        .from(departures)
+        .where(and(eq(departures.id, id), eq(departures.status, esperado)))
+        .for("update");
+      if (!actual) return null;
+      comprobar(actual, await pasajerosRetenidos(tx, id, new Date()));
+      const [salida] = await tx
+        .update(departures)
+        .set(cambios)
+        .where(eq(departures.id, id))
+        .returning();
+      return salida ?? null;
+    });
+  }
+
+  retenidos(id: string, ahora: Date) {
+    return pasajerosRetenidos(this.db, id, ahora);
   }
 
   async delete(id: string, esperado: Parameters<DepartureRepository["delete"]>[1]) {

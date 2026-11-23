@@ -5,6 +5,8 @@ export type DepartureWithPoints = Departure & { boardingPointIds: string[] };
 
 // Sin lógica de permisos ni de negocio (ADR-026). `update` y `delete` son condicionales por
 // estado: devuelven `null`/`false` si la salida ya no estaba en `esperado` (cambio concurrente).
+// `update` bloquea la salida (el mismo `FOR UPDATE` que la reserva) y llama a `comprobar` con la fila
+// bloqueada y los pasajeros retenidos calculados en esa transacción; si lanza, no se escribe nada.
 export interface DepartureRepository {
   find(id: string): Promise<Departure | null>;
   findPackageStatus(packageId: string): Promise<PackageStatus | null>;
@@ -15,7 +17,10 @@ export interface DepartureRepository {
     id: string,
     esperado: DepartureStatus,
     cambios: Partial<DepartureContent> & { status?: DepartureStatus },
+    comprobar: (actual: Departure, retenidos: number) => void,
   ): Promise<Departure | null>;
+  /** Pasajeros que ocupan lugar ahora (lectura sin bloqueo; para mostrar disponibilidad). */
+  retenidos(id: string, ahora: Date): Promise<number>;
   delete(id: string, esperado: DepartureStatus): Promise<boolean>;
   /** Lanza `NotFoundError` si el punto no existe. */
   addBoardingPoint(departureId: string, boardingPointId: string): Promise<ResultadoPunto>;

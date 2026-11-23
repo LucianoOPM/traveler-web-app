@@ -25,6 +25,7 @@ const contenido = {
 function repositorioFalso(
   inicial: Partial<Departure> | null = {},
   estadoPaquete: PackageStatus | null = "publicado",
+  retenidos = 0,
 ) {
   const filas = new Map<string, Departure>();
   if (inicial) {
@@ -59,14 +60,16 @@ function repositorioFalso(
       filas.set(fila.id, fila);
       return fila;
     },
-    update: async (id, esperado, cambios) => {
-      escrituras.push("update");
+    update: async (id, esperado, cambios, comprobar) => {
       const fila = filas.get(id);
       if (!fila || fila.status !== esperado) return null;
+      comprobar(fila, retenidos); // lanza antes de escribir, como la transacción real
+      escrituras.push("update");
       const nueva = { ...fila, ...cambios };
       filas.set(id, nueva);
       return nueva;
     },
+    retenidos: async () => retenidos,
     delete: async (id, esperado) => {
       escrituras.push("delete");
       if (filas.get(id)?.status !== esperado) return false;
@@ -275,9 +278,58 @@ describe("DepartureService", () => {
     expect(escrituras).toEqual([]);
   });
 
-  test("availableSeats devuelve la capacidad total (provisional hasta H3)", async () => {
-    const { repo } = repositorioFalso({ capacity: 42 });
-    expect(await new DepartureService(repo).availableSeats(SALIDA)).toBe(42);
+  test("availableSeats resta los pasajeros retenidos y nunca es negativo", async () => {
+    const sin = repositorioFalso({ capacity: 42 });
+    expect(await new DepartureService(sin.repo).availableSeats(SALIDA)).toBe(42);
+    const con = repositorioFalso({ capacity: 42 }, "publicado", 40);
+    expect(await new DepartureService(con.repo).availableSeats(SALIDA)).toBe(2);
+    const exceso = repositorioFalso({ capacity: 3 }, "publicado", 5);
+    expect(await new DepartureService(exceso.repo).availableSeats(SALIDA)).toBe(0);
+  });
+
+  describe("edición con reservas activas (retenidos > 0)", () => {
+    const publicada = (retenidos: number) =>
+      repositorioFalso({ status: "publicada" }, "publicado", retenidos);
+
+    test("cambiar fechas da 409; reenviar las mismas fechas no", async () => {
+      const { repo, escrituras } = publicada(3);
+      const servicio = new DepartureService(repo);
+      await expect(
+        servicio.edit(SALIDA, { startsAt: new Date("2027-01-11T10:00:00Z") }),
+      ).rejects.toBeInstanceOf(ConflictError);
+      await expect(
+        servicio.edit(SALIDA, { endsAt: new Date("2027-01-13T10:00:00Z") }),
+      ).rejects.toBeInstanceOf(ConflictError);
+      expect(escrituras).toEqual([]);
+      await servicio.edit(SALIDA, { startsAt: contenido.startsAt, endsAt: contenido.endsAt });
+      expect(escrituras).toEqual(["update"]);
+    });
+
+    test("las tarifas se editan libremente", async () => {
+      const { repo } = publicada(3);
+      const editada = await new DepartureService(repo).edit(SALIDA, { adultPriceCents: 1 });
+      expect(editada.adultPriceCents).toBe(1);
+    });
+
+    test("la capacidad no puede bajar de lo retenido (422) pero sí igualarlo", async () => {
+      const { repo, escrituras } = publicada(4);
+      const servicio = new DepartureService(repo);
+      await expect(servicio.edit(SALIDA, { capacity: 3 })).rejects.toBeInstanceOf(
+        BusinessRuleError,
+      );
+      expect(escrituras).toEqual([]);
+      expect((await servicio.edit(SALIDA, { capacity: 4 })).capacity).toBe(4);
+    });
+
+    test("cancelar da 409 con reservas activas y funciona sin ellas", async () => {
+      const con = publicada(1);
+      await expect(new DepartureService(con.repo).cancel(SALIDA)).rejects.toBeInstanceOf(
+        ConflictError,
+      );
+      expect(con.escrituras).toEqual([]);
+      const sin = publicada(0);
+      expect((await new DepartureService(sin.repo).cancel(SALIDA)).status).toBe("cancelada");
+    });
   });
 });
 

@@ -3,6 +3,7 @@ import type { DepartureRepository, ResultadoPunto } from "../domain/departure-re
 import {
   comprobarCancelable,
   comprobarContenido,
+  comprobarEdicionConReservas,
   comprobarEliminable,
   comprobarModificable,
   comprobarPublicable,
@@ -11,7 +12,10 @@ import {
 import type { Departure } from "../types";
 
 export class DepartureService {
-  constructor(private readonly repo: DepartureRepository) {}
+  constructor(
+    private readonly repo: DepartureRepository,
+    private readonly ahora: () => Date = () => new Date(),
+  ) {}
 
   listByPackage(packageId: string) {
     return this.repo.listByPackage(packageId);
@@ -83,13 +87,10 @@ export class DepartureService {
     if (resultado === "sin_cambio") throw sinCambio;
   }
 
-  /**
-   * PROVISIONAL (H2): devuelve la capacidad total porque aún no existen reservas. H3 restará las
-   * plazas retenidas y ocupadas (todos los pasajeros, infantes incluidos) y evitará que la
-   * capacidad baje de lo retenido.
-   */
+  /** Capacidad menos pasajeros retenidos (regla única `retieneInventario`; infantes incluidos). */
   async availableSeats(id: string): Promise<number> {
-    return (await this.cargar(id)).capacity;
+    const salida = await this.cargar(id);
+    return Math.max(0, salida.capacity - (await this.repo.retenidos(id, this.ahora())));
   }
 
   private async cargar(id: string): Promise<Departure> {
@@ -103,7 +104,12 @@ export class DepartureService {
     salida: Departure,
     cambios: Parameters<DepartureRepository["update"]>[2],
   ): Promise<Departure> {
-    const actualizada = await this.repo.update(salida.id, salida.status, cambios);
+    const actualizada = await this.repo.update(
+      salida.id,
+      salida.status,
+      cambios,
+      (actual, retenidos) => comprobarEdicionConReservas(actual, cambios, retenidos),
+    );
     if (!actualizada) throw cambioConcurrente();
     return actualizada;
   }

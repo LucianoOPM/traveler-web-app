@@ -64,10 +64,12 @@ describe.skipIf(!base && !process.env.CI)("repositorio de salidas en traveltech_
 
   test("update y delete son condicionales por estado", async () => {
     const { id } = await repo.create({ packageId: paquete, ...contenido });
-    expect(await repo.update(id, "publicada", { capacity: 1 })).toBeNull();
+    expect(await repo.update(id, "publicada", { capacity: 1 }, () => {})).toBeNull();
     expect(await repo.delete(id, "publicada")).toBe(false);
     expect((await repo.find(id))?.capacity).toBe(10);
-    expect(await repo.update(id, "borrador", { capacity: 1 })).toMatchObject({ capacity: 1 });
+    expect(await repo.update(id, "borrador", { capacity: 1 }, () => {})).toMatchObject({
+      capacity: 1,
+    });
     expect(await repo.delete(id, "borrador")).toBe(true);
     expect(await repo.find(id)).toBeNull();
   });
