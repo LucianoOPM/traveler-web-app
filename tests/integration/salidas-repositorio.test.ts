@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
-import { BoardingPointService } from "../../src/modules/catalog/application/boarding-point-service";
-import { DepartureService } from "../../src/modules/catalog/application/departure-service";
-import { DrizzleBoardingPointRepository } from "../../src/modules/catalog/infrastructure/drizzle-boarding-point-repository";
-import { DrizzleDepartureRepository } from "../../src/modules/catalog/infrastructure/drizzle-departure-repository";
+import { BoardingPointService } from "@modules/catalog/application/boarding-point-service";
+import { DepartureService } from "@modules/catalog/application/departure-service";
+import { DrizzleBoardingPointRepository } from "@modules/catalog/infrastructure/drizzle-boarding-point-repository";
+import { DrizzleDepartureRepository } from "@modules/catalog/infrastructure/drizzle-departure-repository";
 import { abrirBaseDePruebas, recrearEsquema } from "../support/base-de-pruebas";
 
 const base = abrirBaseDePruebas();

@@ -8,7 +8,7 @@ import {
   NotFoundError,
   UnauthenticatedError,
   ValidationError,
-} from "../../src/lib/errors";
+} from "@lib/errors";
 
 describe("jerarquía de errores", () => {
   test("cada clase usa su estado y su código por defecto", () => {

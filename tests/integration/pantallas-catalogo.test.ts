@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { localAUtc } from "../../src/lib/fechas";
-import { pesosACentavos } from "../../src/lib/importes";
+import { localAUtc } from "@lib/fechas";
+import { pesosACentavos } from "@lib/importes";
 import { abrirBaseDePruebas } from "../support/base-de-pruebas";
 import { CONTRASENA, ORIGEN, prepararAplicacion } from "../support/aplicacion";
 

@@ -5,6 +5,15 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": ["bun"]
+    "types": ["bun"],
+    "paths": {
+      "@actions/*": ["./src/actions/*"],
+      "@components/*": ["./src/components/*"],
+      "@db/*": ["./src/db/*"],
+      "@layouts/*": ["./src/layouts/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@pages/*": ["./src/pages/*"]
+    }
   }
 }

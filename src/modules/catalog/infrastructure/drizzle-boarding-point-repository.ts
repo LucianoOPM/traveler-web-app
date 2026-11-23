@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
-import type * as schema from "../../../db/schema";
-import { ConflictError } from "../../../lib/errors";
+import type * as schema from "@db/schema";
+import { ConflictError } from "@lib/errors";
 import type { BoardingPointRepository } from "../domain/boarding-point-repository";
 import { boardingPoints } from "../schema";
 import { esErrorPg } from "./errores-pg";

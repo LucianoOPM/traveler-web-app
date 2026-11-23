@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { abrirBase } from "../../src/db/conexion";
+import { abrirBase } from "@db/conexion";
 import { asegurarBaseDePruebas } from "../support/base-de-pruebas";
 
 const urlDePruebas = process.env.TEST_DATABASE_URL;

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { toActionErrorData } from "../../src/lib/action-errors";
+import { toActionErrorData } from "@lib/action-errors";
 import {
   BusinessRuleError,
   ConflictError,
@@ -8,7 +8,7 @@ import {
   NotFoundError,
   UnauthenticatedError,
   ValidationError,
-} from "../../src/lib/errors";
+} from "@lib/errors";
 
 let registro: ReturnType<typeof spyOn>;
 beforeEach(() => {

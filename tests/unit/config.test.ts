@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { comprobarConfiguracion } from "../../src/lib/config";
+import { comprobarConfiguracion } from "@lib/config";
 
 const raiz = path.resolve(import.meta.dir, "../..");
 

@@ -1,15 +1,15 @@
 ---
 import { z } from "astro/zod";
-import AdminLayout from "../../../layouts/AdminLayout.astro";
-import PortadaForm from "../../../components/catalogo/PortadaForm";
-import PaqueteForm from "../../../components/catalogo/PaqueteForm";
-import SalidaAcciones, { NuevoPunto } from "../../../components/catalogo/SalidaAcciones";
-import SalidaForm from "../../../components/catalogo/SalidaForm";
-import { baseDelServidor } from "../../../db/servidor";
-import { NotFoundError } from "../../../lib/errors";
-import { utcALocal } from "../../../lib/fechas";
-import { centavosAPesos } from "../../../lib/importes";
-import { crearCatalogo } from "../../../modules/catalog/container";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import PortadaForm from "@components/catalogo/PortadaForm";
+import PaqueteForm from "@components/catalogo/PaqueteForm";
+import SalidaAcciones, { NuevoPunto } from "@components/catalogo/SalidaAcciones";
+import SalidaForm from "@components/catalogo/SalidaForm";
+import { baseDelServidor } from "@db/servidor";
+import { NotFoundError } from "@lib/errors";
+import { utcALocal } from "@lib/fechas";
+import { centavosAPesos } from "@lib/importes";
+import { crearCatalogo } from "@modules/catalog/container";
 
 // El middleware ya exige rol `admin` en /admin/catalogo (403 al operador).
 // Fuera de `/api/` un error lanzado sería un 500: un id inválido o inexistente se responde 404 aquí.

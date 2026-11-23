@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatearFecha, localAUtc, utcALocal } from "../../src/lib/fechas";
+import { formatearFecha, localAUtc, utcALocal } from "@lib/fechas";
 
 const MX = "America/Mexico_City"; // UTC−6 fijo desde 2022
 

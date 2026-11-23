@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
-import type * as schema from "../../../db/schema";
-import { NotFoundError } from "../../../lib/errors";
+import type * as schema from "@db/schema";
+import { NotFoundError } from "@lib/errors";
 import type { DepartureRepository, ResultadoPunto } from "../domain/departure-repository";
 import { departureBoardingPoints, departures, packages } from "../schema";
 import { esErrorPg } from "./errores-pg";

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { erroresDeAccion } from "../../src/components/catalogo/errores";
+import { erroresDeAccion } from "@components/catalogo/errores";
 
 describe("erroresDeAccion", () => {
   test("un error por campo se asocia al campo y no hay mensaje general", () => {

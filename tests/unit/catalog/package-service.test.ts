@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { PackageService } from "../../../src/modules/catalog/application/package-service";
-import type { PackageRepository } from "../../../src/modules/catalog/domain/package-repository";
-import { BusinessRuleError, ConflictError, NotFoundError } from "../../../src/lib/errors";
-import type { Package } from "../../../src/modules/catalog/types";
-import type { MediaAsset } from "../../../src/modules/media/types";
+import { PackageService } from "@modules/catalog/application/package-service";
+import type { PackageRepository } from "@modules/catalog/domain/package-repository";
+import { BusinessRuleError, ConflictError, NotFoundError } from "@lib/errors";
+import type { Package } from "@modules/catalog/types";
+import type { MediaAsset } from "@modules/media/types";
 
 // Repositorio en memoria que registra las escrituras, para comprobar que las reglas de negocio
 // fallan ANTES de llegar a la persistencia.

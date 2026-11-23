@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { BusinessRuleError, NotFoundError } from "../../../src/lib/errors";
-import { MediaService, TAMANO_MAXIMO } from "../../../src/modules/media/application/media-service";
-import type { AlmacenArchivos } from "../../../src/modules/media/domain/almacen-archivos";
-import type { MediaRepository } from "../../../src/modules/media/domain/media-repository";
-import type { MediaAsset } from "../../../src/modules/media/types";
+import { BusinessRuleError, NotFoundError } from "@lib/errors";
+import { MediaService, TAMANO_MAXIMO } from "@modules/media/application/media-service";
+import type { AlmacenArchivos } from "@modules/media/domain/almacen-archivos";
+import type { MediaRepository } from "@modules/media/domain/media-repository";
+import type { MediaAsset } from "@modules/media/types";
 import { jpeg, jpegDe, png } from "../../support/imagenes";
 
 function montar(fallaCrear = false) {

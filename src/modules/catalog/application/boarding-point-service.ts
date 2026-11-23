@@ -1,4 +1,4 @@
-import { BusinessRuleError, NotFoundError } from "../../../lib/errors";
+import { BusinessRuleError, NotFoundError } from "@lib/errors";
 import type { BoardingPointRepository } from "../domain/boarding-point-repository";
 import type { BoardingPoint } from "../types";
 

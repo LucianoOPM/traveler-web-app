@@ -5,9 +5,9 @@ import {
   comprobarEditable,
   comprobarEliminable,
   comprobarPublicable,
-} from "../../../src/modules/catalog/domain/package-rules";
-import { BusinessRuleError } from "../../../src/lib/errors";
-import type { Package, PackageStatus } from "../../../src/modules/catalog/types";
+} from "@modules/catalog/domain/package-rules";
+import { BusinessRuleError } from "@lib/errors";
+import type { Package, PackageStatus } from "@modules/catalog/types";
 
 const paquete = (status: PackageStatus, cambios: Partial<Package> = {}): Package => ({
   id: "5f1c1c0e-0000-4000-8000-000000000001",

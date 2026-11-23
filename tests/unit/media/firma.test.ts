@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { jpeg, png, webp } from "../../support/imagenes";
-import { detectarTipoImagen } from "../../../src/modules/media/domain/firma";
+import { detectarTipoImagen } from "@modules/media/domain/firma";
 
 describe("detectarTipoImagen", () => {
   test("reconoce jpeg, png y webp por su firma", () => {

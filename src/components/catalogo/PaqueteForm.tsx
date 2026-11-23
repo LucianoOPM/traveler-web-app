@@ -1,6 +1,6 @@
 import { actions } from "astro:actions";
 import { useState } from "react";
-import type { Package } from "../../modules/catalog/types";
+import type { Package } from "@modules/catalog/types";
 import { Campo, ErrorGeneral, useEnvio } from "./comun";
 
 /** Crea (sin `paquete`) o edita un paquete y, al editar, cambia su estado. Recarga tras escribir. */

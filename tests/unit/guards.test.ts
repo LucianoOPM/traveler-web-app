@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { ForbiddenError, UnauthenticatedError } from "../../src/lib/errors";
-import { esAdmin, exigirAdmin } from "../../src/lib/guards";
+import { ForbiddenError, UnauthenticatedError } from "@lib/errors";
+import { esAdmin, exigirAdmin } from "@lib/guards";
 
 const con = (user: Record<string, unknown> | null | undefined) =>
   ({ user }) as Parameters<typeof exigirAdmin>[0];

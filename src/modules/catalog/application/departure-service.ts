@@ -1,4 +1,4 @@
-import { BusinessRuleError, ConflictError, NotFoundError } from "../../../lib/errors";
+import { BusinessRuleError, ConflictError, NotFoundError } from "@lib/errors";
 import type { DepartureRepository, ResultadoPunto } from "../domain/departure-repository";
 import {
   comprobarCancelable,

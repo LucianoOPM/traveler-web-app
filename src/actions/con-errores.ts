@@ -1,5 +1,5 @@
 import { ActionError, type ActionAPIContext } from "astro:actions";
-import { toActionErrorData } from "../lib/action-errors";
+import { toActionErrorData } from "@lib/action-errors";
 
 /**
  * Envuelve un handler: todo `AppError` o error inesperado pasa por el adaptador y sale como

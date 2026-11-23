@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { AlmacenEnDisco } from "../../../src/modules/media/infrastructure/almacen-en-disco";
+import { AlmacenEnDisco } from "@modules/media/infrastructure/almacen-en-disco";
 
 let raiz = "";
 beforeEach(async () => {

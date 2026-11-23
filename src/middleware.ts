@@ -1,6 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
-import { toErrorResponse } from "./lib/error-response";
-import { esAdmin } from "./lib/guards";
+import { toErrorResponse } from "@lib/error-response";
+import { esAdmin } from "@lib/guards";
 
 // Convierte en una respuesta uniforme cualquier error lanzado por los endpoints de `/api/`.
 // Fuera de `/api/` se relanza para conservar el manejo de errores de Astro.
@@ -18,7 +18,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
       ruta.startsWith("/_actions/") ||
       ruta.startsWith("/api/media/")
     ) {
-      const { auth, roles } = await import("./modules/identity/auth");
+      const { auth, roles } = await import("@modules/identity/auth");
       const sesion = await auth.api.getSession({ headers: context.request.headers });
       context.locals.user = sesion?.user ?? null;
       context.locals.session = sesion?.session ?? null;
