@@ -1,9 +1,10 @@
 # 07 — Contratos de API propuestos
 
-**Estado:** borrador orientativo; validar rutas, códigos y esquemas al implementar. JSON con validación de servidor. No se fija todavía biblioteca de validación.
+**Estado:** borrador orientativo; validar rutas, códigos y esquemas al implementar. JSON con validación de servidor con Zod desde `astro/zod` ([ADR-024](../05-decisiones/11-decisions-and-risks.md)).
 
 ## Convenciones
 - Prefijo `/api/v1/` para endpoints de negocio.
+- Validación de entrada (ADR-024): esquemas Zod de `astro/zod`; `z.strictObject()` en cuerpos de escritura (un campo desconocido es un `400`), importes en centavos con `z.int()`, `z.uuid()` para identificadores y `z.iso.datetime()` para instantes. Los `details` de un `400` salen solo de `path` y `message` de Zod, nunca del valor enviado. El helper que traduce los errores de Zod aún no existe: llega con el primer endpoint de negocio (H2).
 - Identificadores opacos; nunca exponer tokens de sesión o hashes.
 - Respuestas de error con `{ "error": { "code": "...", "message": "..." } }` (implementado en la issue #6, [ADR-019](../05-decisiones/11-decisions-and-risks.md)). `code` es estable y en `snake_case`: cada clase de error tiene uno por defecto (`validation_error`, `unauthenticated`, `forbidden`, `not_found`, `conflict`, `business_rule_violation`, `internal_error`) y quien lanza el error puede usar uno específico (`capacity_exceeded`, `already_boarded`). Solo los errores de validación (`400`) añaden `"details": [{ "field": "...", "message": "..." }]`; solo se serializan `field` y `message`, y quien lanza el error es responsable de que no incluyan valores de entrada (el código no puede comprobarlo). Un error inesperado responde siempre `500` con `internal_error` y un mensaje genérico.
 - Códigos: `400` entrada inválida, `401` sin sesión, `403` sin permiso, `404` no visible/no existe, `409` conflicto de estado/capacidad, `422` regla de negocio, `429` exceso de solicitudes (reservado: aún no se implementa el límite de solicitudes). Hoy las rutas `/api/` inexistentes (`404`) o con método no permitido (`405`) siguen respondiendo con el formato de Astro, no con este JSON.
