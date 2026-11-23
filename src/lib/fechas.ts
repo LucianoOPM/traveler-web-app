@@ -4,7 +4,7 @@ const LOCAL = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 const DIA_MS = 24 * 60 * 60 * 1000;
 
 /** Hora de pared del instante en `zona`, como `YYYY-MM-DDTHH:mm`. */
-export function utcALocal(utc: Date | string, zona: string): string {
+export function utcALocal(utc: Date | string | number, zona: string): string {
   const partes = new Intl.DateTimeFormat("en-US", {
     timeZone: zona,
     hourCycle: "h23",
