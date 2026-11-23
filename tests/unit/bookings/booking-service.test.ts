@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { BookingService } from "@modules/bookings/application/booking-service";
-import { hashDeToken } from "@modules/bookings/domain/access-token";
+import { generarToken, hashDeToken } from "@modules/bookings/domain/access-token";
 import type {
   BookingRepository,
+  ReservaConsultada,
   BookingTx,
   SalidaBloqueada,
 } from "@modules/bookings/domain/booking-repository";
@@ -67,7 +68,10 @@ function crear(
     insertarPasajeros: async (d) => void escrituras.pasajeros.push(...d),
     insertarEvento: async (e) => void escrituras.eventos.push(e),
   };
-  const repo: BookingRepository = { transaction: (fn) => fn(tx) };
+  const repo: BookingRepository = {
+    transaction: (fn) => fn(tx),
+    findByTokenHash: async () => null,
+  };
   const servicio = new BookingService(repo, { holdHours: 24, ahora: () => AHORA });
   return { servicio, escrituras };
 }
@@ -176,10 +180,76 @@ describe("BookingService.create", () => {
   test("una solicitud inválida falla antes de abrir la transacción", async () => {
     let abierta = false;
     const servicio = new BookingService(
-      { transaction: () => ((abierta = true), Promise.reject(new Error("no debía abrirse"))) },
+      {
+        transaction: () => ((abierta = true), Promise.reject(new Error("no debía abrirse"))),
+        findByTokenHash: async () => null,
+      },
       { holdHours: 24 },
     );
     await expect(servicio.create(solicitud([]))).rejects.toBeInstanceOf(BusinessRuleError);
     expect(abierta).toBe(false);
+  });
+});
+
+describe("BookingService.findByToken", () => {
+  const reserva = (cambios: Partial<ReservaConsultada> = {}): ReservaConsultada => ({
+    reference: "TT-ABCDEFGH",
+    status: "pendiente",
+    expiresAt: new Date("2027-01-02T00:00:00Z"),
+    totalCents: 150000,
+    buyerName: "Ana",
+    packageName: "Cancún",
+    startsAt: salidaBase.startsAt,
+    endsAt: salidaBase.endsAt,
+    boardingPointName: "Terminal Norte",
+    passengers: [{ fullName: "Ana", fareCategory: "adulto", priceSnapshotCents: 150000 }],
+    ...cambios,
+  });
+  const servicioCon = (respuesta: ReservaConsultada | null) => {
+    const consultados: string[] = [];
+    const repo: BookingRepository = {
+      transaction: () => Promise.reject(new Error("la consulta no abre transacciones")),
+      findByTokenHash: async (hash) => (consultados.push(hash), respuesta),
+    };
+    return {
+      consultados,
+      servicio: new BookingService(repo, { holdHours: 24, ahora: () => AHORA }),
+    };
+  };
+
+  test("busca por el hash del token, nunca por el token", async () => {
+    const token = generarToken();
+    const { servicio, consultados } = servicioCon(reserva());
+    expect((await servicio.findByToken(token))?.reference).toBe("TT-ABCDEFGH");
+    expect(consultados).toEqual([hashDeToken(token)]);
+  });
+
+  test("token malformado: null sin consultar la base", async () => {
+    const { servicio, consultados } = servicioCon(reserva());
+    for (const malo of [
+      "",
+      "abc",
+      "a".repeat(42),
+      "a".repeat(44),
+      "../".repeat(15),
+      "!".repeat(43),
+    ]) {
+      expect(await servicio.findByToken(malo)).toBeNull();
+    }
+    expect(consultados).toEqual([]);
+  });
+
+  test("token inexistente: null", async () => {
+    expect(await servicioCon(null).servicio.findByToken(generarToken())).toBeNull();
+  });
+
+  test("una pendiente vencida se muestra como expirada; en_revision no vence", async () => {
+    const vencida = { expiresAt: new Date("2026-12-31T00:00:00Z") };
+    const a = await servicioCon(reserva(vencida)).servicio.findByToken(generarToken());
+    expect(a?.status).toBe("expirada");
+    const b = await servicioCon(
+      reserva({ ...vencida, status: "en_revision" }),
+    ).servicio.findByToken(generarToken());
+    expect(b?.status).toBe("en_revision");
   });
 });

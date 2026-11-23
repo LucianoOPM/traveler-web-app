@@ -1,5 +1,10 @@
 import { BusinessRuleError, InternalError } from "@lib/errors";
-import { generarReferencia, generarToken, hashDeToken } from "../domain/access-token";
+import {
+  formatoDeToken,
+  generarReferencia,
+  generarToken,
+  hashDeToken,
+} from "../domain/access-token";
 import {
   calcularExpiracion,
   comprobarCapacidad,
@@ -9,7 +14,7 @@ import {
   retieneInventario,
   type SolicitudReserva,
 } from "../domain/booking-rules";
-import type { BookingRepository } from "../domain/booking-repository";
+import type { BookingRepository, ReservaConsultada } from "../domain/booking-repository";
 import type { Booking } from "../types";
 
 const INTENTOS_DE_REFERENCIA = 3;
@@ -28,6 +33,18 @@ export class BookingService {
     private readonly opciones: OpcionesReservas,
   ) {
     this.ahora = opciones.ahora ?? (() => new Date());
+  }
+
+  /**
+   * Consulta de solo lectura por token. `null` si el token es inválido o no existe (no se distinguen).
+   * No materializa la expiración: una `pendiente` vencida se muestra como `expirada` sin escribir.
+   */
+  async findByToken(token: string): Promise<ReservaConsultada | null> {
+    if (!formatoDeToken(token)) return null;
+    const reserva = await this.repo.findByTokenHash(hashDeToken(token));
+    if (!reserva) return null;
+    const vencida = reserva.status === "pendiente" && reserva.expiresAt <= this.ahora();
+    return vencida ? { ...reserva, status: "expirada" } : reserva;
   }
 
   /**

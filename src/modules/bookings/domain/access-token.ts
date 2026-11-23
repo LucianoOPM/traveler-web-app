@@ -3,6 +3,9 @@ import { createHash, randomBytes, randomInt } from "node:crypto";
 /** Token de acceso del comprador: 256 bits aleatorios. En claro solo existe en memoria. */
 export const generarToken = () => randomBytes(32).toString("base64url");
 
+/** Forma de un token generado por `generarToken`: se descarta lo demás sin tocar la base. */
+export const formatoDeToken = (token: string) => /^[A-Za-z0-9_-]{43}$/.test(token);
+
 /** Lo único que se persiste del token. */
 export const hashDeToken = (token: string) => createHash("sha256").update(token).digest("hex");
 

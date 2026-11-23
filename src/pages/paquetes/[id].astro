@@ -76,6 +76,9 @@ const zona = process.env.AGENCY_TIMEZONE!;
             <th scope="col" class="border-b px-3 py-2 text-left font-medium">
               Puntos de abordaje
             </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              <span class="sr-only">Reservar</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -91,7 +94,19 @@ const zona = process.env.AGENCY_TIMEZONE!;
               <td class="border-b px-3 py-2">{formatearPesos(s.childPriceCents)}</td>
               <td class="border-b px-3 py-2">{formatearPesos(s.infantPriceCents)}</td>
               <td class="border-b px-3 py-2">{s.availableSeats}</td>
-              <td class="border-b px-3 py-2">{s.boardingPoints.join(", ")}</td>
+              <td class="border-b px-3 py-2">{s.boardingPoints.map((p) => p.name).join(", ")}</td>
+              <td class="border-b px-3 py-2">
+                {s.availableSeats > 0 && s.boardingPoints.length > 0 ? (
+                  <a
+                    href={`/reservar/${s.id}`}
+                    class="underline underline-offset-4 hover:no-underline"
+                  >
+                    Reservar
+                  </a>
+                ) : (
+                  "No disponible"
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

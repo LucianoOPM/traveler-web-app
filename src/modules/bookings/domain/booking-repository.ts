@@ -1,5 +1,11 @@
 import type { Departure, PackageStatus } from "@modules/catalog/types";
-import type { Booking, NewBooking, NewBookingEvent, NewBookingPassenger } from "../types";
+import type {
+  Booking,
+  BookingPassenger,
+  NewBooking,
+  NewBookingEvent,
+  NewBookingPassenger,
+} from "../types";
 
 export type SalidaBloqueada = Departure & { packageStatus: PackageStatus };
 
@@ -18,7 +24,21 @@ export interface BookingTx {
   insertarEvento(datos: NewBookingEvent): Promise<void>;
 }
 
+/** Lo que ve el comprador al consultar su reserva. Sin hash ni ids internos de otras tablas. */
+export type ReservaConsultada = Pick<
+  Booking,
+  "reference" | "status" | "expiresAt" | "totalCents" | "buyerName"
+> & {
+  packageName: string;
+  startsAt: Date;
+  endsAt: Date;
+  boardingPointName: string;
+  passengers: Pick<BookingPassenger, "fullName" | "fareCategory" | "priceSnapshotCents">[];
+};
+
 export interface BookingRepository {
+  /** Solo lectura. `null` si ninguna reserva tiene ese hash. */
+  findByTokenHash(hash: string): Promise<ReservaConsultada | null>;
   /** Ejecuta `fn` en una transacción; si lanza, se revierte todo. El servicio decide qué es atómico. */
   transaction<T>(fn: (tx: BookingTx) => Promise<T>): Promise<T>;
 }

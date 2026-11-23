@@ -170,6 +170,7 @@ describe.skipIf(!base && !process.env.CI)("BookingService sobre PostgreSQL real"
     const real = new DrizzleBookingRepository(db);
     const roto = new BookingService(
       {
+        findByTokenHash: real.findByTokenHash.bind(real),
         transaction: (fn) =>
           real.transaction((tx) =>
             fn({

@@ -39,6 +39,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return respuesta;
       }
     }
+    // La consulta de reserva lleva el token en la URL: nunca se cachea ni se envía como referrer.
+    if (ruta.startsWith("/reservas/")) {
+      const respuesta = await next();
+      respuesta.headers.set("Cache-Control", "no-store");
+      respuesta.headers.set("Referrer-Policy", "no-referrer");
+      return respuesta;
+    }
     return await next();
   } catch (error) {
     const path = context.url.pathname;

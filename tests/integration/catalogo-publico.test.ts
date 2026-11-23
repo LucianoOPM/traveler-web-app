@@ -220,12 +220,18 @@ describe.skipIf(!base && !process.env.CI)("catálogo público", () => {
       "publicada",
       "borrador",
       "boardingpointids",
-      ids.salidaA,
-      ids.salidaB,
-      ids.puntoNorte,
+      // Los ids de salidas publicadas y de sus puntos sí son públicos (#69, checkout); los de
+      // salidas no publicadas, nunca.
+      ids.salidaCancelada,
+      ids.salidaBorrador,
+      ids.salidaPasada,
+      ids.puntoSoloCancelada,
       ids.borrador,
       ids.archivado,
     ];
+    // El id de una salida publicada solo aparece como destino del enlace «Reservar».
+    expect(textos[1]).toContain(`/reservar/${ids.salidaA}`);
+    expect(textos[1]!.split(ids.salidaA)).toHaveLength(2);
     for (const texto of textos) {
       const minusculas = texto.toLowerCase();
       for (const interno of internos) {

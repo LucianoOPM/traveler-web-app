@@ -1,0 +1,95 @@
+---
+import PublicLayout from "@layouts/PublicLayout.astro";
+import { baseDelServidor } from "@db/servidor";
+import { formatearFecha } from "@lib/fechas";
+import { formatearPesos } from "@lib/importes";
+import { noEncontrado } from "@lib/no-encontrado";
+import { crearReservas } from "@modules/bookings/container";
+
+// Solo lectura: un GET nunca modifica datos. El middleware añade `Cache-Control: no-store` y
+// `Referrer-Policy: no-referrer` a toda `/reservas/*`. Token inexistente, inválido o malformado
+// responden el mismo `404`: no se revela si la reserva existe. No se registra el token ni la URL.
+const reserva = await crearReservas(await baseDelServidor()).bookings.findByToken(
+  Astro.params.token ?? "",
+);
+if (!reserva) return noEncontrado();
+
+const zona = process.env.AGENCY_TIMEZONE!;
+const ESTADOS = {
+  pendiente: "Pendiente",
+  en_revision: "En revisión",
+  expirada: "Expirada",
+  cancelada: "Cancelada",
+} as const;
+const CATEGORIAS = { adulto: "Adulto", menor: "Menor", infante: "Infante" } as const;
+---
+
+<PublicLayout titulo={`Reserva ${reserva.reference}`}>
+  <h1 class="mb-4 text-3xl font-semibold">Reserva {reserva.reference}</h1>
+  <dl class="mb-6 grid gap-1">
+    <div>
+      <dt class="mr-1 inline font-medium">Estado:</dt>
+      <dd class="inline">{ESTADOS[reserva.status]}</dd>
+    </div>
+    {reserva.status === "pendiente" && (
+      <div>
+        <dt class="mr-1 inline font-medium">Vigente hasta:</dt>
+        <dd class="inline">{formatearFecha(reserva.expiresAt, zona)}</dd>
+      </div>
+    )}
+    {reserva.status === "expirada" && (
+      <div>
+        <dt class="mr-1 inline font-medium">Venció:</dt>
+        <dd class="inline">{formatearFecha(reserva.expiresAt, zona)}</dd>
+      </div>
+    )}
+    <div>
+      <dt class="mr-1 inline font-medium">Paquete:</dt>
+      <dd class="inline">{reserva.packageName}</dd>
+    </div>
+    <div>
+      <dt class="mr-1 inline font-medium">Salida:</dt>
+      <dd class="inline">{formatearFecha(reserva.startsAt, zona)}</dd>
+    </div>
+    <div>
+      <dt class="mr-1 inline font-medium">Regreso:</dt>
+      <dd class="inline">{formatearFecha(reserva.endsAt, zona)}</dd>
+    </div>
+    <div>
+      <dt class="mr-1 inline font-medium">Punto de abordaje:</dt>
+      <dd class="inline">{reserva.boardingPointName}</dd>
+    </div>
+    <div>
+      <dt class="mr-1 inline font-medium">Contacto:</dt>
+      <dd class="inline">{reserva.buyerName}</dd>
+    </div>
+  </dl>
+  <h2 class="mb-2 text-2xl font-semibold">Pasajeros</h2>
+  <table class="mb-4 w-full max-w-xl text-sm">
+    <thead>
+      <tr>
+        <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+          Nombre
+        </th>
+        <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+          Categoría
+        </th>
+        <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+          Precio
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {reserva.passengers.map((p) => (
+        <tr>
+          <td class="border-b px-3 py-2">{p.fullName}</td>
+          <td class="border-b px-3 py-2">{CATEGORIAS[p.fareCategory]}</td>
+          <td class="border-b px-3 py-2">{formatearPesos(p.priceSnapshotCents)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+  <p class="text-lg">
+    <strong>Total: {formatearPesos(reserva.totalCents)}</strong>
+  </p>
+</PublicLayout>

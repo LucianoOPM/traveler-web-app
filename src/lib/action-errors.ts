@@ -13,6 +13,7 @@ export type ActionErrorCode =
   | "NOT_FOUND"
   | "CONFLICT"
   | "UNPROCESSABLE_CONTENT"
+  | "TOO_MANY_REQUESTS"
   | "INTERNAL_SERVER_ERROR";
 
 const POR_ESTADO: Record<number, ActionErrorCode> = {
@@ -22,6 +23,7 @@ const POR_ESTADO: Record<number, ActionErrorCode> = {
   404: "NOT_FOUND",
   409: "CONFLICT",
   422: "UNPROCESSABLE_CONTENT",
+  429: "TOO_MANY_REQUESTS",
 };
 
 export function toActionErrorData(
