@@ -24,4 +24,4 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 | H8 | Endurecimiento y entrega | Pendiente |
 
 ## Siguiente paso
-Continuar H2 con la issue #54, catálogo público (ver el [roadmap](01-producto/02-roadmap.md) y las decisiones de arquitectura ADR-024, ADR-025 y ADR-026). Antes de H3, revisar las reglas de edición de salidas publicadas (ver la guía de desarrollo). Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
+Continuar H2 con la issue #54, catálogo público (ver el [roadmap](01-producto/02-roadmap.md) y las decisiones de arquitectura ADR-024, ADR-025 y ADR-026). La interfaz adoptará Tailwind CSS v4 y shadcn/ui ([ADR-027](05-decisiones/11-decisions-and-risks.md)), **aún sin instalar**: conviene una issue de instalación y migración de las pantallas existentes antes del catálogo público. Antes de H3, revisar las reglas de edición de salidas publicadas (ver la guía de desarrollo). Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
