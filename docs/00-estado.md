@@ -1,12 +1,12 @@
 # 00 — Estado del proyecto
 
-**Última actualización:** 2026-11-22 (H0 cerrado; H1 en curso; simplificación integral en marcha)
+**Última actualización:** 2026-11-22 (H0 cerrado; H1 en curso)
 
 ## Resumen
 Proyecto Astro mínimo con configuración validada al arrancar (`src/lib/config.ts`), errores tipados (`src/lib/errors.ts`), `GET /api/health`, CI (`verificar`), PostgreSQL local con Docker Compose (tres bases vacías: privada, demo y pruebas) y Drizzle con scripts `db:*`. Aún no hay lógica de negocio, esquema, migraciones reales ni autenticación. `admin:create` y `demo:seed` no existen todavía (H1/H6).
 
 ## Filosofía (2026-11-22)
-La solución más sencilla que resuelva la necesidad actual. Sin infraestructura preventiva ni procesos burocráticos. No se conserva complejidad solo porque ya está hecha. En curso: simplificación integral en 6 cambios (documentación y ruido, errores, configuración, commits, Drizzle sin rollback, CI y ADR).
+La solución más sencilla que resuelva la necesidad actual. Sin infraestructura preventiva ni procesos burocráticos. No se conserva complejidad solo porque ya está hecha. Simplificación integral hecha (documentación, errores, configuración, commits, Drizzle sin rollback, CI y ADR); detalle en los ADR 017 a 023.
 
 ## Hitos
 Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
