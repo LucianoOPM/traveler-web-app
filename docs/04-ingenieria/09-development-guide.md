@@ -1,7 +1,7 @@
 # 09 — Guía de desarrollo local
 
 ## Requisitos
-Hoy hacen falta **Git, Bun y Node.js**; Docker con Compose y PostgreSQL se necesitarán desde H1 y todavía no se usan. Versiones validadas juntas el 2026-11-22 (ver [ADR-015](../05-decisiones/11-decisions-and-risks.md)); se fijan **exactas** (sin `^` ni `~`) en `package.json` y se respaldan con `bun.lock`:
+Hacen falta **Git, Bun y Node.js**; **Docker con Compose** se usa desde H1 (issue #28) solo para PostgreSQL local y no hace falta para `bun run test` ni `bun run test:health`. Versiones validadas juntas el 2026-11-22 (ver [ADR-015](../05-decisiones/11-decisions-and-risks.md)); se fijan **exactas** (sin `^` ni `~`) en `package.json` y se respaldan con `bun.lock`:
 
 | Componente | Versión | Notas |
 |---|---|---|
@@ -29,7 +29,7 @@ Hoy hacen falta **Git, Bun y Node.js**; Docker con Compose y PostgreSQL se neces
 | eslint-plugin-jsx-a11y-x | 0.2.0 | devDependency; accesibilidad en JSX (el clásico `eslint-plugin-jsx-a11y` 6.10.2 solo declara ESLint hasta 9). Es una versión 0.x |
 | @eslint/js | 10.0.1 | devDependency; reglas base `js.configs.recommended` (no viene con ESLint) |
 | globals | 17.14.0 | devDependency; globales de Node/navegador (no viene con ESLint) |
-| PostgreSQL | 17.10 (`postgres:17-alpine` al validar) | Solo en Docker; fijar la etiqueta exacta al crear el `docker-compose` |
+| PostgreSQL | 17.10 (imagen `postgres:17.10-alpine`, etiqueta verificada en el registro el 2026-11-22) | Solo en Docker; etiqueta exacta fijada en `docker-compose.yml` (issue #28) |
 
 **Aún no instalados:** `drizzle-orm`, `drizzle-kit`, `pg`, `auth`, `better-auth`, `@better-auth/drizzle-adapter` y PostgreSQL **no están en `package.json` ni en el entorno**; sus filas son las versiones validadas (ADR-015) para cuando entren en H1. Hoy el proyecto solo instala Astro, React, TypeScript y las herramientas de formato, lint y pruebas.
 
@@ -45,6 +45,10 @@ APP_ORIGIN=http://localhost:4321
 PRIVATE_STORAGE_DIR=./storage/private
 DEMO_STORAGE_DIR=./storage/demo
 AGENCY_TIMEZONE=America/Mexico_City
+# Solo para Docker Compose (no la valida loadConfig); debe coincidir con la contraseña de las URLs
+POSTGRES_PASSWORD=CHANGE_ME
+# Opcional y comentada en .env.example: pruebas con PostgreSQL (no la valida loadConfig)
+# TEST_DATABASE_URL=postgresql://traveltech:CHANGE_ME@localhost:5432/traveltech_test
 ```
 No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` solo contiene valores ilustrativos y **no arranca tal cual**: hay que copiarlo a `.env` y reemplazar `AUTH_SECRET` (y las contraseñas `CHANGE_ME`).
 
@@ -70,9 +74,17 @@ Para `bun run dev`, `bun run build` o `bun run start` hace falta una configuraci
 
 ### Pendiente: todavía NO existe
 Estos pasos aparecían como orientativos y **no funcionan hoy**; no ejecutarlos ni darlos por hechos:
-- `docker compose up -d`: no hay `docker-compose` ni base de datos todavía (llegan en H1; ver la fila de PostgreSQL en la tabla de versiones).
-- `bun run db:migrate` y `bun run admin:create`: se crearán en H1.
+- `bun run db:migrate` y `bun run admin:create`: se crearán en H1 (hoy existe la base vacía, pero no hay esquema ni migraciones).
 - `bun run demo:seed`: se creará en H6.
+
+## Base de datos local (issue #28)
+`docker-compose.yml` define un único servicio `postgres` (`postgres:17.10-alpine`) con el volumen con nombre `traveltech_pgdata` (en Docker aparece como `traveltech_traveltech_pgdata`, con el prefijo del proyecto) y el script `docker/postgres/init/01-crear-bases.sql`, que crea `traveltech_private`, `traveltech_demo` y `traveltech_test`.
+- **Arranque:** con `.env` creado, `docker compose up -d --wait` (el servicio no se declara sano hasta que las tres bases existen: el `healthcheck` usa TCP con `-h 127.0.0.1`, porque el servidor temporal de la inicialización solo escucha por socket).
+- **Parada:** `docker compose down` conserva los datos; `docker compose down -v` borra el volumen y todos los datos locales.
+- **Contraseña:** `POSTGRES_PASSWORD` es obligatoria (sin ella Compose falla con «Define POSTGRES_PASSWORD en .env») y debe coincidir con la de las URLs. El valor `CHANGE_ME` de `.env.example` funciona en local; cámbielo si la máquina es compartida.
+- **Seguridad:** solo desarrollo. El usuario `traveltech` es superusuario y el puerto se publica únicamente en `127.0.0.1`.
+- **Solución de problemas:** (1) *puerto 5432 ocupado*: pare el PostgreSQL local o el contenedor que lo usa; no se ofrece otro puerto configurable. (2) *Fallo de autenticación*: la contraseña de las URLs no coincide con `POSTGRES_PASSWORD` **en el momento de crear el volumen** (la contraseña se fija al inicializar; cambiarla después exige `down -v` o `ALTER USER`). (3) *Falta una base*: el volumen ya estaba inicializado; recréelo con `down -v`.
+- **Verificado (2026-11-22, Windows 11, Docker 29.9.2, Compose v5.6.1, puerto 5432 libre):** sin `POSTGRES_PASSWORD`, `docker compose config` falla con el mensaje anterior; `up -d --wait` termina con el servicio sano (18 s en el primer arranque medido) y existen las tres bases; conexión desde el anfitrión con `Bun.SQL` y las URLs de `.env.example` a las tres bases, y una contraseña errónea se rechaza; una tabla creada en `traveltech_test` sobrevive a `down` + `up`; `down -v` borra el volumen y `up` recrea las tres bases vacías (6 s). **Límites:** no se probó en Linux ni macOS, ni con el puerto 5432 ocupado. Las pruebas automatizadas de esta issue solo comprueban el texto de los archivos (`tests/unit/docker-compose.test.ts`); no arrancan Docker.
 
 ### Scripts que sí existen (issue #2)
 | Script | Comando | Notas |
