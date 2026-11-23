@@ -14,7 +14,10 @@
 | Control | `audit_events` | Actor, acción, entidad, antes/después saneado, timestamp |
 
 ## Campos de alto valor
-- `departures`: `package_id`, `starts_at`, `ends_at`, `capacity`, `adult_price_cents`, `child_price_cents`, `infant_price_cents`, `status`.
+- `packages` (implementado, `0001_catalogo`): `id`, `name`, `summary`, `description`, `status` (`borrador | publicado | archivado`, por defecto `borrador`), `created_at`, `updated_at`. La portada se añade con las imágenes.
+- `departures` (implementado): `package_id` (`on delete restrict`), `starts_at`, `ends_at`, `capacity`, `adult_price_cents`, `child_price_cents`, `infant_price_cents`, `status` (`borrador | publicada | cancelada`, por defecto `borrador`), `created_at`, `updated_at`. `CHECK`: `capacity >= 0`, tarifas `>= 0`, `ends_at > starts_at` y estados limitados; «en abordaje» y «finalizada» se añaden en H5.
+- `boarding_points` (implementado): `id`, `name` (único), `created_at`. `departure_boarding_points`: `departure_id` (cascade) y `boarding_point_id` (restrict), clave primaria compuesta (única por pareja).
+- Tipos TypeScript del catálogo: inferidos con `$inferSelect`/`$inferInsert` en `src/modules/catalog/types.ts` (`Package`, `NewPackage`, `Departure`, ...); no se duplican a mano.
 - `bookings`: `departure_id`, `buyer_name`, `buyer_contact`, `boarding_point_id`, `status`, `expires_at`, `total_cents`, `access_token_hash`, `created_at`.
 - `booking_passengers`: `booking_id`, `full_name`, `fare_category`, `price_snapshot_cents`.
 - `bank_accounts`: `priority`, `monthly_limit_cents`, `is_eligible`, datos de cuenta ficticios o privados según entorno.

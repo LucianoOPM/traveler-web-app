@@ -6,6 +6,7 @@ const base = abrirBaseDePruebas();
 const TABLAS = ["account", "session", "user", "verification"];
 
 // Igual que base-de-pruebas.test.ts: en local se omite sin TEST_DATABASE_URL; en CI falla si falta.
+// 0001_catalogo vive en la misma base: cada consulta se limita a las tablas de identidad.
 describe.skipIf(!base && !process.env.CI)("esquema de identidad en traveltech_test", () => {
   const { sql, db } = base ?? {};
   if (!sql || !db) {
@@ -23,14 +24,14 @@ describe.skipIf(!base && !process.env.CI)("esquema de identidad en traveltech_te
 
   test("existen las cuatro tablas de Better Auth", async () => {
     const filas = await sql`select table_name from information_schema.tables
-      where table_schema = 'public' order by table_name`;
+      where table_schema = 'public' and table_name in ('account', 'session', 'user', 'verification') order by table_name`;
     expect(filas.map((f: { table_name: string }) => f.table_name)).toEqual(TABLAS);
   });
 
   test("los id son uuid y todas las fechas son timestamptz", async () => {
     const columnas: Array<{ table_name: string; column_name: string; data_type: string }> =
       await sql`select table_name, column_name, data_type from information_schema.columns
-        where table_schema = 'public'`;
+        where table_schema = 'public' and table_name in ('account', 'session', 'user', 'verification')`;
     const tipos = (esFecha: boolean) =>
       new Set(
         columnas
@@ -51,7 +52,8 @@ describe.skipIf(!base && !process.env.CI)("esquema de identidad en traveltech_te
       select c.conrelid::regclass::text as tabla, a.attname as columna,
              c.confrelid::regclass::text as destino, c.confdeltype as borrado
       from pg_constraint c join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
-      where c.contype = 'f' and c.connamespace = 'public'::regnamespace order by 1`;
+      where c.contype = 'f' and c.connamespace = 'public'::regnamespace
+        and c.conrelid::regclass::text in ('account', 'session', '"user"', 'verification') order by 1`;
     expect(fks).toEqual([
       { tabla: "account", columna: "user_id", destino: '"user"', borrado: "c" },
       { tabla: "session", columna: "user_id", destino: '"user"', borrado: "c" },
@@ -60,13 +62,15 @@ describe.skipIf(!base && !process.env.CI)("esquema de identidad en traveltech_te
 
   test("únicos (email, token) e índices de Better Auth", async () => {
     const unicos = await sql`select conname from pg_constraint
-      where contype = 'u' and connamespace = 'public'::regnamespace order by 1`;
+      where contype = 'u' and connamespace = 'public'::regnamespace
+        and conrelid::regclass::text in ('account', 'session', '"user"', 'verification') order by 1`;
     expect(unicos.map((f: { conname: string }) => f.conname)).toEqual([
       "session_token_unique",
       "user_email_unique",
     ]);
     const indices = await sql`select indexname from pg_indexes
-      where schemaname = 'public' and indexname like '%\\_idx' order by 1`;
+      where schemaname = 'public' and indexname like '%\\_idx'
+        and tablename in ('account', 'session', 'user', 'verification') order by 1`;
     expect(indices.map((f: { indexname: string }) => f.indexname)).toEqual([
       "account_userId_idx",
       "session_userId_idx",
