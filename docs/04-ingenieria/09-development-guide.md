@@ -16,8 +16,8 @@ Hacen falta **Git, Bun y Node.js**; **Docker con Compose** se usa desde H1 (issu
 | @types/react / @types/react-dom | 19.3.0 | devDependencies (tipos de React) |
 | @types/bun | 1.4.5 | devDependency (tipos de `bun:test`); declarado con `"types": ["bun"]` en `tsconfig.json` porque TypeScript 6 no incluye `@types/*` solo. Nota: esos tipos también aplican al código de las islas |
 | drizzle-orm | 0.45.4 | Estable; no usar 1.0 RC. Driver `drizzle-orm/bun-sql` |
-| drizzle-kit | 0.31.11 | Migraciones (`generate`/`migrate`); necesita `pg` instalado |
-| pg | 8.23.1 | Solo devDependency, requerida por `drizzle-kit` (la app usa `bun-sql`) |
+| drizzle-kit | 0.31.11 | devDependency; solo **genera** migraciones (`db:generate`). No aplica: corre bajo Node y no carga `.env` (ADR-023) |
+| pg | 8.23.1 | **No se instala** (ADR-023): solo lo exigía `drizzle-kit migrate`, que no se usa. Versión validada por si hace falta (`migrate`, `push` o `studio`) |
 | auth (CLI de Better Auth) | 1.7.27 | devDependency; `auth generate` crea el esquema Drizzle |
 | better-auth | 1.7.27 | Plugin `admin`: `import { admin } from "better-auth/plugins"` |
 | @better-auth/drizzle-adapter | 1.7.27 | `import { drizzleAdapter } from "@better-auth/drizzle-adapter"`; `drizzleAdapter(db, { provider: "pg" })` |
@@ -31,7 +31,7 @@ Hacen falta **Git, Bun y Node.js**; **Docker con Compose** se usa desde H1 (issu
 | globals | 17.14.0 | devDependency; globales de Node/navegador (no viene con ESLint) |
 | PostgreSQL | 17.10 (imagen `postgres:17.10-alpine`, etiqueta verificada en el registro el 2026-11-22) | Solo en Docker; etiqueta exacta fijada en `docker-compose.yml` (issue #28) |
 
-**Aún no instalados:** `drizzle-orm`, `drizzle-kit`, `pg`, `auth`, `better-auth`, `@better-auth/drizzle-adapter` y PostgreSQL **no están en `package.json` ni en el entorno**; sus filas son las versiones validadas (ADR-015) para cuando entren en H1. Hoy el proyecto solo instala Astro, React, TypeScript y las herramientas de formato, lint y pruebas.
+**Instalados desde la issue #29:** `drizzle-orm` y `drizzle-kit` (exactas). **Aún no instalados:** `auth`, `better-auth` y `@better-auth/drizzle-adapter` (issue #31; sus filas son las versiones validadas, ADR-015). **`pg` no se instala** (ADR-023). PostgreSQL solo existe en Docker (issue #28).
 
 Detalles verificados al validar: al crear la instancia de Drizzle hay que pasar `{ schema }` (el esquema generado con `auth generate`) o el adaptador de Better Auth falla con "Drizzle schema mismatch"; el handler se monta en `src/pages/api/auth/[...all].ts`.
 
@@ -74,7 +74,7 @@ Para `bun run dev`, `bun run build` o `bun run start` hace falta una configuraci
 
 ### Pendiente: todavía NO existe
 Estos pasos aparecían como orientativos y **no funcionan hoy**; no ejecutarlos ni darlos por hechos:
-- `bun run db:migrate` y `bun run admin:create`: se crearán en H1 (hoy existe la base vacía, pero no hay esquema ni migraciones).
+- `bun run admin:create`: se creará en H1 (hoy `db:migrate` existe, pero no hay esquema ni migraciones reales: la primera llega con la issue #31).
 - `bun run demo:seed`: se creará en H6.
 
 ## Base de datos local (issue #28)
@@ -86,6 +86,16 @@ Estos pasos aparecían como orientativos y **no funcionan hoy**; no ejecutarlos 
 - **Solución de problemas:** (1) *puerto 5432 ocupado*: pare el PostgreSQL local o el contenedor que lo usa; no se ofrece otro puerto configurable. (2) *Fallo de autenticación*: la contraseña de las URLs no coincide con `POSTGRES_PASSWORD` **en el momento de crear el volumen** (la contraseña se fija al inicializar; cambiarla después exige `down -v` o `ALTER USER`). (3) *Falta una base*: el volumen ya estaba inicializado; recréelo con `down -v`.
 - **Verificado (2026-11-22, Windows 11, Docker 29.9.2, Compose v5.6.1, puerto 5432 libre):** sin `POSTGRES_PASSWORD`, `docker compose config` falla con el mensaje anterior; `up -d --wait` termina con el servicio sano (18 s en el primer arranque medido) y existen las tres bases; conexión desde el anfitrión con `Bun.SQL` y las URLs de `.env.example` a las tres bases, y una contraseña errónea se rechaza; una tabla creada en `traveltech_test` sobrevive a `down` + `up`; `down -v` borra el volumen y `up` recrea las tres bases vacías (6 s). **Límites:** no se probó en Linux ni macOS, ni con el puerto 5432 ocupado. Las pruebas automatizadas de esta issue solo comprueban el texto de los archivos (`tests/unit/docker-compose.test.ts`); no arrancan Docker.
 
+## Migraciones y rollback (issue #29, [ADR-023](../05-decisiones/11-decisions-and-risks.md))
+Código en `src/db/` (`guardia.ts`, `objetivo.ts`, `migraciones.ts`, `conexion.ts`, `migrar.ts`, `rollback.ts`, `schema.ts`) y `drizzle.config.ts`; migraciones en `src/db/migrations/` (aún no existe: la crea la primera `db:generate`).
+- **`bun run db:generate`:** `drizzle-kit generate` crea `NNNN_<nombre>.sql` y `meta/` a partir de `src/db/schema.ts`. No necesita base de datos ni `.env`.
+- **`bun run db:migrate [private|demo]`:** aplica las migraciones pendientes a la base privada (por defecto) o a la demo, con el migrador programático de `bun-sql` bajo Bun (carga `.env`). Toma la URL de `loadConfig` y nunca la imprime. Salida 0 correcto (sin migraciones imprime «No hay migraciones que aplicar»), 1 configuración o migración fallida, 2 argumentos inválidos (`test`, rutas, más de uno). `traveltech_test` no es un objetivo: la usan las pruebas.
+- **`bun run db:rollback`:** revierte la última migración aplicada **solo** en la base de `TEST_DATABASE_URL`, y solo si `select current_database()` en esa conexión devuelve exactamente `traveltech_test`. Sin argumentos. Salida 0 correcto, 1 rechazado (guardia, irreversible, sin migraciones, `.sql` alterado o fallo del SQL), 2 falta `TEST_DATABASE_URL` o hay argumentos. Para `traveltech_private` o `traveltech_demo` no existe rollback automático: aplicar el `.down.sql` a mano, con un respaldo propio previo y borrando también la última fila de `drizzle.__drizzle_migrations`.
+- **Escribir un `down.sql`:** junto a cada `NNNN_<nombre>.sql` crear `NNNN_<nombre>.down.sql` con el SQL que deshace la migración (se ejecuta entero en una transacción). Si la migración pierde o transforma datos de forma irreversible, el archivo contiene solo `-- IRREVERSIBLE: <motivo>` (el motivo no puede estar vacío). `tests/unit/migraciones.test.ts` falla si una migración real no tiene ni lo uno ni lo otro.
+- **No editar un `.sql` ya aplicado:** el ejecutor compara su SHA-256 con el `hash` del historial y se niega a revertir si difiere.
+- **Pruebas:** `tests/integration/db-rollback.test.ts` (7 pruebas con fixtures de `tests/fixtures/migraciones/`) corre contra `traveltech_test` y se omite si no hay `TEST_DATABASE_URL`: `docker compose up -d --wait` y descomentar `TEST_DATABASE_URL` en `.env`. Que la CI **falle** sin ellas llega con la issue #30. Soporte en `tests/support/base-de-pruebas.ts`.
+- **Verificado (2026-11-22, Windows 11, Docker 29.9.2, PostgreSQL 17.10):** ciclo migrar → revertir → migrar con el historial en 1 → 0 → 1 filas; `down` roto sin cambios; irreversible rechazado; `.sql` alterado rechazado; con las URLs de `traveltech_private` y `traveltech_demo`, `db:rollback` sale con 1 y no ejecuta nada más; `db:migrate` y `db:migrate demo` sin migraciones salen con 0. **Límites:** solo con fixtures (la primera migración real llega en la issue #31); no se probó en Linux ni macOS.
+
 ### Scripts que sí existen (issue #2)
 | Script | Comando | Notas |
 |---|---|---|
@@ -94,6 +104,7 @@ Estos pasos aparecían como orientativos y **no funcionan hoy**; no ejecutarlos 
 | `bun run preview` | `bun scripts/start.ts` | Igual que `start`. **No es `astro preview`**: esa CLI corre con Node, que no carga `.env`, y devolvía 500 en todas las peticiones (verificado). El puerto se cambia con `PORT` (por defecto 4321), no con `--port` |
 | `bun run check` | `astro check` | Comprueba tipos con `tsconfig` estricto; falla ante errores; no exige `.env` |
 | `bun run start` | `bun scripts/start.ts` | Producción (tras `build`): valida la configuración y, si es inválida, sale con código 1 sin escuchar; si es válida lanza `dist/server/entry.mjs`. Bun carga `.env` solo |
+| `bun run db:generate` / `db:migrate` / `db:rollback` | `drizzle-kit generate` / `bun scripts/db-migrar.ts` / `bun scripts/db-rollback.ts` | Ver «Migraciones y rollback» (issue #29, ADR-023) |
 | `bun run format` | `prettier . --write` | Reescribe el formato de los archivos (no toca `docs/`, `*.md` ni `bun.lock`) |
 | `bun run format:check` | `prettier . --check` | Sale con 1 si algún archivo no cumple; no modifica nada |
 | `bun run lint` | `eslint . --max-warnings 0` | ESLint sobre `.astro`, `.ts`, `.tsx` y `.mjs`; cualquier advertencia es un fallo |
@@ -127,7 +138,7 @@ storage/              # archivos privados ignorados por Git
 tests/                # unit, integration, e2e
 docs/
 ```
-Estado (issue #3): las carpetas de `src/modules/*`, `src/db`, `src/lib`, `scripts/` y `tests/*` existen y se versionan con un `.gitkeep` (Git no guarda carpetas vacías); se borrará el `.gitkeep` de cada una cuando reciba su primer archivo. Los módulos aún no tienen subcarpetas internas (`schema`, `domain`...): se crean con el primer código.
+Estado (issue #3): las carpetas de `src/modules/*`, `src/db`, `src/lib`, `scripts/` y `tests/*` existen y se versionan con un `.gitkeep` (Git no guarda carpetas vacías); se borrará el `.gitkeep` de cada una cuando reciba su primer archivo (`src/db/` ya lo recibió en la issue #29). Los módulos aún no tienen subcarpetas internas (`schema`, `domain`...): se crean con el primer código.
 
 `storage/` **no existe en el repositorio**: `.gitignore` ignora `/storage/` (solo la carpeta de la raíz; una carpeta `src/lib/storage/` con código sí se versiona). Se prevé que la aplicación cree `storage/private` y `storage/demo` en tiempo de ejecución según `PRIVATE_STORAGE_DIR` y `DEMO_STORAGE_DIR`; esa decisión se confirmará en la issue #4. Las rutas configurables deben quedar bajo `storage/` o fuera del repositorio: cualquier otra ruta dentro del repo no está protegida por `.gitignore`. `.gitignore` también excluye `.env` y `.env.*` (salvo `.env.example`), `node_modules/`, `dist/`, `.astro/` y `*.log`. Los archivos privados nunca van en `public/` (ver [06-security-and-access](../02-diseno/06-security-and-access.md)).
 

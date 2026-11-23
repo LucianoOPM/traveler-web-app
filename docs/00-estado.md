@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-22 (H0 cerrado; H1 en curso, issue #28)
 
 ## Resumen
-Existe documentación, un [README](../README.md) de arranque y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; workflow de CI en `.github/workflows/ci.yml` con los jobs `verificar` y `commits`, fusionado en `dev` con el PR #22 y exigido por los rulesets de `dev` y `main`). Desde la issue #28 (H1) hay un `docker-compose.yml` con PostgreSQL local (tres bases vacías: privada, demo y pruebas). Aún no hay lógica de negocio, esquema, migraciones ni autenticación.
+Existe documentación, un [README](../README.md) de arranque y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; workflow de CI en `.github/workflows/ci.yml` con los jobs `verificar` y `commits`, fusionado en `dev` con el PR #22 y exigido por los rulesets de `dev` y `main`). Desde la issue #28 (H1) hay un `docker-compose.yml` con PostgreSQL local (tres bases vacías: privada, demo y pruebas). Desde la issue #29 hay Drizzle (`src/db/`), `db:generate`, `db:migrate` y `db:rollback` (solo en `traveltech_test`), con `down.sql` por migración (ADR-023). Aún no hay lógica de negocio, esquema, migraciones reales ni autenticación.
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
@@ -11,7 +11,7 @@ Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
 | Hito | Descripción | Estado |
 |---|---|---|
 | H0 | Preparación y disciplina | **Cerrado.** Issues #1 a #11: Astro inicializado (#2), estructura de carpetas (#3), validación de configuración (#4), formato y lint (#5), errores tipados (#6), infraestructura de pruebas (#7), endpoint de salud (#8), convención de commits (#9), CI en GitHub Actions (#10, PR #22; `verificar` y `commits` son checks requeridos en `dev` y `main`) y README de arranque con verificación en clon limpio (#11, PR #25). Integrado en `main` con los PR #24 y #26, con la CI en verde. Ver «Cierre de H0» |
-| H1 | Plataforma y autenticación | **En curso.** Diseño de las issues #28 a #31 en `docs/superpowers/specs/2026-11-22-h1-issues-1-4-base-de-datos-design.md`. #28 (Docker Compose con PostgreSQL y las tres bases) implementada y verificada con Docker; siguen #29 (Drizzle y rollback), #30 (pruebas con PostgreSQL, PEN-15) y #31 (identidad) |
+| H1 | Plataforma y autenticación | **En curso.** Diseño de las issues #28 a #31 en `docs/superpowers/specs/2026-11-22-h1-issues-1-4-base-de-datos-design.md`. #28 (Docker Compose con PostgreSQL y las tres bases) integrada (PR #32). #29 (Drizzle, `db:migrate`, ejecutor de rollback y guardia de base de pruebas, ADR-023) implementada y verificada con PostgreSQL real; siguen #30 (CI con PostgreSQL y fallo obligatorio, PEN-15) y #31 (identidad) |
 | H2 | Catálogo y capacidad | Pendiente |
 | H3 | Reservaciones | Pendiente |
 | H4 | Pagos y cuentas | Pendiente |
@@ -47,7 +47,7 @@ Esa integración comprobó la CI en `main`, pero H0 seguía abierto porque falta
 **H0 cerrado (2026-11-22).** Se cumplieron las condiciones fijadas: issue #11 fusionada en `dev`, integración `dev → main` y CI de `main` en verde (PR y push). Este cambio de estado se registra en `dev` y llegará a `main` con la siguiente integración. Siguen vigentes los límites de la verificación: no se probó en otra máquina ni sistema operativo, ni la hidratación de la island en un navegador.
 
 ## Scripts y comandos
-`db:migrate`, `admin:create`, `demo:seed`: **no existen todavía** (se crean en H1/H6).
+`db:generate`, `db:migrate` y `db:rollback` existen desde la issue #29. `admin:create` y `demo:seed`: **no existen todavía** (se crean en H1/H6).
 
 ## Siguiente paso sugerido
-Continuar H1 con la issue #29 (Drizzle, `db:migrate` y ejecutor de rollback; ver [02-roadmap](01-producto/02-roadmap.md) y el diseño de H1). H0 está cerrado (ver «Cierre de H0»). Antes de asumir decisiones de H1, revisar [pendientes](05-decisiones/pendientes.md). Desde la issue #10, todo PR hacia `dev` o `main` necesita que `verificar` y `commits` pasen. PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).
+Continuar H1 con la issue #30 (CI con PostgreSQL y fallo obligatorio; ver [02-roadmap](01-producto/02-roadmap.md) y el diseño de H1). H0 está cerrado (ver «Cierre de H0»). Antes de asumir decisiones de H1, revisar [pendientes](05-decisiones/pendientes.md). Desde la issue #10, todo PR hacia `dev` o `main` necesita que `verificar` y `commits` pasen. PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).

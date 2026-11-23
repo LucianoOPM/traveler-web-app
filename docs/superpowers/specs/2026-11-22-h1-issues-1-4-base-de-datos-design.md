@@ -37,6 +37,8 @@ Que una prueba, un script o un `.env` mal configurado pueda borrar o migrar haci
 - B. Solo respaldo y restauración. Cubre datos, pero es lento, no prueba el esquema migración a migración y necesita infraestructura que se pospone a H8.
 - C. Migraciones correctivas hacia adelante únicamente. Es lo habitual en producción, pero no cumple el criterio de salida «rollback probado».
 
+> **Cambios aprobados al empezar la issue #29 (2026-11-22):** (1) **no se instala `pg`**: solo lo exigía `drizzle-kit migrate` y las migraciones se aplican con el migrador programático de `bun-sql` (verificado: `drizzle-kit` corre bajo Node y no carga `.env`); (2) la **guardia** `asegurarBaseDePruebas` y el soporte mínimo de pruebas (`tests/support/base-de-pruebas.ts`) se crean en la #29, porque el ejecutor de rollback y su prueba los necesitan; la #30 conserva el fallo obligatorio en CI, el servicio PostgreSQL de CI, el ADR-024 y la documentación; (3) se añade el script `db:generate`; (4) la conexión es `abrirBase(url)` sin *singleton* (`getConfig()` usa `astro:env/server`, inexistente en scripts). El ejecutor además verifica el SHA-256 del `.sql` contra el historial antes de revertir. Plan: `docs/superpowers/plans/2026-11-22-issue-29-drizzle-migraciones.md`; registro: ADR-023.
+
 ## Diseño por issue
 
 ### Issue 1 — Docker Compose con PostgreSQL y las tres bases

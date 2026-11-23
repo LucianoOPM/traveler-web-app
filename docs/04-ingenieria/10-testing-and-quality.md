@@ -37,8 +37,10 @@ El runner oficial es `bun test` (integrado en Bun, TypeScript nativo, API compat
 
 Ninguna prueba actual requiere `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado y sin PostgreSQL). Por defecto `bun test` ejecuta los archivos **en serie**, y las pruebas de un archivo una tras otra; `--parallel` (archivos en procesos) y `--concurrent` (pruebas dentro de un archivo) son opcionales y cambian lo que debe prever la estrategia de bases de datos de abajo. Según la documentación de Bun, `--isolate` aísla el estado global y los registros de módulos entre archivos, de modo que sin él todos los archivos los comparten (p. ej., un pool de conexiones creado como singleton se compartiría), y `test.concurrent` o `--randomize` cambian el orden de ejecución. `tests/e2e/` solo contiene un `.gitkeep`.
 
-### Integración con PostgreSQL (propuesta para H1, [PEN-15](../05-decisiones/pendientes.md); **no implementada**)
-Se activa en H1, cuando exista la base de datos. Propuesta pendiente de confirmar:
+### Integración con PostgreSQL (propuesta para H1, [PEN-15](../05-decisiones/pendientes.md); **implementada en parte**)
+**Estado (issue #29, [ADR-023](../05-decisiones/11-decisions-and-risks.md)):** ya existen la base `traveltech_test` en Docker (issue #28), la guardia `asegurarBaseDePruebas` (`src/db/guardia.ts`: `select current_database()` en la propia conexión, exige exactamente `traveltech_test`), el soporte `tests/support/base-de-pruebas.ts` (`urlDePruebas`, `abrirBaseDePruebas`, `reiniciarEsquema`, siempre detrás de la guardia) y `tests/integration/db-rollback.test.ts`, que se omite con `describe.skipIf` si no hay `TEST_DATABASE_URL`. **Falta (issue #30):** que la CI ejecute PostgreSQL y que falle, en vez de omitir, si falta `TEST_DATABASE_URL` o la base no responde, y el ADR que cierre PEN-15. Los archivos con base de datos corren en serie; las pruebas de concurrencia llegan en H3.
+
+Propuesta original, pendiente de cerrar con la issue #30:
 - Una base `traveltech_test` independiente de la privada y la demo, en la misma instancia Docker (extiende REC-001 con una base solo de pruebas), con migraciones (`drizzle-kit migrate`) aplicadas sobre ella.
 - Una variable `TEST_DATABASE_URL` exclusiva de pruebas, fuera de las 8 obligatorias de la aplicación.
 - Las pruebas PostgreSQL se omiten (`describe.skipIf`) si no hay configuración de pruebas habilitada, de modo que `bun run test` siga pasando sin base de datos.
