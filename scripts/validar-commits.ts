@@ -5,8 +5,9 @@
  * mensajes ya guardados no llevan comentarios de plantilla, así que una cabecera que empieza por
  * `#` debe rechazarse. Solo se valida la cabecera; el cuerpo y el pie son libres.
  *
- * Este archivo solo tiene la lógica pura. El CLI (`bun scripts/validar-commits.ts <base> <head>`)
- * se añade en la misma ruta y llama a estas funciones.
+ * Uso como programa: `bun scripts/validar-commits.ts <sha-base> <sha-head>` (SHA completos de 40
+ * caracteres). Valida los commits de `base..head`. Salida: 0 válido o rango vacío, 1 hay commits
+ * inválidos, 2 uso incorrecto o fallo de `git log` (p. ej. falta historial).
  */
 
 import { validarMensaje } from "./commit-msg";
@@ -43,4 +44,60 @@ export function validarCommits(commits: CommitRango[]): string[] {
     );
   }
   return errores;
+}
+
+const SHA_COMPLETO = /^[0-9a-f]{40}$/;
+
+if (import.meta.main) {
+  const [base, head] = [Bun.argv[2], Bun.argv[3]];
+  if (base === undefined || head === undefined) {
+    console.error("Uso: bun scripts/validar-commits.ts <sha-base> <sha-head>");
+    process.exit(2);
+  }
+  // Solo SHA completos: un valor como `--all` no debe llegar a `git` como si fuera una opción.
+  for (const [nombre, valor] of [
+    ["base", base],
+    ["head", head],
+  ] as const) {
+    if (!SHA_COMPLETO.test(valor)) {
+      console.error(
+        `El argumento <${nombre}> debe ser un SHA completo de 40 caracteres hexadecimales.`,
+      );
+      process.exit(2);
+    }
+  }
+
+  const proceso = Bun.spawn(["git", "log", "--format=%H%x00%B%x1e", `${base}..${head}`], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [salida, errorGit, codigo] = await Promise.all([
+    new Response(proceso.stdout).text(),
+    new Response(proceso.stderr).text(),
+    proceso.exited,
+  ]);
+  if (codigo !== 0) {
+    console.error(
+      `No se pudo ejecutar git log ${base.slice(0, 7)}..${head.slice(0, 7)} (¿falta historial? usa fetch-depth: 0):\n${errorGit.trim()}`,
+    );
+    process.exit(2);
+  }
+
+  const commits = analizarLog(salida);
+  if (commits.length === 0) {
+    console.log("No hay commits que validar en el rango.");
+    process.exit(0);
+  }
+  const errores = validarCommits(commits);
+  if (errores.length > 0) {
+    console.error(
+      `${errores.length} de ${commits.length} commits no cumplen Conventional Commits:\n`,
+    );
+    for (const error of errores) console.error(`- ${error}`);
+    console.error(
+      "\nFormato: tipo(scope)!: descripción. Detalle y tipos válidos: docs/04-ingenieria/09-development-guide.md",
+    );
+    process.exit(1);
+  }
+  console.log(`${commits.length} commits válidos.`);
 }
