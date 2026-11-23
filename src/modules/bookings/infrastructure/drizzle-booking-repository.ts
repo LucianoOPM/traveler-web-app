@@ -1,9 +1,10 @@
-import { and, eq, count, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "@db/schema";
 import { departureBoardingPoints, departures, packages } from "@modules/catalog/schema";
 import type { BookingRepository, BookingTx } from "../domain/booking-repository";
 import { bookingEvents, bookingPassengers, bookings } from "../schema";
+import { reservasCandidatas } from "./reservas-retenidas";
 
 type Tx = Parameters<Parameters<BunSQLDatabase<typeof schema>["transaction"]>[0]>[0];
 
@@ -40,23 +41,7 @@ const operaciones = (tx: Tx): BookingTx => ({
     return filas.length > 0;
   },
 
-  reservasCandidatas(departureId) {
-    return tx
-      .select({
-        status: bookings.status,
-        expiresAt: bookings.expiresAt,
-        pasajeros: count(bookingPassengers.id),
-      })
-      .from(bookings)
-      .leftJoin(bookingPassengers, eq(bookingPassengers.bookingId, bookings.id))
-      .where(
-        and(
-          eq(bookings.departureId, departureId),
-          inArray(bookings.status, ["pendiente", "en_revision"]),
-        ),
-      )
-      .groupBy(bookings.id);
-  },
+  reservasCandidatas: (departureId) => reservasCandidatas(tx, departureId),
 
   async insertarReserva(datos) {
     const [fila] = await tx.insert(bookings).values(datos).onConflictDoNothing().returning();

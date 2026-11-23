@@ -1,7 +1,7 @@
 // Reglas de dominio de la salida: funciones puras que lanzan `BusinessRuleError` (422).
 // Los mensajes son públicos: no incluyen valores enviados por el cliente. Las mismas invariantes
 // existen como CHECK en PostgreSQL (`departures_*_check`).
-import { BusinessRuleError } from "@lib/errors";
+import { BusinessRuleError, ConflictError } from "@lib/errors";
 import type { Departure, PackageStatus } from "../types";
 
 export type DepartureContent = Pick<
@@ -52,5 +52,32 @@ export function comprobarCancelable(salida: Departure) {
 export function comprobarEliminable(salida: Departure) {
   if (salida.status !== "borrador") {
     throw new BusinessRuleError("Solo un borrador puede eliminarse");
+  }
+}
+
+/**
+ * Con la salida bloqueada y `retenidos` calculado en la misma transacción (los pasajeros de
+ * reservas que retienen inventario). Sin reservas activas no restringe nada. Las tarifas siempre
+ * son editables: la reserva ya congeló su precio.
+ */
+export function comprobarEdicionConReservas(
+  actual: Pick<Departure, "startsAt" | "endsAt" | "capacity">,
+  cambios: Partial<DepartureContent> & { status?: Departure["status"] },
+  retenidos: number,
+) {
+  if (retenidos === 0) return;
+  const cambiaFecha = (nueva: Date | undefined, previa: Date) =>
+    nueva !== undefined && nueva.getTime() !== previa.getTime();
+  if (
+    cambiaFecha(cambios.startsAt, actual.startsAt) ||
+    cambiaFecha(cambios.endsAt, actual.endsAt)
+  ) {
+    throw new ConflictError("No se pueden cambiar las fechas de una salida con reservas activas");
+  }
+  if (cambios.status === "cancelada") {
+    throw new ConflictError("No se puede cancelar una salida con reservas activas");
+  }
+  if (cambios.capacity !== undefined && cambios.capacity < retenidos) {
+    throw new BusinessRuleError("La capacidad no puede ser menor que los lugares retenidos");
   }
 }

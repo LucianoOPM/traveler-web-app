@@ -24,7 +24,12 @@ try {
   if (error instanceof NotFoundError) return new Response("No encontrado", { status: 404 });
   throw error;
 }
-const salidas = await catalogo.departures.listByPackage(paquete.id);
+const salidas = await Promise.all(
+  (await catalogo.departures.listByPackage(paquete.id)).map(async (s) => ({
+    ...s,
+    disponibles: await catalogo.departures.availableSeats(s.id),
+  })),
+);
 const puntos = await catalogo.boardingPoints.list();
 const zona = process.env.AGENCY_TIMEZONE!;
 ---
@@ -63,8 +68,9 @@ const zona = process.env.AGENCY_TIMEZONE!;
         {utcALocal(s.startsAt, zona)} → {utcALocal(s.endsAt, zona)} ({s.status})
       </h3>
       <p class="text-sm text-muted-foreground">
-        Capacidad {s.capacity} · adulto {centavosAPesos(s.adultPriceCents)} · menor{" "}
-        {centavosAPesos(s.childPriceCents)} · infante {centavosAPesos(s.infantPriceCents)}
+        Capacidad {s.capacity} · disponibles {s.disponibles} · adulto{" "}
+        {centavosAPesos(s.adultPriceCents)} · menor {centavosAPesos(s.childPriceCents)} · infante{" "}
+        {centavosAPesos(s.infantPriceCents)}
       </p>
       <details>
         <summary class="cursor-pointer rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
