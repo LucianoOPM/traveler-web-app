@@ -1,0 +1,70 @@
+---
+import { z } from "astro/zod";
+import PublicLayout from "../../layouts/PublicLayout.astro";
+import { baseDelServidor } from "../../db/servidor";
+import { NotFoundError } from "../../lib/errors";
+import { formatearFecha } from "../../lib/fechas";
+import { formatearPesos } from "../../lib/importes";
+import { noEncontrado } from "../../lib/no-encontrado";
+import { crearCatalogo } from "../../modules/catalog/container";
+
+// Fuera de `/api/` un error lanzado sería un 500: id inválido, inexistente y no publicado
+// responden lo mismo (`noEncontrado`) para no revelar que el paquete existe.
+const id = z.uuid().safeParse(Astro.params.id);
+if (!id.success) return noEncontrado();
+
+let paquete;
+try {
+  paquete = await crearCatalogo(await baseDelServidor()).publico.get(id.data);
+} catch (error) {
+  if (error instanceof NotFoundError) return noEncontrado();
+  throw error;
+}
+const zona = process.env.AGENCY_TIMEZONE!;
+---
+
+<PublicLayout titulo={paquete.name}>
+  <p>
+    <a href="/">← Paquetes</a>
+  </p>
+  <h1>{paquete.name}</h1>
+  <p>{paquete.summary}</p>
+  <p>{paquete.description}</p>
+
+  <h2>Salidas</h2>
+  {paquete.salidas.length === 0 ? (
+    <p>Sin salidas próximas</p>
+  ) : (
+    <table>
+      <caption>Salidas próximas y tarifas por persona</caption>
+      <thead>
+        <tr>
+          <th scope="col">Salida</th>
+          <th scope="col">Regreso</th>
+          <th scope="col">Adulto</th>
+          <th scope="col">Menor</th>
+          <th scope="col">Infante</th>
+          <th scope="col">Plazas disponibles</th>
+          <th scope="col">Puntos de abordaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        {paquete.salidas.map((s) => (
+          <tr>
+            <td>
+              <time datetime={s.startsAt.toISOString()}>{formatearFecha(s.startsAt, zona)}</time>
+            </td>
+            <td>
+              <time datetime={s.endsAt.toISOString()}>{formatearFecha(s.endsAt, zona)}</time>
+            </td>
+            <td>{formatearPesos(s.adultPriceCents)}</td>
+            <td>{formatearPesos(s.childPriceCents)}</td>
+            <td>{formatearPesos(s.infantPriceCents)}</td>
+            <td>{s.availableSeats}</td>
+            <td>{s.boardingPoints.join(", ")}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</PublicLayout>

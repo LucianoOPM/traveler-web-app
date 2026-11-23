@@ -18,6 +18,14 @@ export class DrizzlePackageRepository implements PackageRepository {
     return this.db.select().from(packages).orderBy(desc(packages.createdAt));
   }
 
+  listPublished() {
+    return this.db
+      .select()
+      .from(packages)
+      .where(eq(packages.status, "publicado"))
+      .orderBy(desc(packages.createdAt));
+  }
+
   async create(datos: Parameters<PackageRepository["create"]>[0]) {
     const [paquete] = await this.db.insert(packages).values(datos).returning();
     return paquete!;

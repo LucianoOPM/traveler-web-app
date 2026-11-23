@@ -7,6 +7,8 @@ export interface PackageRepository {
   find(id: string): Promise<Package | null>;
   /** Del más reciente al más antiguo. */
   list(): Promise<Package[]>;
+  /** Solo `publicado`, del más reciente al más antiguo (catálogo público). */
+  listPublished(): Promise<Package[]>;
   create(datos: PackageContent): Promise<Package>;
   update(
     id: string,

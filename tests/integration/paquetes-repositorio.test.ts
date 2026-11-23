@@ -48,6 +48,18 @@ describe.skipIf(!base && !process.env.CI)("repositorio de paquetes en traveltech
     expect((await servicio.list()).map((p) => p.id)).toEqual([nuevo.id, viejo.id]);
   });
 
+  test("listPublished solo devuelve los publicados", async () => {
+    const borrador = await servicio.create({ name: "Borrador" });
+    const publicado = await servicio.create({ name: "Publicado", summary: "s", description: "d" });
+    await servicio.publish(publicado.id);
+    const archivado = await servicio.create({ name: "Archivado", summary: "s", description: "d" });
+    await servicio.publish(archivado.id);
+    await servicio.archive(archivado.id);
+    const ids = (await repo.listPublished()).map((p) => p.id);
+    expect(ids).toEqual([publicado.id]);
+    expect(ids).not.toContain(borrador.id);
+  });
+
   test("update y delete son condicionales por estado", async () => {
     const { id } = await repo.create({ name: "A", summary: "s", description: "d" });
     expect(await repo.update(id, "publicado", { name: "B" })).toBeNull();
