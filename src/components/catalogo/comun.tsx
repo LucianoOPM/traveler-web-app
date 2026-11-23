@@ -1,5 +1,7 @@
 import { isInputError, type ActionError } from "astro:actions";
 import { useState, type InputHTMLAttributes } from "react";
+import { Input } from "@components/ui/input";
+import { Textarea } from "@components/ui/textarea";
 import { erroresDeAccion } from "./errores";
 
 export type Errores = { campos: Record<string, string>; general: string | null };
@@ -44,7 +46,11 @@ export function useEnvio() {
 }
 
 export function ErrorGeneral({ mensaje }: { mensaje: string | null }) {
-  return mensaje ? <p role="alert">{mensaje}</p> : null;
+  return mensaje ? (
+    <p role="alert" className="text-sm text-destructive">
+      {mensaje}
+    </p>
+  ) : null;
 }
 
 type CampoProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -63,12 +69,11 @@ export function Campo({ etiqueta, error, multilinea, onValor, id, ...resto }: Ca
     "aria-describedby": error ? idError : undefined,
   };
   return (
-    <p>
-      <label>
+    <div className="mb-4 grid gap-1.5">
+      <label className="grid gap-1.5 text-sm font-medium">
         {etiqueta}
-        <br />
         {multilinea ? (
-          <textarea
+          <Textarea
             {...comunes}
             name={resto.name}
             rows={4}
@@ -77,15 +82,14 @@ export function Campo({ etiqueta, error, multilinea, onValor, id, ...resto }: Ca
             onChange={(e) => onValor(e.target.value)}
           />
         ) : (
-          <input {...comunes} {...resto} onChange={(e) => onValor(e.target.value)} />
+          <Input {...comunes} {...resto} onChange={(e) => onValor(e.target.value)} />
         )}
       </label>
       {error && (
-        <span id={idError} role="alert">
-          {" "}
+        <span id={idError} role="alert" className="text-sm text-destructive">
           {error}
         </span>
       )}
-    </p>
+    </div>
   );
 }

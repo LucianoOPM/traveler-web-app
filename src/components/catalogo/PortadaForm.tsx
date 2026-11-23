@@ -1,4 +1,6 @@
 import { actions } from "astro:actions";
+import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
 import { ErrorGeneral, useEnvio } from "./comun";
 
 /** Sube o reemplaza la portada de un paquete (jpeg, png o webp; la validación real es del servidor). */
@@ -22,12 +24,11 @@ export default function PortadaForm({
   }
 
   return (
-    <form onSubmit={subir} noValidate>
-      <p>
-        <label>
+    <form onSubmit={subir} noValidate className="grid justify-items-start gap-4">
+      <div className="grid gap-1.5">
+        <label className="grid gap-1.5 text-sm font-medium">
           {tienePortada ? "Reemplazar portada" : "Subir portada"} (JPEG, PNG o WebP, máx. 5 MiB)
-          <br />
-          <input
+          <Input
             type="file"
             name="file"
             accept="image/jpeg,image/png,image/webp"
@@ -36,16 +37,15 @@ export default function PortadaForm({
           />
         </label>
         {errores.campos.file && (
-          <span id="portada-error" role="alert">
-            {" "}
+          <span id="portada-error" role="alert" className="text-sm text-destructive">
             {errores.campos.file}
           </span>
         )}
-      </p>
+      </div>
       <ErrorGeneral mensaje={errores.general} />
-      <button type="submit" disabled={enviando}>
+      <Button type="submit" disabled={enviando}>
         Subir
-      </button>
+      </Button>
     </form>
   );
 }
