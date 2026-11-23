@@ -2,7 +2,7 @@
 
 Plataforma para una sola agencia de viajes: catálogo, salidas, reservaciones, pagos, boletos QR, abordaje y marketing. Tiene una experiencia privada (admin/operador) y una demo de visitantes de solo lectura con datos ficticios.
 
-**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Todavía **no hay** lógica de negocio, esquema, migraciones ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
+**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Hay Drizzle con migraciones reversibles (ADR-023), pero todavía **no hay** lógica de negocio, esquema, migraciones reales ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
 
 ## Requisitos
 - [Git](https://git-scm.com/)
@@ -47,7 +47,7 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 - Crea `traveltech_private`, `traveltech_demo` y `traveltech_test`.
 - **`POSTGRES_PASSWORD` (solo para Compose) debe coincidir con la contraseña de las URLs** de `DATABASE_URL` y `DEMO_DATABASE_URL`; sin ella, Compose se niega a arrancar.
 - El script de inicialización solo corre con el volumen vacío: para añadir una base a una instalación existente hay que recrear el volumen con `down -v`.
-- `TEST_DATABASE_URL` es opcional y está comentada en `.env.example`; su uso llega con las pruebas con PostgreSQL.
+- `TEST_DATABASE_URL` es opcional y está comentada en `.env.example`; con ella descomentada y la base en marcha, `bun run test` también ejecuta las pruebas de migraciones y rollback contra `traveltech_test` (sin ella se omiten).
 - Más detalles y solución de problemas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
 
 ## Comandos disponibles
@@ -61,8 +61,11 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 | `bun run format` / `bun run format:check` | Prettier: reescribe / comprueba |
 | `bun run test` | Pruebas unitarias y de integración |
 | `bun run test:health` | Prueba de salud local |
+| `bun run db:generate` | Genera migraciones con `drizzle-kit` (aún no hay esquema) |
+| `bun run db:migrate` / `bun run db:migrate:demo` | `drizzle-kit migrate` sobre la base privada / la demo |
+| `bun run db:rollback` | Revierte la última migración **solo** en `traveltech_test` (`TEST_DATABASE_URL`) |
 
-**Aún no existen** `db:migrate`, `admin:create` ni `demo:seed` (se crearán en H1 y H6). Lista completa y notas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
+**Aún no existen** `admin:create` ni `demo:seed` (se crearán en H1 y H6). `db:migrate` existe, pero todavía no hay migraciones reales. Lista completa y notas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
 
 ## Cómo trabajar
 - Ramas: `main` es la de despliegue y `dev` la de desarrollo. Las ramas de trabajo (`feat/`, `fix/`, `chore/`, `docs/`) salen de `dev` y vuelven por PR.

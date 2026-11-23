@@ -37,6 +37,8 @@ Que una prueba, un script o un `.env` mal configurado pueda borrar o migrar haci
 - B. Solo respaldo y restauración. Cubre datos, pero es lento, no prueba el esquema migración a migración y necesita infraestructura que se pospone a H8.
 - C. Migraciones correctivas hacia adelante únicamente. Es lo habitual en producción, pero no cumple el criterio de salida «rollback probado».
 
+> **Cambios aprobados al empezar la issue #29 (2026-11-22):** (1) ~~no se instala `pg`~~ **revisado en el mismo PR:** `db:migrate` es `drizzle-kit migrate` (el flujo oficial de la documentación de Drizzle) y `pg` 8.23.1 se instala como devDependency, como preveía ADR-015; `db:migrate:demo` usa `drizzle.demo.config.ts`; `migrate()` de `bun-sql` se usa solo en las pruebas (la premisa de que `drizzle-kit` no carga `.env` era falsa); se eliminan `scripts/db-migrar.ts`, `src/db/objetivo.ts` y `src/db/migrar.ts`; (2) la **guardia** `asegurarBaseDePruebas` y el soporte mínimo de pruebas (`tests/support/base-de-pruebas.ts`) se crean en la #29, porque el ejecutor de rollback y su prueba los necesitan; la #30 conserva el fallo obligatorio en CI, el servicio PostgreSQL de CI, el ADR-024 y la documentación; (3) se añade el script `db:generate`; (4) la conexión es `abrirBase(url)` sin *singleton* (`getConfig()` usa `astro:env/server`, inexistente en scripts). El ejecutor además verifica el SHA-256 del `.sql` contra el historial antes de revertir. Plan: `docs/superpowers/plans/2026-11-22-issue-29-drizzle-migraciones.md`; registro: ADR-023.
+
 ## Diseño por issue
 
 ### Issue 1 — Docker Compose con PostgreSQL y las tres bases
@@ -67,6 +69,7 @@ Que una prueba, un script o un `.env` mal configurado pueda borrar o migrar haci
 ### Issue 4 — Esquema de identidad y primera migración con rollback
 - Instalar `better-auth` y `@better-auth/drizzle-adapter` 1.7.27 y el CLI `auth` 1.7.27 (devDependency).
 - Módulo `identity`: configuración mínima de Better Auth con el Admin plugin y los roles `admin` y `operator`, **solo la necesaria para generar el esquema**; no se monta el handler (issue 6). Los permisos finos de negocio no van en Better Auth (doc 06).
+- **Regla del responsable (ADR-023): Drizzle hace siempre las migraciones; el CLI de Better Auth no migra** (`auth migrate` nunca; solo se admite `auth generate` como ayuda para obtener el esquema de Drizzle, que se revisa y se versiona; la migración la crea `drizzle-kit generate` y la aplica `drizzle-kit migrate`). Ninguna configuración de Better Auth crea ni altera tablas.
 - Esquema generado con `auth generate` y revisado a mano: identificadores **UUID** y fechas `timestamptz` (convención del proyecto). *Verificar al implementar* cómo lo admite Better Auth 1.7.27; si no se puede cumplir la convención, se detiene el trabajo y se consulta antes de decidir.
 - Se conservan los nombres de tablas por defecto de Better Auth (`user`, `session`, `account`, `verification`) para no depender de mapeos del adaptador. *Llamada del constructor.*
 - Primera migración `0000_identidad` con su `down.sql` (elimina tablas, que arrastran sus índices y restricciones, en orden inverso de dependencias).
