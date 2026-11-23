@@ -1,4 +1,5 @@
 ---
+import "../styles/global.css";
 import { esAdmin } from "@lib/guards";
 // Layout del área privada. Solo se usa en páginas bajo `/admin`, donde el middleware ya garantiza
 // que `Astro.locals.user` existe y es personal.
@@ -6,6 +7,8 @@ const { titulo = "Panel" } = Astro.props;
 const usuario = Astro.locals.user;
 // Ocultar el enlace no protege nada: el middleware devuelve 403 al operador en `/admin/catalogo`.
 const verCatalogo = esAdmin(usuario);
+const enlace =
+  "rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50";
 ---
 
 <html lang="es">
@@ -16,22 +19,32 @@ const verCatalogo = esAdmin(usuario);
     <title>{titulo} · TravelTech</title>
   </head>
   <body>
-    <header>
-      <a href="/admin">
+    <header class="flex flex-wrap items-center gap-4 border-b px-4 py-3">
+      <a href="/admin" class={enlace}>
         <strong>TravelTech</strong>
       </a>
-      <nav aria-label="Principal">
-        <a href="/admin">Inicio</a>
-        {verCatalogo && <a href="/admin/catalogo">Catálogo</a>}
+      <nav aria-label="Principal" class="flex flex-1 gap-4">
+        <a href="/admin" class={enlace}>
+          Inicio
+        </a>
+        {verCatalogo && (
+          <a href="/admin/catalogo" class={enlace}>
+            Catálogo
+          </a>
+        )}
       </nav>
-      <span>
+      <span class="text-sm text-muted-foreground">
         {usuario?.name} ({usuario?.role})
       </span>
-      <button type="button" id="cerrar-sesion">
+      <button
+        type="button"
+        id="cerrar-sesion"
+        class="h-8 rounded-lg border px-2.5 text-sm outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
         Cerrar sesión
       </button>
     </header>
-    <main>
+    <main class="p-4">
       <slot />
     </main>
     <script>
@@ -44,24 +57,5 @@ const verCatalogo = esAdmin(usuario);
         location.assign("/login");
       });
     </script>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        margin: 0;
-      }
-      header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #ccc;
-      }
-      header nav {
-        flex: 1;
-      }
-      main {
-        padding: 1rem;
-      }
-    </style>
   </body>
 </html>

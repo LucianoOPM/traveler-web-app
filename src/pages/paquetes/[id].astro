@@ -24,50 +24,78 @@ const zona = process.env.AGENCY_TIMEZONE!;
 ---
 
 <PublicLayout titulo={paquete.name}>
-  <p>
-    <a href="/">← Paquetes</a>
+  <p class="mb-4">
+    <a
+      href="/"
+      class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+    >
+      ← Paquetes
+    </a>
   </p>
-  <h1>{paquete.name}</h1>
+  <h1 class="mb-4 text-3xl font-semibold">{paquete.name}</h1>
   {paquete.portadaUrl && (
-    <img src={paquete.portadaUrl} alt={`Portada de ${paquete.name}`} width="640" />
+    <img
+      src={paquete.portadaUrl}
+      alt={`Portada de ${paquete.name}`}
+      width="640"
+      class="mb-4 aspect-video w-full max-w-2xl rounded-lg object-cover"
+    />
   )}
-  <p>{paquete.summary}</p>
-  <p>{paquete.description}</p>
+  <p class="mb-2 text-lg">{paquete.summary}</p>
+  <p class="mb-6 text-muted-foreground">{paquete.description}</p>
 
-  <h2>Salidas</h2>
+  <h2 class="mb-3 text-2xl font-semibold">Salidas</h2>
   {paquete.salidas.length === 0 ? (
     <p>Sin salidas próximas</p>
   ) : (
-    <table>
-      <caption>Salidas próximas y tarifas por persona</caption>
-      <thead>
-        <tr>
-          <th scope="col">Salida</th>
-          <th scope="col">Regreso</th>
-          <th scope="col">Adulto</th>
-          <th scope="col">Menor</th>
-          <th scope="col">Infante</th>
-          <th scope="col">Plazas disponibles</th>
-          <th scope="col">Puntos de abordaje</th>
-        </tr>
-      </thead>
-      <tbody>
-        {paquete.salidas.map((s) => (
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <caption class="pb-2 text-left text-muted-foreground">
+          Salidas próximas y tarifas por persona
+        </caption>
+        <thead>
           <tr>
-            <td>
-              <time datetime={s.startsAt.toISOString()}>{formatearFecha(s.startsAt, zona)}</time>
-            </td>
-            <td>
-              <time datetime={s.endsAt.toISOString()}>{formatearFecha(s.endsAt, zona)}</time>
-            </td>
-            <td>{formatearPesos(s.adultPriceCents)}</td>
-            <td>{formatearPesos(s.childPriceCents)}</td>
-            <td>{formatearPesos(s.infantPriceCents)}</td>
-            <td>{s.availableSeats}</td>
-            <td>{s.boardingPoints.join(", ")}</td>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Salida
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Regreso
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Adulto
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Menor
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Infante
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Plazas disponibles
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Puntos de abordaje
+            </th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {paquete.salidas.map((s) => (
+            <tr>
+              <td class="border-b px-3 py-2">
+                <time datetime={s.startsAt.toISOString()}>{formatearFecha(s.startsAt, zona)}</time>
+              </td>
+              <td class="border-b px-3 py-2">
+                <time datetime={s.endsAt.toISOString()}>{formatearFecha(s.endsAt, zona)}</time>
+              </td>
+              <td class="border-b px-3 py-2">{formatearPesos(s.adultPriceCents)}</td>
+              <td class="border-b px-3 py-2">{formatearPesos(s.childPriceCents)}</td>
+              <td class="border-b px-3 py-2">{formatearPesos(s.infantPriceCents)}</td>
+              <td class="border-b px-3 py-2">{s.availableSeats}</td>
+              <td class="border-b px-3 py-2">{s.boardingPoints.join(", ")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )}
 </PublicLayout>

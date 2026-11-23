@@ -10,29 +10,42 @@ const zona = process.env.AGENCY_TIMEZONE!;
 ---
 
 <PublicLayout titulo="Paquetes">
-  <h1>Paquetes de viaje</h1>
+  <h1 class="mb-6 text-3xl font-semibold">Paquetes de viaje</h1>
   {paquetes.length === 0 && <p>Aún no hay paquetes publicados.</p>}
-  {paquetes.map((p) => (
-    <article>
-      <h2>
-        <a href={`/paquetes/${p.id}`}>{p.name}</a>
-      </h2>
-      {p.portadaUrl && (
-        <img src={p.portadaUrl} alt={`Portada de ${p.name}`} width="320" loading="lazy" />
-      )}
-      <p>{p.summary}</p>
-      {p.salidas.length === 0 ? (
-        <p>Sin salidas próximas</p>
-      ) : (
-        <ul>
-          {p.salidas.map((s) => (
-            <li>
-              <time datetime={s.startsAt.toISOString()}>{formatearFecha(s.startsAt, zona)}</time>
-              {" · "}adulto {formatearPesos(s.adultPriceCents)}
-            </li>
-          ))}
-        </ul>
-      )}
-    </article>
-  ))}
+  <div class="grid gap-6 sm:grid-cols-2">
+    {paquetes.map((p) => (
+      <article class="grid content-start gap-2 rounded-xl border p-4">
+        <h2 class="text-xl font-semibold">
+          <a
+            href={`/paquetes/${p.id}`}
+            class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+          >
+            {p.name}
+          </a>
+        </h2>
+        {p.portadaUrl && (
+          <img
+            src={p.portadaUrl}
+            alt={`Portada de ${p.name}`}
+            width="320"
+            loading="lazy"
+            class="aspect-video w-full rounded-lg object-cover"
+          />
+        )}
+        <p class="text-muted-foreground">{p.summary}</p>
+        {p.salidas.length === 0 ? (
+          <p>Sin salidas próximas</p>
+        ) : (
+          <ul class="grid gap-1 text-sm">
+            {p.salidas.map((s) => (
+              <li>
+                <time datetime={s.startsAt.toISOString()}>{formatearFecha(s.startsAt, zona)}</time>
+                {" · "}adulto {formatearPesos(s.adultPriceCents)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </article>
+    ))}
+  </div>
 </PublicLayout>

@@ -1,4 +1,5 @@
 import { actions } from "astro:actions";
+import { Button } from "@components/ui/button";
 import { useState } from "react";
 import type { Package } from "@modules/catalog/types";
 import { Campo, ErrorGeneral, useEnvio } from "./comun";
@@ -70,26 +71,38 @@ export default function PaqueteForm({ paquete }: { paquete?: Package }) {
         error={errores.campos.description}
       />
       <ErrorGeneral mensaje={errores.general} />
-      {!archivado && (
-        <button type="submit" disabled={enviando}>
-          {paquete ? "Guardar cambios" : "Crear paquete"}
-        </button>
-      )}
-      {paquete?.status === "borrador" && (
-        <>
-          <button type="button" disabled={enviando} onClick={() => cambiarEstado("publishPackage")}>
-            Publicar
-          </button>
-          <button type="button" disabled={enviando} onClick={eliminar}>
-            Eliminar borrador
-          </button>
-        </>
-      )}
-      {paquete?.status === "publicado" && (
-        <button type="button" disabled={enviando} onClick={() => cambiarEstado("archivePackage")}>
-          Archivar
-        </button>
-      )}
+      <div className="flex flex-wrap gap-2">
+        {!archivado && (
+          <Button type="submit" disabled={enviando}>
+            {paquete ? "Guardar cambios" : "Crear paquete"}
+          </Button>
+        )}
+        {paquete?.status === "borrador" && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={enviando}
+              onClick={() => cambiarEstado("publishPackage")}
+            >
+              Publicar
+            </Button>
+            <Button type="button" variant="destructive" disabled={enviando} onClick={eliminar}>
+              Eliminar borrador
+            </Button>
+          </>
+        )}
+        {paquete?.status === "publicado" && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={enviando}
+            onClick={() => cambiarEstado("archivePackage")}
+          >
+            Archivar
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

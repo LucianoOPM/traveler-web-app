@@ -1,4 +1,5 @@
 import { actions } from "astro:actions";
+import { Button } from "@components/ui/button";
 import { useState } from "react";
 import { utcALocal, localAUtc } from "@lib/fechas";
 import { centavosAPesos, pesosACentavos } from "@lib/importes";
@@ -87,9 +88,9 @@ export default function SalidaForm({ paqueteId, salida, zona }: Props) {
       {campo("infantPriceCents", "Tarifa infante (MXN)", { type: "text", inputMode: "decimal" })}
       <ErrorGeneral mensaje={errores.general} />
       {!cancelada && (
-        <button type="submit" disabled={enviando}>
+        <Button type="submit" disabled={enviando}>
           {salida ? "Guardar salida" : "Crear salida"}
-        </button>
+        </Button>
       )}
     </form>
   );

@@ -1,4 +1,5 @@
 import { actions } from "astro:actions";
+import { Button } from "@components/ui/button";
 import { useState } from "react";
 import type { BoardingPoint, Departure, PackageStatus } from "@modules/catalog/types";
 import { Campo, ErrorGeneral, useEnvio } from "./comun";
@@ -23,68 +24,80 @@ export default function SalidaAcciones({ salida, estadoPaquete, puntos, asignado
   const par = (boardingPointId: string) => ({ departureId: salida.id, boardingPointId });
 
   return (
-    <div>
+    <div className="grid gap-3">
       <ErrorGeneral mensaje={errores.general ?? Object.values(errores.campos)[0] ?? null} />
-      {salida.status === "borrador" && (
-        <>
-          <button
+      <div className="flex flex-wrap items-center gap-2">
+        {salida.status === "borrador" && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={enviando || estadoPaquete !== "publicado"}
+              onClick={() => recargar(() => actions.catalog.publishDeparture({ id: salida.id }))}
+            >
+              Publicar salida
+            </Button>
+            {estadoPaquete !== "publicado" && (
+              <small className="text-muted-foreground">Publica primero el paquete.</small>
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={enviando}
+              onClick={() =>
+                confirm("¿Eliminar este borrador?") &&
+                recargar(() => actions.catalog.deleteDeparture({ id: salida.id }))
+              }
+            >
+              Eliminar borrador
+            </Button>
+          </>
+        )}
+        {salida.status === "publicada" && (
+          <Button
             type="button"
-            disabled={enviando || estadoPaquete !== "publicado"}
-            onClick={() => recargar(() => actions.catalog.publishDeparture({ id: salida.id }))}
-          >
-            Publicar salida
-          </button>
-          {estadoPaquete !== "publicado" && <small> Publica primero el paquete.</small>}
-          <button
-            type="button"
+            variant="outline"
             disabled={enviando}
             onClick={() =>
-              confirm("¿Eliminar este borrador?") &&
-              recargar(() => actions.catalog.deleteDeparture({ id: salida.id }))
+              confirm("¿Cancelar esta salida? No se puede reabrir.") &&
+              recargar(() => actions.catalog.cancelDeparture({ id: salida.id }))
             }
           >
-            Eliminar borrador
-          </button>
-        </>
-      )}
-      {salida.status === "publicada" && (
-        <button
-          type="button"
-          disabled={enviando}
-          onClick={() =>
-            confirm("¿Cancelar esta salida? No se puede reabrir.") &&
-            recargar(() => actions.catalog.cancelDeparture({ id: salida.id }))
-          }
-        >
-          Cancelar salida
-        </button>
-      )}
+            Cancelar salida
+          </Button>
+        )}
+      </div>
 
-      <h4>Puntos de abordaje</h4>
-      <ul>
+      <h4 className="font-medium">Puntos de abordaje</h4>
+      <ul className="grid gap-2">
         {puntos
           .filter((p) => asignados.includes(p.id))
           .map((p) => (
-            <li key={p.id}>
-              {p.name}{" "}
+            <li key={p.id} className="flex items-center gap-2">
+              {p.name}
               {!cancelada && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   disabled={enviando}
                   onClick={() => recargar(() => actions.catalog.removeBoardingPoint(par(p.id)))}
                 >
                   Quitar
-                </button>
+                </Button>
               )}
             </li>
           ))}
         {asignados.length === 0 && <li>Sin puntos asignados</li>}
       </ul>
       {!cancelada && libres.length > 0 && (
-        <p>
-          <label>
-            Agregar punto{" "}
-            <select value={elegido} onChange={(e) => setElegido(e.target.value)}>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            Agregar punto
+            <select
+              value={elegido}
+              onChange={(e) => setElegido(e.target.value)}
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
               <option value="">Elige uno…</option>
               {libres.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -92,15 +105,16 @@ export default function SalidaAcciones({ salida, estadoPaquete, puntos, asignado
                 </option>
               ))}
             </select>
-          </label>{" "}
-          <button
+          </label>
+          <Button
             type="button"
+            variant="outline"
             disabled={enviando || !elegido}
             onClick={() => recargar(() => actions.catalog.assignBoardingPoint(par(elegido)))}
           >
             Asignar
-          </button>
-        </p>
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -127,9 +141,9 @@ export function NuevoPunto() {
         error={errores.campos.name}
       />
       <ErrorGeneral mensaje={errores.general} />
-      <button type="submit" disabled={enviando}>
+      <Button type="submit" disabled={enviando}>
         Crear punto
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,5 +1,6 @@
 import node from "@astrojs/node";
 import react from "@astrojs/react";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import { loadEnv } from "vite";
 import { comprobarConfiguracion } from "./src/lib/config.ts";
@@ -36,5 +37,5 @@ export default defineConfig({
   integrations: [react(), validarConfiguracion],
   // `bun` (driver `bun-sql`) solo existe al ejecutar bajo Bun (`bun run start`); el build corre
   // bajo Node y no puede resolverlo, así que se deja como importación externa.
-  vite: { build: { rolldownOptions: { external: ["bun"] } } },
+  vite: { plugins: [tailwindcss()], build: { rolldownOptions: { external: ["bun"] } } },
 });

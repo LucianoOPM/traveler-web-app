@@ -8,7 +8,7 @@ Proyecto Astro con PostgreSQL local (Docker Compose), Drizzle y autenticación d
 **Filosofía:** la solución más sencilla que resuelva la necesidad actual; sin infraestructura preventiva ni abstracciones sin uso real; no conservar complejidad solo porque ya existe. Seguridad, integridad de datos y los invariantes P0 no se negocian.
 
 ## Stack (confirmado)
-Astro full-stack + React islands + Astro Actions · Tailwind v4 + shadcn/ui (ADR-027, decidido, aún sin instalar) · Bun · PostgreSQL + Drizzle (Docker solo para la BD) · Better Auth + Admin plugin · monolito modular (servicios como clases con DI por constructor, sin contenedor) · archivos privados en disco local.
+Astro full-stack + React islands + Astro Actions · Tailwind v4 + shadcn/ui con Base UI (ADR-027, instalado en #65) · Bun · PostgreSQL + Drizzle (Docker solo para la BD) · Better Auth + Admin plugin · monolito modular (servicios como clases con DI por constructor, sin contenedor) · archivos privados en disco local.
 
 ## Invariantes que nunca se rompen (P0)
 - **Una agencia, sin multitenencia**: nada de `organization_id` ni tablas de tenants.

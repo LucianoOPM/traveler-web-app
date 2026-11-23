@@ -8,27 +8,37 @@ const paquetes = await crearCatalogo(await baseDelServidor()).packages.list();
 ---
 
 <AdminLayout titulo="Catálogo">
-  <h1>Paquetes</h1>
-  <p>
-    <a href="/admin/catalogo/nuevo">Nuevo paquete</a>
+  <h1 class="mb-4 text-2xl font-semibold">Paquetes</h1>
+  <p class="mb-4">
+    <a
+      href="/admin/catalogo/nuevo"
+      class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+    >
+      Nuevo paquete
+    </a>
   </p>
   {paquetes.length === 0 ? (
     <p>Aún no hay paquetes.</p>
   ) : (
-    <table>
+    <table class="w-full text-sm">
       <thead>
         <tr>
-          <th>Nombre</th>
-          <th>Estado</th>
+          <th class="border-b px-3 py-2 text-left font-medium">Nombre</th>
+          <th class="border-b px-3 py-2 text-left font-medium">Estado</th>
         </tr>
       </thead>
       <tbody>
         {paquetes.map((p) => (
           <tr>
-            <td>
-              <a href={`/admin/catalogo/${p.id}`}>{p.name}</a>
+            <td class="border-b px-3 py-2">
+              <a
+                href={`/admin/catalogo/${p.id}`}
+                class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+              >
+                {p.name}
+              </a>
             </td>
-            <td>{p.status}</td>
+            <td class="border-b px-3 py-2">{p.status}</td>
           </tr>
         ))}
       </tbody>
