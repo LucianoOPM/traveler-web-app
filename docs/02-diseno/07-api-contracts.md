@@ -21,6 +21,9 @@ Las Actions son endpoints públicos: cada una autoriza en su handler y se prueba
 - Códigos: `400` entrada inválida, `401` sin sesión, `403` sin permiso, `404` no visible/no existe, `409` conflicto de estado/capacidad, `422` regla de negocio, `429` exceso de solicitudes (`TooManyRequestsError`, código `rate_limited`; en una Action sale como `TOO_MANY_REQUESTS`; hoy solo lo aplica `bookings.create`, ver abajo). Hoy las rutas `/api/` inexistentes (`404`) o con método no permitido (`405`) siguen respondiendo con el formato de Astro, no con este JSON.
 - Para acciones financieras y de abordaje: idempotencia, auditoría y transacción.
 
+## Estado real de H3
+Actions de reservas implementadas: `bookings.create` (pública), `bookings.cancel`, `bookings.reactivate` y `bookings.regenerateToken` (solo admin), descritas más abajo. Páginas: `/reservar/<salida>`, `/reservas/<token>` y `/admin/catalogo/salidas/<id>/reservas`. Permisos comprobados por petición directa (`tests/integration/reservas-seguridad.test.ts`, con una tabla explícita de Actions), errores inesperados con mensaje genérico y GET sin escrituras de negocio. Lo demás de esta página sigue siendo propuesta.
+
 ## Endpoints iniciales (propuesta original)
 Esta tabla es la propuesta original en forma de rutas REST. Con el [ADR-025](../05-decisiones/11-decisions-and-risks.md), las operaciones internas y de formulario (CRUD, reservas, pagos, revisión, abordaje) se implementan como Actions y las lecturas de página como SSR; permanecen como API Routes solo las que necesiten HTTP propio. Se confirma la superficie de cada operación al implementar su hito.
 
