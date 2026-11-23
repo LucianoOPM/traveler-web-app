@@ -72,6 +72,14 @@ const zona = process.env.AGENCY_TIMEZONE!;
         {centavosAPesos(s.adultPriceCents)} · menor {centavosAPesos(s.childPriceCents)} · infante{" "}
         {centavosAPesos(s.infantPriceCents)}
       </p>
+      <p>
+        <a
+          href={`/admin/catalogo/salidas/${s.id}/reservas`}
+          class="rounded-sm underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          Reservas
+        </a>
+      </p>
       <details>
         <summary class="cursor-pointer rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
           Editar salida

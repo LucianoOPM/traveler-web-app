@@ -2,9 +2,10 @@ import { defineAction } from "astro:actions";
 import { z } from "astro/zod";
 import { baseDelServidor } from "@db/servidor";
 import { TooManyRequestsError } from "@lib/errors";
+import { exigirAdmin } from "@lib/guards";
 import { crearReservas } from "@modules/bookings/container";
 import { LIMITE_RESERVAS, LimiteDeSolicitudes } from "@modules/bookings/domain/rate-limit";
-import { MAX_PASAJEROS } from "@modules/bookings/domain/booking-rules";
+import { MAX_MOTIVO, MAX_PASAJEROS } from "@modules/bookings/domain/booking-rules";
 import { CATEGORIAS_TARIFA } from "@modules/bookings/schema";
 import { conErrores } from "./con-errores";
 
@@ -12,6 +13,17 @@ import { conErrores } from "./con-errores";
 // `BookingService` (ADR-025, ADR-026). La base la elige el servidor: la entrada es estricta, así que
 // un `role`, `demoMode` o `database` enviado por el cliente se rechaza como clave desconocida.
 const limite = new LimiteDeSolicitudes(LIMITE_RESERVAS.max, LIMITE_RESERVAS.ventanaMs);
+
+// Acciones del administrador (#70): `exigirAdmin` en cada handler; el actor sale de la sesión.
+const accionAdmin = z.strictObject({
+  bookingId: z.uuid(),
+  reason: z
+    .string()
+    .trim()
+    .min(1, "El motivo es obligatorio")
+    .max(MAX_MOTIVO, `Máximo ${MAX_MOTIVO} caracteres`),
+});
+const reservas = async () => crearReservas(await baseDelServidor()).bookings;
 
 const texto = (max: number) =>
   z.string().trim().min(1, "Este campo es obligatorio").max(max, `Máximo ${max} caracteres`);
@@ -53,6 +65,31 @@ export const bookings = {
         totalCents: booking.totalCents,
         expiresAt: booking.expiresAt,
       };
+    }),
+  }),
+  cancel: defineAction({
+    input: accionAdmin,
+    handler: conErrores("bookings.cancel", async ({ bookingId, reason }, { locals }) => {
+      exigirAdmin(locals);
+      return (await reservas()).cancel(bookingId, { actorUserId: locals.user!.id, reason });
+    }),
+  }),
+  reactivate: defineAction({
+    input: accionAdmin,
+    handler: conErrores("bookings.reactivate", async ({ bookingId, reason }, { locals }) => {
+      exigirAdmin(locals);
+      return (await reservas()).reactivate(bookingId, { actorUserId: locals.user!.id, reason });
+    }),
+  }),
+  regenerateToken: defineAction({
+    input: accionAdmin,
+    handler: conErrores("bookings.regenerateToken", async ({ bookingId, reason }, { locals }) => {
+      exigirAdmin(locals);
+      // El token nuevo solo sale aquí, una vez; en la base solo queda su hash.
+      return (await reservas()).regenerateToken(bookingId, {
+        actorUserId: locals.user!.id,
+        reason,
+      });
     }),
   }),
 };

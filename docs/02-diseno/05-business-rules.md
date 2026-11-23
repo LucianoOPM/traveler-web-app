@@ -6,6 +6,16 @@
 - Crear reserva y retener lugares es atómico. El precio queda congelado en la reserva.
 - El plazo de retención es configurable; una reserva con comprobante en revisión **no se libera automáticamente**.
 - Expirar una reserva libera inventario cuando corresponda. Reactivar requiere verificar disponibilidad en transacción.
+- **Ciclo de vida de la reserva (#70).** Solo el administrador cancela, reactiva o regenera el enlace, con un **motivo obligatorio** (1 a 500 caracteres, sin solo espacios) y el actor tomado de la sesión. Cada cambio deja su evento en `booking_events`; ningún evento guarda tokens ni hashes.
+
+  | Operación | `pendiente` vigente | `en_revision` | `expirada` (o `pendiente` vencida) | `cancelada` |
+  |---|---|---|---|---|
+  | Cancelar | → `cancelada` | → `cancelada` | `409` | idempotente, sin evento |
+  | Reactivar | idempotente, sin renovar vencimiento ni evento | idempotente | → `pendiente` si hay capacidad | → `pendiente` si hay capacidad |
+  | Regenerar enlace | nuevo token (el anterior deja de funcionar al instante) | nuevo token | `409` | `409` |
+
+  Reactivar exige salida `publicada`, con paquete `publicado` y que no haya empezado (`422`), y que quepan los pasajeros de la reserva (`409 capacity_exceeded`); el nuevo `expires_at` es `min(ahora + BOOKING_HOLD_HOURS, starts_at)`. Una operación repetida cuyo destino ya está alcanzado es idempotente y no genera eventos; una transición incompatible con el estado actual da `409`.
+- **Expiración perezosa, sin cron ni colas.** Una `pendiente` con `expires_at <= ahora` ya no retiene lugares aunque su estado no se haya actualizado. Dentro de toda transacción que bloquea la salida (crear, cancelar, reactivar o regenerar una reserva, y editar o cancelar la salida) se materializan como `expirada`, con evento `expirada` y actor `sistema`. `en_revision` nunca expira. **Un rechazo de negocio (409/422) no revierte esas expiraciones:** el rechazo se devuelve como valor dentro de la transacción y se lanza tras el commit, así que lo materializado persiste y la operación rechazada no deja ninguna otra escritura. Un error inesperado sí revierte todo. Lecturas (GET, pantalla de admin, consulta del comprador) nunca escriben: muestran la pendiente vencida como `expirada`.
 - Cancelación y cambios manuales quedan auditados.
 
 ## Pagos

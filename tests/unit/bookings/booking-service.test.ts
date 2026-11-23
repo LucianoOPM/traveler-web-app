@@ -67,10 +67,15 @@ function crear(
     },
     insertarPasajeros: async (d) => void escrituras.pasajeros.push(...d),
     insertarEvento: async (e) => void escrituras.eventos.push(e),
+    salidaDeReserva: async () => null,
+    buscarReserva: async () => null,
+    cambiarReserva: async () => false,
+    expirarVencidas: async () => {},
   };
   const repo: BookingRepository = {
     transaction: (fn) => fn(tx),
     findByTokenHash: async () => null,
+    listarPorSalida: async () => null,
   };
   const servicio = new BookingService(repo, { holdHours: 24, ahora: () => AHORA });
   return { servicio, escrituras };
@@ -183,6 +188,7 @@ describe("BookingService.create", () => {
       {
         transaction: () => ((abierta = true), Promise.reject(new Error("no debía abrirse"))),
         findByTokenHash: async () => null,
+        listarPorSalida: async () => null,
       },
       { holdHours: 24 },
     );
@@ -210,6 +216,7 @@ describe("BookingService.findByToken", () => {
     const repo: BookingRepository = {
       transaction: () => Promise.reject(new Error("la consulta no abre transacciones")),
       findByTokenHash: async (hash) => (consultados.push(hash), respuesta),
+      listarPorSalida: async () => null,
     };
     return {
       consultados,

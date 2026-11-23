@@ -46,6 +46,13 @@ Esta tabla es la propuesta original en forma de rutas REST. Con el [ADR-025](../
 - **Páginas SSR:** `/reservar/<departureId>` (checkout; `404` uniforme si la salida no existe, no está publicada, su paquete no lo está o ya empezó) y `/reservas/<token>` (consulta, solo lectura: estado, vencimiento, pasajeros, punto de abordaje y total; `Cache-Control: no-store` y `Referrer-Policy: no-referrer`; `404` idéntico para token inexistente, inválido o malformado; el token se busca por hash).
 - **DTO público del catálogo:** las salidas del detalle incluyen su `id` y sus puntos de abordaje `{ id, name }` (UUID opacos, no credenciales) porque el checkout los necesita.
 
+## Reservas: acciones de administrador (#70)
+Actions **solo admin** (sin sesión `401`, operador o vetado `403`; el permiso se comprueba en cada handler). Entrada `z.strictObject({ bookingId: uuid, reason: 1–500 caracteres sin solo espacios })`: cualquier otra clave (p. ej. un `actorUserId` o un `role`) es `400`; el actor sale de la sesión del servidor. Reserva inexistente: `404`.
+- `bookings.cancel`: `pendiente`/`en_revision` → `cancelada`; repetida sobre una `cancelada`: `200` idempotente sin evento; desde `expirada`: `409`. Respuesta `{ status, cambio }`.
+- `bookings.reactivate`: `expirada`/`cancelada` → `pendiente` con nuevo vencimiento; sin capacidad `409 capacity_exceeded`; salida cancelada, iniciada o con paquete no publicado `422`; repetida sobre `pendiente`/`en_revision`: `200` idempotente, sin renovar el vencimiento ni evento. Respuesta `{ status, expiresAt, cambio }`.
+- `bookings.regenerateToken`: solo reservas vigentes (`pendiente` no vencida o `en_revision`; si no, `409`). Respuesta `{ token }`: **se muestra una sola vez**; el hash anterior queda reemplazado en la misma operación y el evento `token_regenerado` no guarda token ni hash.
+- Pantalla `/admin/catalogo/salidas/<id>/reservas` (solo admin por el middleware de `/admin/catalogo`; operador `403`): estado, vencimiento, contacto completo, pasajeros, total, punto de abordaje y las acciones permitidas, cada una con su motivo. Es de solo lectura al cargarse.
+
 ## Salud
 `GET /api/health` (fuera de `/api/v1/`, implementado en la issue #8): `200` con `{ "status": "ok" }` y `Cache-Control: no-store`; sin efectos secundarios y sin exponer configuración, secretos ni versiones. Indica que el servidor arrancó con configuración válida; con configuración inválida responde `500 internal_error` (ver [ADR-019](../05-decisiones/11-decisions-and-risks.md)). No comprueba la base de datos: si la salud la incluirá o habrá un endpoint de *readiness* aparte (H1) **no está decidido**.
 

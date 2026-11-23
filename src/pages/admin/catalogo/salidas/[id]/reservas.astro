@@ -1,0 +1,114 @@
+---
+import { z } from "astro/zod";
+import ReservaAcciones from "@components/reservas/ReservaAcciones";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { baseDelServidor } from "@db/servidor";
+import { NotFoundError } from "@lib/errors";
+import { formatearFecha } from "@lib/fechas";
+import { formatearPesos } from "@lib/importes";
+import { crearReservas } from "@modules/bookings/container";
+
+// El middleware ya exige rol `admin` en /admin/catalogo (403 al operador): aquí se ve el contacto
+// completo de los compradores. Solo lectura: nada de esta página modifica datos al cargarse (el
+// estado `expirada` de una pendiente vencida se calcula, no se materializa). Un id inválido o
+// inexistente responde 404 (fuera de `/api/` un error lanzado sería un 500).
+const id = z.uuid().safeParse(Astro.params.id);
+if (!id.success) return new Response("No encontrado", { status: 404 });
+
+let listado;
+try {
+  listado = await crearReservas(await baseDelServidor()).bookings.listByDeparture(id.data);
+} catch (error) {
+  if (error instanceof NotFoundError) return new Response("No encontrado", { status: 404 });
+  throw error;
+}
+const { salida, reservas } = listado;
+const zona = process.env.AGENCY_TIMEZONE!;
+const ESTADOS = {
+  pendiente: "Pendiente",
+  en_revision: "En revisión",
+  expirada: "Expirada",
+  cancelada: "Cancelada",
+} as const;
+const celda = "border-b px-3 py-2 align-top";
+const cabecera = "border-b px-3 py-2 text-left font-medium";
+---
+
+<AdminLayout titulo={`Reservas de ${salida.packageName}`}>
+  <p class="mb-4">
+    <a
+      href={`/admin/catalogo/${salida.packageId}`}
+      class="rounded-sm underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      ← {salida.packageName}
+    </a>
+  </p>
+  <h1 class="mb-1 text-2xl font-semibold">Reservas de la salida</h1>
+  <p class="mb-4 text-muted-foreground">
+    {salida.packageName} · {formatearFecha(salida.startsAt, zona)} →{" "}
+    {formatearFecha(salida.endsAt, zona)} · Capacidad {salida.capacity}
+  </p>
+  {reservas.length === 0 ? (
+    <p>Esta salida no tiene reservas.</p>
+  ) : (
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <caption class="pb-2 text-left text-muted-foreground">
+          Reservas, más recientes primero. Una pendiente vencida se muestra como expirada.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class={cabecera}>
+              Referencia
+            </th>
+            <th scope="col" class={cabecera}>
+              Estado
+            </th>
+            <th scope="col" class={cabecera}>
+              Contacto
+            </th>
+            <th scope="col" class={cabecera}>
+              Pasajeros
+            </th>
+            <th scope="col" class={cabecera}>
+              Total
+            </th>
+            <th scope="col" class={cabecera}>
+              Punto
+            </th>
+            <th scope="col" class={cabecera}>
+              Acciones
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {reservas.map((r) => (
+            <tr>
+              <td class={celda}>{r.reference}</td>
+              <td class={celda}>
+                {ESTADOS[r.status]}
+                {(r.status === "pendiente" || r.status === "expirada") && (
+                  <div class="text-muted-foreground">
+                    {r.status === "pendiente" ? "Vence" : "Venció"}:{" "}
+                    {formatearFecha(r.expiresAt, zona)}
+                  </div>
+                )}
+              </td>
+              <td class={celda}>
+                {r.buyerName}
+                <div>{r.buyerPhone}</div>
+                <div>{r.buyerEmail}</div>
+              </td>
+              <td class={celda}>{r.pasajeros}</td>
+              <td class={celda}>{formatearPesos(r.totalCents)}</td>
+              <td class={celda}>{r.boardingPointName}</td>
+              <td class={celda}>
+                <ReservaAcciones client:load bookingId={r.id} acciones={r.acciones} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</AdminLayout>
