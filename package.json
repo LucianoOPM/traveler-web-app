@@ -19,7 +19,10 @@
     "prepare": "bun scripts/instalar-hooks.ts",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun scripts/db-migrar.ts",
+    "db:rollback": "bun scripts/db-rollback.ts"
   },
   "dependencies": {
     "@astrojs/node": "11.1.14",
