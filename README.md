@@ -18,7 +18,7 @@ cd traveler-web-app
 bun install
 bun run test:health
 ```
-- `bun install` también activa el hook local de commits (`core.hooksPath=.githooks`). Para una instalación estrictamente reproducible, use `bun install --frozen-lockfile` (es lo que hace la CI).
+- Para una instalación estrictamente reproducible, use `bun install --frozen-lockfile` (es lo que hace la CI).
 - `bun run test:health` construye la aplicación, la arranca y comprueba `GET /api/health`. **No necesita `.env`**, PostgreSQL ni servicios externos. Genera el `dist/` de la raíz (ignorado por Git).
 - Todas las pruebas: `bun run test`.
 
@@ -69,8 +69,8 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 
 ## Cómo trabajar
 - Ramas: `main` es la de despliegue y `dev` la de desarrollo. Las ramas de trabajo (`feat/`, `fix/`, `chore/`, `docs/`) salen de `dev` y vuelven por PR.
-- Commits en [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...); el hook local los valida.
-- La CI (GitHub Actions) ejecuta formato, lint, tipos, pruebas y build, y valida los commits de cada PR. Ambos checks (`verificar` y `commits`) son obligatorios para fusionar en `dev` y `main`.
+- Commits en [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`...) como recomendación; no hay validación automática.
+- La CI (GitHub Actions) ejecuta formato, lint, tipos, pruebas y build. El check `verificar` es obligatorio para fusionar en `dev` y `main`.
 
 ## Documentación
 Índice por tarea en [docs/README.md](docs/README.md). Lo que aún no está decidido está en [docs/05-decisiones/pendientes.md](docs/05-decisiones/pendientes.md).

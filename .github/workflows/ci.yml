@@ -45,19 +45,3 @@ jobs:
           PRIVATE_STORAGE_DIR: ./storage/private
           DEMO_STORAGE_DIR: ./storage/demo
           AGENCY_TIMEZONE: America/Mexico_City
-
-  commits:
-    name: commits
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
-      - name: Validar los commits del PR
-        run: bun scripts/validar-commits.ts "$BASE_SHA" "$HEAD_SHA"
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
