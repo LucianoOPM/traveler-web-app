@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "../../../db/schema";
 import { NotFoundError } from "../../../lib/errors";
-import type { DepartureRepository } from "../domain/departure-repository";
+import type { DepartureRepository, ResultadoPunto } from "../domain/departure-repository";
 import { departureBoardingPoints, departures, packages } from "../schema";
 import { esErrorPg } from "./errores-pg";
 
@@ -50,12 +50,14 @@ export class DrizzleDepartureRepository implements DepartureRepository {
 
   async addBoardingPoint(departureId: string, boardingPointId: string) {
     try {
-      const filas = await this.db
-        .insert(departureBoardingPoints)
-        .values({ departureId, boardingPointId })
-        .onConflictDoNothing()
-        .returning({ id: departureBoardingPoints.departureId });
-      return filas.length > 0;
+      return await this.conSalidaModificable(departureId, async (tx) => {
+        const filas = await tx
+          .insert(departureBoardingPoints)
+          .values({ departureId, boardingPointId })
+          .onConflictDoNothing()
+          .returning({ id: departureBoardingPoints.departureId });
+        return filas.length > 0;
+      });
     } catch (error) {
       if (esErrorPg(error, "23503")) throw new NotFoundError("Punto de abordaje no encontrado");
       throw error;
@@ -63,15 +65,38 @@ export class DrizzleDepartureRepository implements DepartureRepository {
   }
 
   async removeBoardingPoint(departureId: string, boardingPointId: string) {
-    const filas = await this.db
-      .delete(departureBoardingPoints)
-      .where(
-        and(
-          eq(departureBoardingPoints.departureId, departureId),
-          eq(departureBoardingPoints.boardingPointId, boardingPointId),
-        ),
-      )
-      .returning({ id: departureBoardingPoints.departureId });
-    return filas.length > 0;
+    return this.conSalidaModificable(departureId, async (tx) => {
+      const filas = await tx
+        .delete(departureBoardingPoints)
+        .where(
+          and(
+            eq(departureBoardingPoints.departureId, departureId),
+            eq(departureBoardingPoints.boardingPointId, boardingPointId),
+          ),
+        )
+        .returning({ id: departureBoardingPoints.departureId });
+      return filas.length > 0;
+    });
+  }
+
+  // `FOR UPDATE` bloquea la fila de la salida hasta el commit: una cancelación concurrente espera
+  // y, si llegó antes, aquí se ve `cancelada`. La FK sola no basta (su bloqueo no choca con un
+  // UPDATE del estado). `escribir` devuelve si la escritura cambió algo.
+  private conSalidaModificable(
+    departureId: string,
+    escribir: (tx: Tx) => Promise<boolean>,
+  ): Promise<ResultadoPunto> {
+    return this.db.transaction(async (tx) => {
+      const [salida] = await tx
+        .select({ status: departures.status })
+        .from(departures)
+        .where(eq(departures.id, departureId))
+        .for("update");
+      if (!salida) return "inexistente";
+      if (salida.status === "cancelada") return "cancelada";
+      return (await escribir(tx)) ? "ok" : "sin_cambio";
+    });
   }
 }
+
+type Tx = Parameters<Parameters<BunSQLDatabase<typeof schema>["transaction"]>[0]>[0];

@@ -96,6 +96,39 @@ describe.skipIf(!base && !process.env.CI)("repositorio de salidas en traveltech_
     expect(await sql`select 1 from departure_boarding_points`).toHaveLength(0);
   });
 
+  test("una cancelación concurrente impide asignar y quitar puntos (FOR UPDATE)", async () => {
+    const { id } = await salidas.create({ packageId: paquete, ...contenido });
+    await salidas.publish(id);
+    const asignado = await puntos.create("Asignado");
+    const nuevo = await puntos.create("Nuevo");
+    await salidas.assignBoardingPoint(id, asignado.id);
+
+    // Una transacción cancela la salida y la mantiene abierta; mientras tanto otra operación intenta
+    // modificar los puntos. Debe esperar el bloqueo y, al verla cancelada, rechazar la escritura.
+    let confirmar!: () => void;
+    const espera = new Promise<void>((resolver) => (confirmar = resolver));
+    let cancelada!: () => void;
+    const yaCancelo = new Promise<void>((resolver) => (cancelada = resolver));
+    const cancelando = sql.begin(async (tx) => {
+      await tx`update departures set status = 'cancelada' where id = ${id}`;
+      cancelada();
+      await espera;
+    });
+    await yaCancelo;
+    const asignando = repo.addBoardingPoint(id, nuevo.id);
+    const quitando = repo.removeBoardingPoint(id, asignado.id);
+    await Bun.sleep(150); // dan tiempo a que ambas queden esperando el bloqueo
+    confirmar();
+    await cancelando;
+
+    expect(await asignando).toBe("cancelada");
+    expect(await quitando).toBe("cancelada");
+    const filas = await sql`select boarding_point_id from departure_boarding_points`;
+    expect(filas.map((f: { boarding_point_id: string }) => f.boarding_point_id)).toEqual([
+      asignado.id,
+    ]);
+  });
+
   test("eliminar una salida borrador borra sus asignaciones (cascade)", async () => {
     const { id } = await salidas.create({ packageId: paquete, ...contenido });
     await salidas.assignBoardingPoint(id, (await puntos.create("Terminal Norte")).id);

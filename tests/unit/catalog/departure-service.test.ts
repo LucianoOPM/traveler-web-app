@@ -68,15 +68,22 @@ function repositorioFalso(
       if (filas.get(id)?.status !== esperado) return false;
       return filas.delete(id);
     },
-    addBoardingPoint: async (_salida, punto) => {
+    // Como el real: el estado se comprueba al escribir, no solo al leer.
+    addBoardingPoint: async (salida, punto) => {
+      const estado = filas.get(salida)?.status;
+      if (!estado) return "inexistente";
+      if (estado === "cancelada") return "cancelada";
       escrituras.push("addBoardingPoint");
-      if (asignados.has(punto)) return false;
+      if (asignados.has(punto)) return "sin_cambio";
       asignados.add(punto);
-      return true;
+      return "ok";
     },
-    removeBoardingPoint: async (_salida, punto) => {
+    removeBoardingPoint: async (salida, punto) => {
+      const estado = filas.get(salida)?.status;
+      if (!estado) return "inexistente";
+      if (estado === "cancelada") return "cancelada";
       escrituras.push("removeBoardingPoint");
-      return asignados.delete(punto);
+      return asignados.delete(punto) ? "ok" : "sin_cambio";
     },
   };
   return { repo, filas, escrituras };
@@ -235,6 +242,25 @@ describe("DepartureService", () => {
 
   test("en una salida cancelada no se asignan ni quitan puntos (422)", async () => {
     const { repo, escrituras } = repositorioFalso({ status: "cancelada" });
+    const servicio = new DepartureService(repo);
+    await expect(servicio.assignBoardingPoint(SALIDA, PUNTO)).rejects.toBeInstanceOf(
+      BusinessRuleError,
+    );
+    await expect(servicio.removeBoardingPoint(SALIDA, PUNTO)).rejects.toBeInstanceOf(
+      BusinessRuleError,
+    );
+    expect(escrituras).toEqual([]);
+  });
+
+  test("si la salida se cancela entre la lectura y la escritura, asignar y quitar dan 422", async () => {
+    const { repo, filas, escrituras } = repositorioFalso({ status: "publicada" });
+    const find = repo.find;
+    // Otro admin cancela justo después de que este servicio lee la salida publicada.
+    repo.find = async (id) => {
+      const leida = await find(id);
+      filas.set(id, { ...filas.get(id)!, status: "cancelada" });
+      return leida;
+    };
     const servicio = new DepartureService(repo);
     await expect(servicio.assignBoardingPoint(SALIDA, PUNTO)).rejects.toBeInstanceOf(
       BusinessRuleError,

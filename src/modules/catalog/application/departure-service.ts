@@ -1,5 +1,5 @@
-import { ConflictError, NotFoundError } from "../../../lib/errors";
-import type { DepartureRepository } from "../domain/departure-repository";
+import { BusinessRuleError, ConflictError, NotFoundError } from "../../../lib/errors";
+import type { DepartureRepository, ResultadoPunto } from "../domain/departure-repository";
 import {
   comprobarCancelable,
   comprobarContenido,
@@ -55,16 +55,28 @@ export class DepartureService {
 
   async assignBoardingPoint(departureId: string, boardingPointId: string): Promise<void> {
     comprobarModificable(await this.cargar(departureId));
-    if (!(await this.repo.addBoardingPoint(departureId, boardingPointId))) {
-      throw new ConflictError("El punto de abordaje ya está asignado a la salida");
-    }
+    this.resolver(
+      await this.repo.addBoardingPoint(departureId, boardingPointId),
+      new ConflictError("El punto de abordaje ya está asignado a la salida"),
+    );
   }
 
   async removeBoardingPoint(departureId: string, boardingPointId: string): Promise<void> {
     comprobarModificable(await this.cargar(departureId));
-    if (!(await this.repo.removeBoardingPoint(departureId, boardingPointId))) {
-      throw new NotFoundError("El punto de abordaje no está asignado a la salida");
+    this.resolver(
+      await this.repo.removeBoardingPoint(departureId, boardingPointId),
+      new NotFoundError("El punto de abordaje no está asignado a la salida"),
+    );
+  }
+
+  // La comprobación previa da un error rápido; el repositorio vuelve a comprobar el estado con la
+  // salida bloqueada, así que una cancelación concurrente también termina en `422`.
+  private resolver(resultado: ResultadoPunto, sinCambio: Error) {
+    if (resultado === "cancelada") {
+      throw new BusinessRuleError("Una salida cancelada no puede modificarse");
     }
+    if (resultado === "inexistente") throw new NotFoundError("Salida no encontrada");
+    if (resultado === "sin_cambio") throw sinCambio;
   }
 
   /**

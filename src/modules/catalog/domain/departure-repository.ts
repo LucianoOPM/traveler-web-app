@@ -13,7 +13,14 @@ export interface DepartureRepository {
     cambios: Partial<DepartureContent> & { status?: DepartureStatus },
   ): Promise<Departure | null>;
   delete(id: string, esperado: DepartureStatus): Promise<boolean>;
-  /** `false` si el punto ya estaba asignado; lanza `NotFoundError` si el punto no existe. */
-  addBoardingPoint(departureId: string, boardingPointId: string): Promise<boolean>;
-  removeBoardingPoint(departureId: string, boardingPointId: string): Promise<boolean>;
+  /** Lanza `NotFoundError` si el punto no existe. */
+  addBoardingPoint(departureId: string, boardingPointId: string): Promise<ResultadoPunto>;
+  removeBoardingPoint(departureId: string, boardingPointId: string): Promise<ResultadoPunto>;
 }
+
+/**
+ * Resultado de asignar o quitar un punto. La salida se bloquea y su estado se comprueba dentro de
+ * la misma transacción que la escritura: `cancelada` significa que ya lo estaba al escribir;
+ * `sin_cambio`, que el punto ya estaba asignado (al asignar) o no lo estaba (al quitar).
+ */
+export type ResultadoPunto = "ok" | "sin_cambio" | "cancelada" | "inexistente";
