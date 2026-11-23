@@ -8,7 +8,7 @@ Proyecto Astro con PostgreSQL local (Docker Compose), Drizzle y autenticación d
 **Filosofía:** la solución más sencilla que resuelva la necesidad actual; sin infraestructura preventiva ni abstracciones sin uso real; no conservar complejidad solo porque ya existe. Seguridad, integridad de datos y los invariantes P0 no se negocian.
 
 ## Stack (confirmado)
-Astro full-stack + React islands · Bun · PostgreSQL + Drizzle (Docker solo para la BD) · Better Auth + Admin plugin · monolito modular · archivos privados en disco local.
+Astro full-stack + React islands + Astro Actions · Bun · PostgreSQL + Drizzle (Docker solo para la BD) · Better Auth + Admin plugin · monolito modular (servicios como clases con DI por constructor, sin contenedor) · archivos privados en disco local.
 
 ## Invariantes que nunca se rompen (P0)
 - **Una agencia, sin multitenencia**: nada de `organization_id` ni tablas de tenants.
@@ -35,5 +35,6 @@ Astro full-stack + React islands · Bun · PostgreSQL + Drizzle (Docker solo par
 - Al cambiar una regla confirmada: registrar ADR. Al cerrar un hito: actualizar `docs/00-estado.md`.
 - Un hito no se cierra con capturas: exige funcionalidad, prueba automatizada, migración, errores controlados y docs al día.
 - **Migraciones: siempre Drizzle** (`drizzle-kit generate`/`migrate`, solo hacia adelante, sin `down.sql`; ADR-023). Nunca `auth migrate` ni nada de Better Auth que cree o altere tablas; como mucho `auth generate` para obtener el esquema de Drizzle, que se revisa y se versiona.
+- Operaciones internas = **Astro Actions** con el permiso comprobado en cada handler (las Actions son públicas); API Routes solo ante una necesidad HTTP específica (ADR-025). Lógica de negocio en servicios y dominio, no en la Action (ADR-026).
 - No existe aún el script `demo:seed`; no afirmarlo.
 - Entorno del usuario: sin Python. Usar Node/Bun/bash. Commits en Conventional Commits. Responder en español.

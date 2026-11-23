@@ -29,6 +29,8 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-022 | CI en GitHub Actions: un workflow con el job `verificar` (formato, lint, tipos, pruebas y build) | Confirmada |
 | ADR-023 | Migraciones solo hacia adelante con `drizzle-kit` (sin `down.sql` ni rollback), copia antes de migrar y protección de la base de pruebas | Confirmada |
 | ADR-024 | Validación de entrada de la API con Zod desde `astro/zod` (sin dependencias nuevas): `z.strictObject` en escrituras, centavos con `z.int()`, errores solo con `path` y `message`; el helper llega con el primer endpoint de H2 (cierra PEN-10) | Confirmada |
+| ADR-025 | Astro Actions para las operaciones internas (validación Zod, permiso en cada handler, adaptador `AppError` → `ActionError`); API Routes solo ante necesidad HTTP específica | Confirmada |
+| ADR-026 | Servicios como clases con inyección por constructor (sin contenedor de DI); capas `domain`/`application`/`infrastructure` por módulo; transacciones desde el caso de uso | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -58,7 +60,7 @@ Consecuencias: typescript-eslint 8.73.0 admite TypeScript `<6.1.0`; verificar an
 Fecha: 2026-11-22
 
 ### ADR-019 — Errores tipados y respuestas uniformes
-Estado: confirmada (simplificada el 2026-11-22)
+Estado: confirmada (simplificada el 2026-11-22; su formato rige en API Routes, las Actions usan `ActionError`: ver ADR-025)
 Decisión: `src/lib/errors.ts` define `AppError` y siete subclases (400, 401, 403, 404, 409, 422, 500) con código `snake_case`. `src/middleware.ts` envuelve `next()` en un `try/catch` (en un middleware de Astro `next()` rechaza con el valor lanzado original) y, solo para rutas `/api/`, `toErrorResponse` (`src/lib/error-response.ts`) devuelve `{ error: { code, message } }`. `InternalError` y cualquier otro valor lanzado son inesperados: `500 internal_error` con mensaje genérico y una línea de registro con `errorName`, `method` y `path` (nunca mensaje, `cause`, query ni cabeceras; en desarrollo se imprime el error completo).
 Consecuencias: el `message` de un `AppError` es público y su autor responde de que sea seguro; los `404`/`405` de rutas `/api/` inexistentes siguen con el formato de Astro; no hay `requestId` ni biblioteca de logging; 429 queda reservado. Límite: un error lanzado tras empezar una respuesta en streaming no lo captura el middleware.
 Fecha: 2026-11-22
@@ -96,7 +98,7 @@ Consecuencias: **versión y relaciones.** Se usa la línea estable `latest` de n
 Fecha: 2026-11-22
 
 ### ADR-024 — Validación de entrada de la API con `astro/zod`
-Estado: confirmada (cierra PEN-10)
+Estado: confirmada (cierra PEN-10; dentro de Actions la validación la hace la propia Action, ver ADR-025)
 Contexto: los endpoints de H2 en adelante reciben cuerpos, parámetros y consultas del cliente y hay que validarlos en el servidor. La validación de la configuración de entorno (ADR-017) es propia y no cambia.
 Decisión:
 1. **Biblioteca:** Zod 4 importado siempre desde `astro/zod`, la reexportación oficial que usa Astro (hoy Zod 4.6.7). No se añade ninguna dependencia ni se importa `zod` directamente.
@@ -110,6 +112,34 @@ Decisión:
 5. **Helper diferido:** la función que convierte un error de Zod en `ValidationError` **no existe aún**. Se escribe y se prueba contra una ruta real junto con el primer endpoint de H2 (sin infraestructura sin consumidor).
 Alternativas consideradas: importar `zod` directamente (habría que fijar la versión y podrían convivir dos Zod); Valibot o ArkType (otra dependencia sin ventaja que justifique el costo en un monolito pequeño); validar a mano (más código y más riesgo de omisiones).
 Consecuencias: `astro/zod` sube con Astro: subir de versión mayor de Zod exige revisar este ADR. Si Astro dejara de reexportarlo habría que declarar `zod` como dependencia. `z.object` ignora campos desconocidos, por eso las escrituras usan `z.strictObject`.
+Fecha: 2026-11-22
+
+### ADR-025 — Astro Actions para las operaciones internas
+Estado: confirmada
+Contexto: H2 y los hitos siguientes necesitan operaciones de escritura desde el panel y los formularios. El ADR-024 las planteaba como rutas `/api/v1/` con un helper de validación; Astro Actions validan la entrada con Zod, dan tipos de extremo a extremo y evitan una API REST paralela.
+Decisión:
+1. **Mecanismo principal:** las operaciones internas y de formulario (CRUD de catálogo, reservas, pagos, revisión, abordaje…) son Astro Actions en `src/actions/` (un archivo por módulo, agrupadas en `src/actions/index.ts`). No hay una API REST paralela para lo que ya cubren.
+2. **Lecturas de página** (catálogo público, panel): SSR que llama a los servicios directamente en el servidor, sin Action ni API.
+3. **API Routes solo ante una necesidad HTTP específica:** servir archivos privados, validar QR desde clientes externos, integraciones, Better Auth (`/api/auth/*`, sin cambios) y `/api/health`.
+4. **Una Action** valida la entrada (`input` con Zod, ADR-024), verifica sesión y permiso, invoca el servicio y devuelve el resultado. No contiene reglas de negocio: esas viven en servicios y dominio, que siguen comprobando sus invariantes (la validación de forma de Zod no las sustituye).
+5. **Autorización:** las Actions son endpoints públicos (`/_actions/<nombre>`). El middleware resuelve la sesión también en `/_actions/` y la deja en `locals`, pero **cada handler comprueba el permiso**; ninguna Action se supone privada. Cada Action se prueba con peticiones directas: sin sesión (`401`) y con rol insuficiente (`403`).
+6. **Errores:** Astro convierte cualquier error no controlado de un handler en `INTERNAL_SERVER_ERROR` **con el mensaje del error original** (verificado en Astro 7.4.13, `callSafely`), lo que rompería el ADR-019. Toda Action pasa por un único adaptador `AppError` → `ActionError`: conserva el mensaje público (`400` `BAD_REQUEST`, `401` `UNAUTHORIZED`, `403` `FORBIDDEN`, `404` `NOT_FOUND`, `409` `CONFLICT`, `422` `UNPROCESSABLE_CONTENT`) y responde un mensaje genérico para `InternalError` y errores inesperados, con el mismo registro mínimo del ADR-019. Se escribe con la primera Action (paquetes) junto con la prueba de que un error inesperado no filtra su mensaje.
+7. **CSRF:** Astro comprueba `Origin` en peticiones de formulario (`security.checkOrigin`, activo por defecto, también al despachar Actions); las Actions JSON dependen del preflight CORS del navegador y de la cookie de sesión `SameSite=Lax` de Better Auth. No se desactiva `checkOrigin`.
+Alternativas consideradas: API REST `/api/v1/` (duplica validación y tipos); tRPC u otra librería RPC (dependencia nueva sin necesidad).
+Consecuencias: las respuestas de `/_actions/*` usan `ActionError`/`ActionInputError`, no el JSON `{ error: { code, message } }` del ADR-019, que se mantiene en las API Routes. `ActionError` solo admite sus códigos HTTP y descarta propiedades extra: el código estable de un `AppError` (p. ej. `capacity_exceeded`) no llega al cliente; si una pantalla debe ramificar por él, la Action devuelve el resultado como dato (se decide en esa issue). Los errores de entrada traen `fields` (solo el primer segmento del `path`) e `issues`; un campo desconocido en un `z.strictObject` produce un error sin `fields` (`path` vacío), y la interfaz muestra el mensaje general. El helper «Zod → `ValidationError`» del ADR-024 solo aplica a API Routes con cuerpo y no se escribe mientras no exista una. Subir de versión de Astro exige revisar este ADR.
+Fecha: 2026-11-22
+
+### ADR-026 — Servicios como clases con inyección por constructor
+Estado: confirmada
+Contexto: la lógica de negocio de H2 en adelante coordina repositorios, transacciones y reglas. Se quiere que sea comprobable con dependencias falsas sin añadir un framework.
+Decisión:
+1. **Capas por módulo** (`src/modules/<módulo>/`): `domain/` (reglas, invariantes, cálculos y transiciones; funciones puras cuando basten, y las interfaces de repositorio), `application/` (servicios: clases que implementan casos de uso, coordinan dependencias y gestionan transacciones), `infrastructure/` (repositorios Drizzle y adaptadores) y `container.ts` (factory que construye repositorios y servicios). Cada módulo conserva su `schema.ts` y `relations.ts` (ADR-023), compuestos en `src/db/schema.ts`. La estructura es orientativa: se respeta la organización ya existente (`identity`).
+2. **Inyección por constructor**, sin contenedor de DI, decoradores ni librerías (Inversify, NestJS). Se definen interfaces solo para dependencias que de verdad necesiten abstracción (sobre todo repositorios); no se crean interfaces, factories ni clases «por si acaso». Funciones donde la lógica sea simple y pura.
+3. **Sin conexión global en los servicios:** reciben sus dependencias por constructor. La conexión se crea en la composición a partir de la base elegida en el servidor, nunca desde el cliente (invariante de demo).
+4. **Transacciones:** las coordina el caso de uso. Una operación de negocio atómica es una sola transacción en la que pueden participar varios repositorios (construidos sobre el mismo ejecutor `db`/`tx`); no se abren transacciones independientes dentro de ella. Las restricciones de la base siguen siendo la última defensa. El mecanismo concreto para que un servicio obtenga repositorios ligados a `tx` se fija con el primer caso de uso que lo necesite; en H3 a H5 inventario, pagos y abordaje añaden la concurrencia adecuada (locks o actualizaciones condicionales, ver [05-business-rules](../02-diseno/05-business-rules.md)).
+5. **Pruebas:** reglas puras con pruebas unitarias; servicios con pruebas unitarias y repositorios falsos o en memoria; repositorios y transacciones con integración sobre PostgreSQL real (`traveltech_test`); permisos de las Actions con peticiones directas no autorizadas. Sin mocks excesivos ni abstracciones creadas solo para probar.
+Alternativas consideradas: módulos de funciones que importan la base (dependencia implícita, más difícil de sustituir en pruebas); un contenedor de DI (complejidad sin beneficio a este tamaño); Clean Architecture completa (capas innecesarias).
+Consecuencias: más archivos por módulo que con funciones sueltas; se compensa creando las carpetas solo cuando reciben su primer archivo, como ya hace la guía. Los repositorios no toman decisiones de permisos: la autorización vive en la Action.
 Fecha: 2026-11-22
 
 ## Recomendaciones adoptadas para arrancar
@@ -135,6 +165,8 @@ Fecha: 2026-11-22
 | Flyer con fecha incorrecta | Render desde datos de salida en cada seed |
 | Dependencia prematura de SaaS | Adaptadores y ejecución local |
 | Comportamiento de `drizzle-orm/bun-sql` con transacciones concurrentes y dos conexiones (privada/demo) no probado (ADR-015) | Pruebas de concurrencia de reserva en H3 y de aislamiento de bases en H7; alternativa probada: `pg` |
+| Una Action devuelve al cliente el mensaje de un error inesperado (comportamiento de Astro 7.4.13) | Adaptador único `AppError` → `ActionError` con mensaje genérico y prueba de que no filtra (ADR-025) |
+| Tratar una Action como privada por estar en el servidor | Cada handler comprueba el permiso y se prueba con peticiones directas sin sesión y con rol insuficiente (ADR-025) |
 
 ## Plantilla ADR
 ```md

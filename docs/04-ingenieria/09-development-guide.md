@@ -80,11 +80,14 @@ Drizzle: `src/db/schema.ts` (esquema), `src/db/conexion.ts` (conexión) y `drizz
 ## Estructura
 ```text
 src/
-  pages/        # Rutas Astro y endpoints
+  pages/        # Rutas Astro (SSR) y API Routes
+  actions/      # Astro Actions, un archivo por módulo (ADR-025)
   components/   # UI e islands React
   layouts/      # layouts Astro (AdminLayout: área privada)
   modules/      # un módulo por dominio (catalog, bookings, payments, tickets, operations,
-                # identity, marketing, demo, audit), creado al escribir su primer código
+                # identity, marketing, demo, audit), creado al escribir su primer código;
+                # con domain/, application/, infrastructure/, container.ts, schema.ts y
+                # relations.ts (ADR-026)
   db/           # esquema, conexión y migraciones
   lib/          # configuración, errores y utilidades
 scripts/        # arranque de producción
@@ -93,6 +96,16 @@ tests/          # unit, integration, fixtures y support
 docs/
 ```
 Las carpetas se crean cuando reciben su primer archivo. Los archivos privados nunca van en `public/` ([06-security-and-access](../02-diseno/06-security-and-access.md)).
+
+## Servicios, repositorios y Actions (ADR-025, ADR-026)
+- **Servicio:** clase en `application/` que implementa un caso de uso y recibe sus dependencias (repositorios, adaptadores) por constructor. Nunca importa la base de datos ni lee `process.env`.
+- **Repositorio:** clase en `infrastructure/` con Drizzle; su interfaz vive en `domain/` solo si el servicio la necesita para probarse con un repositorio falso. Sin lógica de permisos.
+- **Dominio:** funciones puras para reglas, cálculos y transiciones. Las invariantes se comprueban en el servicio aunque la Action ya valide la forma.
+- **Composición:** `container.ts` del módulo construye repositorios y servicios; es el único sitio que conoce las clases concretas.
+- **Action:** valida con `input` (Zod desde `astro/zod`, `z.strictObject` en escrituras; ADR-024), comprueba sesión y permiso **dentro del handler**, llama al servicio y devuelve el resultado. Pasa por el adaptador `AppError` → `ActionError`: sin él, Astro devolvería al cliente el mensaje de un error inesperado. El middleware resuelve la sesión en `/_actions/`, pero eso no sustituye la comprobación del handler.
+- **Transacciones:** las abre el servicio, no la Action ni el repositorio; varios repositorios comparten el mismo `db`/`tx`.
+- **Pruebas:** reglas puras (unitarias); servicios con repositorios falsos o en memoria (unitarias); repositorios y transacciones contra PostgreSQL real (integración); permisos de cada Action con peticiones directas sin sesión y con rol insuficiente.
+- **No crear** interfaces, factories ni clases «por si acaso»: se añaden cuando hay una dependencia que abstraer o un segundo uso real.
 
 ## Convención de commits
 Se recomienda [Conventional Commits](https://www.conventionalcommits.org/): `tipo(scope): descripción` con `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, etc. No hay hook ni validación en CI ([ADR-021](../05-decisiones/11-decisions-and-risks.md)).

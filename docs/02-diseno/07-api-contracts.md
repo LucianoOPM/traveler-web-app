@@ -2,15 +2,26 @@
 
 **Estado:** borrador orientativo; validar rutas, códigos y esquemas al implementar. JSON con validación de servidor con Zod desde `astro/zod` ([ADR-024](../05-decisiones/11-decisions-and-risks.md)).
 
-## Convenciones
+## Superficies de comunicación ([ADR-025](../05-decisiones/11-decisions-and-risks.md))
+| Superficie | Uso |
+|---|---|
+| **Astro Actions** (`/_actions/<módulo>.<acción>`) | Operaciones internas y de formulario: CRUD, reservas, pagos, revisión, abordaje. Validan con Zod, comprueban el permiso en su handler y responden un resultado tipado `{ data, error }`; sus errores son `ActionError`/`ActionInputError`, no el JSON de la sección siguiente. |
+| **SSR** | Lecturas de página (catálogo público, panel): consultan los servicios en el servidor. |
+| **API Routes** (`/api/…`) | Solo necesidades HTTP específicas: archivos privados, QR para clientes externos, integraciones, Better Auth y salud. Usan el formato de error de abajo. |
+
+Las Actions son endpoints públicos: cada una autoriza en su handler y se prueba con peticiones directas sin sesión (`401`) y con rol insuficiente (`403`). Un error inesperado nunca devuelve su mensaje original: pasa por un adaptador `AppError` → `ActionError` (ADR-025).
+
+## Convenciones (API Routes)
 - Prefijo `/api/v1/` para endpoints de negocio.
-- Validación de entrada (ADR-024): esquemas Zod de `astro/zod`; `z.strictObject()` en cuerpos de escritura (un campo desconocido es un `400`), importes en centavos con `z.int()`, `z.uuid()` para identificadores y `z.iso.datetime()` para instantes. Los `details` de un `400` salen solo de `path` y `message` de Zod, nunca del valor enviado. El helper que traduce los errores de Zod aún no existe: llega con el primer endpoint de negocio (H2).
+- Validación de entrada (ADR-024): esquemas Zod de `astro/zod`; `z.strictObject()` en cuerpos de escritura (un campo desconocido es un `400`), importes en centavos con `z.int()`, `z.uuid()` para identificadores y `z.iso.datetime()` para instantes. Los `details` de un `400` salen solo de `path` y `message` de Zod, nunca del valor enviado. Dentro de una Action la validación la hace su propio `input` (ADR-025); el helper que traduciría errores de Zod a `ValidationError` solo aplicaría a una API Route con cuerpo y no existe.
 - Identificadores opacos; nunca exponer tokens de sesión o hashes.
 - Respuestas de error con `{ "error": { "code": "...", "message": "..." } }` (implementado en la issue #6, [ADR-019](../05-decisiones/11-decisions-and-risks.md)). `code` es estable y en `snake_case`: cada clase de error tiene uno por defecto (`validation_error`, `unauthenticated`, `forbidden`, `not_found`, `conflict`, `business_rule_violation`, `internal_error`) y quien lanza el error puede usar uno específico (`capacity_exceeded`, `already_boarded`). Solo los errores de validación (`400`) añaden `"details": [{ "field": "...", "message": "..." }]`; solo se serializan `field` y `message`, y quien lanza el error es responsable de que no incluyan valores de entrada (el código no puede comprobarlo). Un error inesperado responde siempre `500` con `internal_error` y un mensaje genérico.
 - Códigos: `400` entrada inválida, `401` sin sesión, `403` sin permiso, `404` no visible/no existe, `409` conflicto de estado/capacidad, `422` regla de negocio, `429` exceso de solicitudes (reservado: aún no se implementa el límite de solicitudes). Hoy las rutas `/api/` inexistentes (`404`) o con método no permitido (`405`) siguen respondiendo con el formato de Astro, no con este JSON.
 - Para acciones financieras y de abordaje: idempotencia, auditoría y transacción.
 
-## Endpoints iniciales
+## Endpoints iniciales (propuesta original)
+Esta tabla es la propuesta original en forma de rutas REST. Con el [ADR-025](../05-decisiones/11-decisions-and-risks.md), las operaciones internas y de formulario (CRUD, reservas, pagos, revisión, abordaje) se implementan como Actions y las lecturas de página como SSR; permanecen como API Routes solo las que necesiten HTTP propio. Se confirma la superficie de cada operación al implementar su hito.
+
 | Método | Ruta | Uso | Actor |
 |---|---|---|---|
 | GET | `/api/v1/packages` | Catálogo | Público/según contexto |

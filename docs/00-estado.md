@@ -15,7 +15,7 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 |---|---|---|
 | H0 | Preparación y disciplina | **Cerrado** (README, CI, pruebas, errores, configuración, endpoint de salud) |
 | H1 | Plataforma y autenticación | **Cerrado** (Docker Compose con PostgreSQL #28, Drizzle con migraciones #29, pruebas con PostgreSQL en CI #30, esquema de identidad y migración `0000_identidad` #31, administrador inicial #43, handler y sesión #44, login, layout y rutas protegidas #45) |
-| H2 | Catálogo y capacidad | Pendiente |
+| H2 | Catálogo y capacidad | **Planificado** en seis issues secuenciales: esquema (#50), Actions de paquetes (#51), Actions de salidas (#52), pantallas administrativas (#53), catálogo público (#54) e imágenes (#55) |
 | H3 | Reservaciones | Pendiente |
 | H4 | Pagos y cuentas | Pendiente |
 | H5 | Boletos y operaciones | Pendiente |
@@ -24,4 +24,4 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 | H8 | Endurecimiento y entrega | Pendiente |
 
 ## Siguiente paso
-Empezar H2 (catálogo y capacidad, ver el [roadmap](01-producto/02-roadmap.md)). Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
+Empezar H2 por la issue #50 (ver el [roadmap](01-producto/02-roadmap.md) y las decisiones de arquitectura ADR-024, ADR-025 y ADR-026). Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
