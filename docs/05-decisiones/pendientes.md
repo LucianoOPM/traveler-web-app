@@ -5,8 +5,6 @@
 ## Negocio y pagos
 | ID | Pendiente | Bloquea | Referencias |
 |---|---|---|---|
-| PEN-01 | Política de anticipos, pagos parciales, devoluciones y sobrepagos | Hito H4 (liquidación), H5 (emisión de boletos) | [05-business-rules](../02-diseno/05-business-rules.md) (sección Pagos) |
-| PEN-02 | Definición explícita de contabilidad operacional: importes comprometidos / reportados / verificados / liberados | Servicio de asignación bancaria (H4) | [04-domain-and-database](../02-diseno/04-domain-and-database.md) (Nota de diseño) |
 | PEN-03 | Importes exactos y estados administrativos de las 3 cuentas ficticias | Seed (H6) | [08-demo-seed-and-content](../03-demo/08-demo-seed-and-content.md) |
 | PEN-16 | Edades que definen las categorías menor e infante y si se validan al reservar | Reservas (H3); en H2 las tarifas solo se etiquetan, sin validar edad | [05-business-rules](../02-diseno/05-business-rules.md) |
 
