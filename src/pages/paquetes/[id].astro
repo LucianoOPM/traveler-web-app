@@ -28,6 +28,9 @@ const zona = process.env.AGENCY_TIMEZONE!;
     <a href="/">← Paquetes</a>
   </p>
   <h1>{paquete.name}</h1>
+  {paquete.portadaUrl && (
+    <img src={paquete.portadaUrl} alt={`Portada de ${paquete.name}`} width="640" />
+  )}
   <p>{paquete.summary}</p>
   <p>{paquete.description}</p>
 

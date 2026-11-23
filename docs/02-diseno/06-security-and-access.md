@@ -34,6 +34,7 @@
 - Denegar **todos** los métodos de escritura para visitante en servicios y endpoints, incluyendo mutaciones indirectas, exportaciones que persisten y subidas.
 - Formularios de demo: validación local y aviso; ningún POST real.
 - Archivos privados fuera de `public/`; servir solo mediante controlador con autorización y cabeceras apropiadas.
+- **Imágenes de paquetes (#55):** la subida es una Action solo para `admin` (`401` sin sesión, `403` operador). El tipo se decide por la **firma real** del archivo (JPEG, PNG o WebP, completo y no truncado), nunca por la extensión ni por el tipo que declare el cliente; máximo 5 MiB; vacío o corrupto se rechaza. El nombre en disco es un UUID generado por el servidor y el almacén rechaza cualquier clave que salga de su raíz. La lectura es `GET /api/media/<uuid>`: resuelve el UUID a un registro (la ruta del disco no sale nunca) y solo es pública si el asset es la portada de un paquete **publicado**; el admin autenticado ve también borradores y archivados. Id inválido, inexistente o no autorizado dan el mismo `404`. Respuesta con `X-Content-Type-Options: nosniff`; `Cache-Control: public, max-age=0, must-revalidate` para portadas públicas y `no-store` para las que solo ve el admin (nada queda público en caché tras archivar un paquete).
 - En demo, usar nombres, imágenes, CLABE y comprobantes sintéticos claramente identificados; no utilizar cuentas reales aunque sean parcialmente enmascaradas.
 
 ## Defensa en profundidad

@@ -14,6 +14,14 @@ export class DrizzlePackageRepository implements PackageRepository {
     return paquete ?? null;
   }
 
+  async findByCover(assetId: string) {
+    const [paquete] = await this.db
+      .select()
+      .from(packages)
+      .where(eq(packages.coverAssetId, assetId));
+    return paquete ?? null;
+  }
+
   list() {
     return this.db.select().from(packages).orderBy(desc(packages.createdAt));
   }

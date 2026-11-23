@@ -24,9 +24,15 @@ const validarConfiguracion = {
   },
 };
 
+// Cuerpo máximo de una petición: la imagen más grande (5 MiB, `TAMANO_MAXIMO` de media) más el
+// sobrecosto de multipart/form-data. Astro limita las Actions a 1 MB por defecto y el adaptador de
+// Node a 1 GB; ambos se fijan aquí al mismo valor (subir una portada es lo único grande del sistema).
+const LIMITE_CUERPO = 6 * 1024 * 1024;
+
 export default defineConfig({
   output: "server",
-  adapter: node({ mode: "standalone" }),
+  adapter: node({ mode: "standalone", bodySizeLimit: LIMITE_CUERPO }),
+  security: { actionBodySizeLimit: LIMITE_CUERPO },
   integrations: [react(), validarConfiguracion],
   // `bun` (driver `bun-sql`) solo existe al ejecutar bajo Bun (`bun run start`); el build corre
   // bajo Node y no puede resolverlo, así que se deja como importación externa.

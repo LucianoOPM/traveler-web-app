@@ -5,6 +5,8 @@ import type { PackageContent } from "./package-rules";
 // estado: devuelven `null`/`false` si el paquete ya no estaba en `esperado` (cambio concurrente).
 export interface PackageRepository {
   find(id: string): Promise<Package | null>;
+  /** El paquete cuya portada es ese asset (a lo sumo uno). */
+  findByCover(assetId: string): Promise<Package | null>;
   /** Del más reciente al más antiguo. */
   list(): Promise<Package[]>;
   /** Solo `publicado`, del más reciente al más antiguo (catálogo público). */
@@ -13,7 +15,7 @@ export interface PackageRepository {
   update(
     id: string,
     esperado: PackageStatus,
-    cambios: Partial<PackageContent> & { status?: PackageStatus },
+    cambios: Partial<PackageContent> & { status?: PackageStatus; coverAssetId?: string },
   ): Promise<Package | null>;
   delete(id: string, esperado: PackageStatus): Promise<boolean>;
 }

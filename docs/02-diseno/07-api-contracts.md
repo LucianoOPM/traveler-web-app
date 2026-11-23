@@ -2,6 +2,8 @@
 
 **Estado:** borrador orientativo; validar rutas, códigos y esquemas al implementar. JSON con validación de servidor con Zod desde `astro/zod` ([ADR-024](../05-decisiones/11-decisions-and-risks.md)).
 
+> Ya implementado fuera de `/api/v1/` (H2, #55): `GET /api/media/<uuid>` sirve las portadas de paquetes (ver [06-security-and-access](06-security-and-access.md)); la subida es la Action `catalog.uploadCover`.
+
 ## Superficies de comunicación ([ADR-025](../05-decisiones/11-decisions-and-risks.md))
 | Superficie | Uso |
 |---|---|

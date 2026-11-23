@@ -23,6 +23,7 @@ const paquete = (n: number, status: PackageStatus): Package => ({
   summary: `Resumen ${n}`,
   description: `Descripción ${n}`,
   status,
+  coverAssetId: null,
   createdAt: new Date("2027-01-01T00:00:00Z"),
   updatedAt: new Date("2027-01-02T00:00:00Z"),
 });
@@ -45,6 +46,7 @@ const salida = (n: number, packageId: string, status: DepartureStatus, dias: num
 function servicio(paquetes: Package[], salidas: ReturnType<typeof salida>[]) {
   const paquetesRepo = {
     find: async (id: string) => paquetes.find((p) => p.id === id) ?? null,
+    findByCover: async (id: string) => paquetes.find((p) => p.coverAssetId === id) ?? null,
     listPublished: async () => paquetes.filter((p) => p.status === "publicado"),
   } as unknown as PackageRepository;
   const salidasRepo = {
@@ -100,7 +102,7 @@ describe("PublicCatalogService.list", () => {
     const p = paquete(1, "publicado");
     const { svc, consultadas } = servicio([p], [salida(1, p.id, "publicada", 10)]);
     const [uno] = await svc.list(AHORA);
-    expect(Object.keys(uno!).sort()).toEqual(["id", "name", "salidas", "summary"]);
+    expect(Object.keys(uno!).sort()).toEqual(["id", "name", "portadaUrl", "salidas", "summary"]);
     expect(Object.keys(uno!.salidas[0]!).sort()).toEqual([
       "adultPriceCents",
       "childPriceCents",
@@ -153,6 +155,7 @@ describe("PublicCatalogService.get", () => {
       "description",
       "id",
       "name",
+      "portadaUrl",
       "salidas",
       "summary",
     ]);
@@ -165,5 +168,38 @@ describe("PublicCatalogService.get", () => {
       "infantPriceCents",
       "startsAt",
     ]);
+  });
+});
+
+const PORTADA = idDe(700);
+
+describe("portada", () => {
+  const conPortada = (n: number, status: PackageStatus) => ({
+    ...paquete(n, status),
+    coverAssetId: PORTADA,
+  });
+
+  test("la lista y el detalle exponen la URL de la portada, o null si no hay", async () => {
+    const con = conPortada(1, "publicado");
+    const { svc } = servicio([con, paquete(2, "publicado")], []);
+    const lista = await svc.list(AHORA);
+    expect(lista.map((x) => x.portadaUrl)).toEqual([`/api/media/${PORTADA}`, null]);
+    expect((await svc.get(con.id, AHORA)).portadaUrl).toBe(`/api/media/${PORTADA}`);
+  });
+
+  test("visibilidad: pública si el paquete está publicado; en otro caso, solo el admin", async () => {
+    const publicado = servicio([conPortada(1, "publicado")], []).svc;
+    expect(await publicado.visibilidadPortada(PORTADA, false)).toBe("publica");
+    expect(await publicado.visibilidadPortada(PORTADA, true)).toBe("publica");
+    for (const estado of ["borrador", "archivado"] as const) {
+      const { svc } = servicio([conPortada(1, estado)], []);
+      expect(await svc.visibilidadPortada(PORTADA, false)).toBeNull();
+      expect(await svc.visibilidadPortada(PORTADA, true)).toBe("privada");
+    }
+  });
+
+  test("un asset que no es portada de ningún paquete no es visible ni para el admin", async () => {
+    const { svc } = servicio([paquete(1, "publicado")], []);
+    expect(await svc.visibilidadPortada(PORTADA, true)).toBeNull();
   });
 });

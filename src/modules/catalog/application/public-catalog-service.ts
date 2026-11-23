@@ -17,6 +17,8 @@ export type PaqueteEnLista = {
   id: string;
   name: string;
   summary: string;
+  /** URL del controlador de lectura (nunca la ruta del disco), o `null` sin portada. */
+  portadaUrl: string | null;
   salidas: SalidaPublica[];
 };
 export type SalidaDetalle = SalidaPublica & { availableSeats: number; boardingPoints: string[] };
@@ -33,6 +35,8 @@ const publica = (s: DepartureWithPoints): SalidaPublica => ({
   infantPriceCents: s.infantPriceCents,
 });
 
+const urlPortada = (id: string | null) => (id ? `/api/media/${id}` : null);
+
 export class PublicCatalogService {
   constructor(
     private readonly packages: PackageRepository,
@@ -48,6 +52,7 @@ export class PublicCatalogService {
         id: p.id,
         name: p.name,
         summary: p.summary,
+        portadaUrl: urlPortada(p.coverAssetId),
         salidas: (await this.proximas(p.id, ahora)).map(publica),
       })),
     );
@@ -63,6 +68,7 @@ export class PublicCatalogService {
       id: paquete.id,
       name: paquete.name,
       summary: paquete.summary,
+      portadaUrl: urlPortada(paquete.coverAssetId),
       description: paquete.description,
       salidas: await Promise.all(
         proximas.map(async (s) => ({
@@ -72,6 +78,20 @@ export class PublicCatalogService {
         })),
       ),
     };
+  }
+
+  /**
+   * Quién puede ver un asset: `publica` si es la portada de un paquete publicado; `privada` si el
+   * paquete no lo está pero quien pide es admin; `null` (404) en cualquier otro caso.
+   */
+  async visibilidadPortada(
+    assetId: string,
+    esAdmin: boolean,
+  ): Promise<"publica" | "privada" | null> {
+    const paquete = await this.packages.findByCover(assetId);
+    if (!paquete) return null;
+    if (paquete.status === "publicado") return "publica";
+    return esAdmin ? "privada" : null;
   }
 
   // `listByPackage` ya viene por fecha de inicio.

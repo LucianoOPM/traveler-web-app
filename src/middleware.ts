@@ -10,8 +10,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // rutas (p. ej. `/api/health`) no cargan Better Auth ni necesitan la base de datos.
     const ruta = context.url.pathname;
     const enAdmin = ruta === "/admin" || ruta.startsWith("/admin/");
-    // En `/_actions/` solo se resuelve la sesión: el permiso lo comprueba cada handler (ADR-025).
-    if (enAdmin || ruta === "/login" || ruta.startsWith("/_actions/")) {
+    // En `/_actions/` y `/api/media/` solo se resuelve la sesión: el permiso lo comprueba cada handler (ADR-025).
+    // `/api/media/` la necesita para que el admin vea las imágenes de borradores.
+    if (
+      enAdmin ||
+      ruta === "/login" ||
+      ruta.startsWith("/_actions/") ||
+      ruta.startsWith("/api/media/")
+    ) {
       const { auth, roles } = await import("./modules/identity/auth");
       const sesion = await auth.api.getSession({ headers: context.request.headers });
       context.locals.user = sesion?.user ?? null;
