@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { ConfigError, loadConfig } from "../../src/lib/config";
 
@@ -150,5 +151,25 @@ describe("loadConfig", () => {
     expect(error).toBeInstanceOf(ConfigError);
     const texto = JSON.stringify((error as ConfigError).issues) + (error as ConfigError).message;
     expect(texto).not.toContain("XYZ");
+  });
+});
+
+describe(".env.example", () => {
+  test("es una configuración válida (con un AUTH_SECRET real)", () => {
+    const env: Record<string, string> = {};
+    for (const linea of readFileSync(
+      path.resolve(import.meta.dir, "../../.env.example"),
+      "utf8",
+    ).split(/\r?\n/)) {
+      const i = linea.indexOf("=");
+      if (linea.trim() === "" || linea.startsWith("#") || i === -1) continue;
+      env[linea.slice(0, i)] = linea.slice(i + 1);
+    }
+    expect(() =>
+      loadConfig(
+        { ...env, AUTH_SECRET: base.AUTH_SECRET },
+        { projectRoot: path.resolve(import.meta.dir, "../..") },
+      ),
+    ).not.toThrow();
   });
 });
