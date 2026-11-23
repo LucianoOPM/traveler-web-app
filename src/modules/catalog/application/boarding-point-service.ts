@@ -13,6 +13,10 @@ const noEncontrado = () => new NotFoundError("Punto de abordaje no encontrado");
 export class BoardingPointService {
   constructor(private readonly repo: BoardingPointRepository) {}
 
+  list() {
+    return this.repo.list();
+  }
+
   async create(name: string): Promise<BoardingPoint> {
     return this.repo.create(nombreValido(name));
   }

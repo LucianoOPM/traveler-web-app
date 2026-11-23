@@ -43,6 +43,10 @@ function repositorioFalso(
   const repo: DepartureRepository = {
     find: async (id) => filas.get(id) ?? null,
     findPackageStatus: async () => estadoPaquete,
+    listByPackage: async (packageId) =>
+      [...filas.values()]
+        .filter((s) => s.packageId === packageId)
+        .map((s) => ({ ...s, boardingPointIds: [] })),
     create: async (datos) => {
       escrituras.push("create");
       const fila: Departure = {
@@ -280,6 +284,7 @@ describe("DepartureService", () => {
 describe("BoardingPointService", () => {
   const punto = { id: PUNTO, name: "Terminal Norte", createdAt: new Date() };
   const repo: BoardingPointRepository = {
+    list: async () => [punto],
     create: async (name) => ({ ...punto, name }),
     update: async (id, name) => (id === PUNTO ? { ...punto, name } : null),
     delete: async (id) => id === PUNTO,

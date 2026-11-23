@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "../../../db/schema";
 import { ConflictError } from "../../../lib/errors";
@@ -12,6 +12,10 @@ export class DrizzlePackageRepository implements PackageRepository {
   async find(id: string) {
     const [paquete] = await this.db.select().from(packages).where(eq(packages.id, id));
     return paquete ?? null;
+  }
+
+  list() {
+    return this.db.select().from(packages).orderBy(desc(packages.createdAt));
   }
 
   async create(datos: Parameters<PackageRepository["create"]>[0]) {

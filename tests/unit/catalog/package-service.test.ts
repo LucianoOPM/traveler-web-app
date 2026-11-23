@@ -24,6 +24,7 @@ function repositorioFalso(inicial: Partial<Package>[] = []) {
   const escrituras: string[] = [];
   const repo: PackageRepository = {
     find: async (id) => filas.get(id) ?? null,
+    list: async () => [...filas.values()],
     create: async (datos) => {
       escrituras.push("create");
       const fila: Package = {
@@ -54,6 +55,20 @@ function repositorioFalso(inicial: Partial<Package>[] = []) {
 }
 
 describe("PackageService", () => {
+  test("get devuelve el paquete y list lo que haya en el repositorio", async () => {
+    const { repo, id } = repositorioFalso([{}]);
+    const servicio = new PackageService(repo);
+    expect((await servicio.get(id)).id).toBe(id);
+    expect(await servicio.list()).toHaveLength(1);
+  });
+
+  test("get de un id inexistente da 404", async () => {
+    const { repo } = repositorioFalso();
+    await expect(
+      new PackageService(repo).get("5f1c1c0e-0000-4000-8000-0000000000ff"),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+
   test("crear deja summary y description vacíos por defecto", async () => {
     const { repo } = repositorioFalso();
     const creado = await new PackageService(repo).create({ name: "Cancún" });

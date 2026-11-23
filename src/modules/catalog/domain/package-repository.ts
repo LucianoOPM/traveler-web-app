@@ -5,6 +5,8 @@ import type { PackageContent } from "./package-rules";
 // estado: devuelven `null`/`false` si el paquete ya no estaba en `esperado` (cambio concurrente).
 export interface PackageRepository {
   find(id: string): Promise<Package | null>;
+  /** Del más reciente al más antiguo. */
+  list(): Promise<Package[]>;
   create(datos: PackageContent): Promise<Package>;
   update(
     id: string,

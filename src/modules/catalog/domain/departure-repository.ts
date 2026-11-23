@@ -1,11 +1,15 @@
 import type { Departure, DepartureStatus, PackageStatus } from "../types";
 import type { DepartureContent } from "./departure-rules";
 
+export type DepartureWithPoints = Departure & { boardingPointIds: string[] };
+
 // Sin lógica de permisos ni de negocio (ADR-026). `update` y `delete` son condicionales por
 // estado: devuelven `null`/`false` si la salida ya no estaba en `esperado` (cambio concurrente).
 export interface DepartureRepository {
   find(id: string): Promise<Departure | null>;
   findPackageStatus(packageId: string): Promise<PackageStatus | null>;
+  /** Salidas del paquete por fecha de inicio, cada una con los ids de sus puntos de abordaje. */
+  listByPackage(packageId: string): Promise<DepartureWithPoints[]>;
   create(datos: DepartureContent & { packageId: string }): Promise<Departure>;
   update(
     id: string,
