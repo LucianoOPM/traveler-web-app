@@ -31,7 +31,7 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-024 | Validación de entrada de la API con Zod desde `astro/zod` (sin dependencias nuevas): `z.strictObject` en escrituras, centavos con `z.int()`, errores solo con `path` y `message`; el helper llega con el primer endpoint de H2 (cierra PEN-10) | Confirmada |
 | ADR-025 | Astro Actions para las operaciones internas (validación Zod, permiso en cada handler, adaptador `AppError` → `ActionError`); API Routes solo ante necesidad HTTP específica | Confirmada |
 | ADR-026 | Servicios como clases con inyección por constructor (sin contenedor de DI); capas `domain`/`application`/`infrastructure` por módulo; transacciones desde el caso de uso | Confirmada |
-| ADR-027 | Interfaz con Tailwind CSS v4 (`@tailwindcss/vite`) y shadcn/ui (componentes propios en `src/components/ui/`, solo en islands React); decidido, pendiente de instalar | Confirmada |
+| ADR-027 | Interfaz con Tailwind CSS v4 (`@tailwindcss/vite`) y shadcn/ui (componentes propios en `src/components/ui/`, solo en islands React); implementado en #65 (con Base UI) | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -144,7 +144,7 @@ Consecuencias: más archivos por módulo que con funciones sueltas; se compensa 
 Fecha: 2026-11-22
 
 ### ADR-027 — Tailwind CSS v4 y shadcn/ui para la interfaz
-Estado: confirmada (decisión de adopción; **aún no instalado**, se implementa en una issue aparte)
+Estado: confirmada; implementada en #65 (2026-11-23)
 Contexto: hasta #53 las pantallas usan HTML semántico y un `<style>` mínimo por layout, sin sistema de estilos ni de componentes (ningún documento lo decidía). Lo que sigue (catálogo público, reservaciones, pagos, boletos y escáner de abordaje en móvil) necesita formularios, tablas, diálogos y una interfaz coherente y accesible; escribir y mantener ese CSS a mano no es la solución más sencilla.
 Decisión:
 1. **Tailwind CSS v4** con el plugin de Vite `@tailwindcss/vite` (la vía oficial de Astro: `astro add tailwind`), añadido a `vite.plugins` en `astro.config.mjs`. No se usa `@astrojs/tailwind` ni `tailwind.config.js` (son de Tailwind 3). Hoja única `src/styles/global.css` con `@import "tailwindcss"`, importada desde los layouts; el tema se define con variables CSS (`@theme`). Versiones verificadas el 2026-11-23: `tailwindcss` y `@tailwindcss/vite` 4.3.5 (su peer `vite` admite `^5.2 || ^6 || ^7 || ^8`; el proyecto usa Vite 8.3.8).
@@ -155,6 +155,7 @@ Decisión:
 6. **Alcance de este ADR:** solo decide. No instala nada ni migra pantallas. La issue de implementación instala y configura Tailwind y shadcn, migra login, layout administrativo y las pantallas de #53, y actualiza guía y estado. Conviene hacerla **antes del catálogo público (#54)** para no construirlo dos veces.
 Alternativas consideradas: seguir con CSS plano (no escala a formularios, tablas, diálogos y flyers, y obliga a reinventar accesibilidad); Bootstrap o DaisyUI (estilos opinados, más costoso de personalizar y sin componentes React accesibles); MUI, Mantine o Chakra (bibliotecas con runtime en React que no sirven en páginas Astro y pesan más); solo primitivas de Radix sin shadcn (más trabajo de estilo sin ventaja).
 Consecuencias: Tailwind 4 está pensado para Safari 16.4+, Chrome 111+ y Firefox 128+ y no funciona en navegadores anteriores (documentación de Tailwind): comprobar los dispositivos del personal antes de H5 (escáner de abordaje en móvil). Tailwind usa capas de CSS (`@layer`): los estilos sin capa, como un `<style>` de Astro, ganan a las utilidades, por eso el punto 4. Los componentes copiados no se actualizan solos: actualizarlos es una tarea manual (`shadcn add` y revisar el diff). Aumentan las dependencias y el código a mantener. La accesibilidad real de los componentes sigue sin probarse en navegador hasta PEN-13.
+Implementación (#65): se eligió **Base UI** como base de shadcn (`--base base`, estilo `base-nova`; ADR-027 permite Radix o Base UI). Versiones exactas: `tailwindcss` y `@tailwindcss/vite` 4.3.5, `shadcn` 4.23.0, `@base-ui/react` 1.9.0, `class-variance-authority` 0.7.1, `clsx` 2.1.1, `tailwind-merge` 3.7.1 y `tw-animate-css` 1.4.0. Se instalaron solo `button`, `input` y `textarea`; sin `lucide-react` ni fuente propia por no usarse. En lugar del alias `@/*` se usan los alias por carpeta ya existentes (`@components/*`, `@lib/*`…, #64), también en `components.json`; sin `baseUrl`. Login y las pantallas de #53 y #54 migradas sin `<style>`.
 Fecha: 2026-11-23
 
 ## Recomendaciones adoptadas para arrancar
