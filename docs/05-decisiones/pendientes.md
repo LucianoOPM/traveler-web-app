@@ -22,6 +22,5 @@
 |---|---|---|
 | PEN-08 | Estrategia final de hosting, correo, IA, almacenamiento cloud y procesos programados | Despliegue (posterior a la demo local) |
 | PEN-09 | Política de conservación de evidencias, registros de auditoría e invitaciones en producción | Despliegue |
-| PEN-10 | Biblioteca de validación de API (no fijada; `astro/zod` es el candidato natural) | Endpoints (H1+) — ver [07-api-contracts](../02-diseno/07-api-contracts.md) |
 | PEN-13 | Herramienta y alcance de las pruebas E2E, incluida la accesibilidad con axe (candidatos, sin instalar: Playwright + `@axe-core/playwright`; el soporte de Bun no se probó en Windows). Se decide con la primera interfaz real | Primera interfaz real / H8 |
 | PEN-12 | Exigir `https` en `APP_ORIGIN` cuando `NODE_ENV=production` (hoy se acepta http o https) | Despliegue y cookies seguras de sesión |

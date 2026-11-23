@@ -28,6 +28,7 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-021 | Conventional Commits solo como recomendación (sin hook ni validación en CI) | Confirmada |
 | ADR-022 | CI en GitHub Actions: un workflow con el job `verificar` (formato, lint, tipos, pruebas y build) | Confirmada |
 | ADR-023 | Migraciones solo hacia adelante con `drizzle-kit` (sin `down.sql` ni rollback), copia antes de migrar y protección de la base de pruebas | Confirmada |
+| ADR-024 | Validación de entrada de la API con Zod desde `astro/zod` (sin dependencias nuevas): `z.strictObject` en escrituras, centavos con `z.int()`, errores solo con `path` y `message`; el helper llega con el primer endpoint de H2 (cierra PEN-10) | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -47,7 +48,7 @@ Estado: confirmada (simplificada el 2026-11-22)
 Contexto: la aplicación no debe arrancar con configuración inválida ni filtrar secretos al cliente, a logs o al build (`import.meta.env.X` incrusta el valor del `.env` en `dist/`).
 Decisión: una función `comprobarConfiguracion(env)` en `src/lib/config.ts` (sin Zod, sin objeto `Config`, sin caché) llamada desde `astro.config.mjs` (dev y build) y `scripts/start.ts` (producción, antes de escuchar). Las variables se leen con `process.env`.
 Alternativas descartadas: `env.schema` de Astro — se probó el 2026-11-22: con `validateSecrets: true` un build sin `DATABASE_URL` o con `AUTH_SECRET` corto termina con código 0 y el servidor arranca sin validar, además de no expresar reglas entre variables; validar solo en el middleware (arrancaría con configuración inválida).
-Consecuencias: `bun run dev` y `bun run build` exigen un `.env` válido; `.env.example` falla a propósito hasta generar `AUTH_SECRET`. Esto no resuelve PEN-10 (validación de la API).
+Consecuencias: `bun run dev` y `bun run build` exigen un `.env` válido; `.env.example` falla a propósito hasta generar `AUTH_SECRET`. Esto no resuelve la validación de la API (PEN-10, resuelto en ADR-024).
 Fecha: 2026-11-22
 
 ### ADR-018 — Formato, lint y accesibilidad estática
@@ -92,6 +93,23 @@ Decisión:
 5. **Drizzle hace siempre las migraciones; Better Auth nunca** (regla del responsable, 2026-11-22): no se usa `auth migrate`; a lo sumo `auth generate` para obtener el esquema de Drizzle, que se revisa y se versiona.
 6. Driver de la aplicación `bun-sql`; `pg` es dependencia de desarrollo solo porque `drizzle-kit` la necesita.
 Consecuencias: **versión y relaciones.** Se usa la línea estable `latest` de npm (`drizzle-orm` 0.45.4 y `drizzle-kit` 0.31.11; no existe una etiqueta LTS y 1.0 sigue en beta/RC: `1.0.0-rc.6` el 2026-11-22). La documentación de 1.0 indica que **cambian las relaciones**: 0.45.x usa `relations()` por tabla (consultas relacionales v1: `fields`/`references`, pasadas a `drizzle()` junto con el esquema), mientras que 1.0 elimina esa API y usa `defineRelations` en un solo lugar (consultas relacionales v2: `r.one`/`r.many`, `from`/`to`, `through` para muchos a muchos), y además amplía `__drizzle_migrations` con `name` y `applied_at` y empareja las migraciones por nombre de carpeta. Para contemplarlo: el código declara relaciones solo en archivos `relations.ts` de cada módulo y la conexión sigue siendo el único punto que las pasa a `drizzle()` (`src/db/conexion.ts`); así subir a 1.0 reescribe esos archivos y revisa `rollback.ts` (depende de `created_at`/`hash` y del layout `NNNN_<nombre>.sql` + `.down.sql`), sin tocar el resto. Subir de versión exige un ADR nuevo y repetir la validación. Además, `bun-sql` tiene limitaciones documentadas por Drizzle (`json`/`jsonb` hacen un `JSON.stringify` extra, `timestamp` con `mode: "string"` puede fallar y los `array` tienen problemas): evitar esos tipos o probarlos antes de usarlos.
+Fecha: 2026-11-22
+
+### ADR-024 — Validación de entrada de la API con `astro/zod`
+Estado: confirmada (cierra PEN-10)
+Contexto: los endpoints de H2 en adelante reciben cuerpos, parámetros y consultas del cliente y hay que validarlos en el servidor. La validación de la configuración de entorno (ADR-017) es propia y no cambia.
+Decisión:
+1. **Biblioteca:** Zod 4 importado siempre desde `astro/zod`, la reexportación oficial que usa Astro (hoy Zod 4.6.7). No se añade ninguna dependencia ni se importa `zod` directamente.
+2. **Convenciones de esquema:**
+   - Cuerpos de escritura con `z.strictObject()`: un campo desconocido (`role`, `database`, `demoMode`…) se rechaza, no se ignora en silencio.
+   - Importes en centavos con `z.int()` (nunca `z.number()`: los floats no son dinero).
+   - Identificadores con `z.uuid()`.
+   - Instantes con `z.iso.datetime()` (UTC).
+3. **Errores:** un fallo de Zod se traduce a `ValidationError` (ADR-019) con `details: [{ field, message }]`, donde `field` es el `path` unido por puntos. Nunca se serializan `input` ni valores enviados por el cliente. Los mensajes por defecto de Zod no incluyen lo recibido (comprobado con 4.6.7: solo tipos y opciones esperadas); los mensajes personalizados son responsabilidad de quien los escribe, como manda el ADR-019.
+4. **Idioma:** base `z.locales.es()` aplicada una sola vez (`z.config` es global), con mensajes propios donde la redacción automática no sirva (p. ej. «Inválido dirección de correo electrónico»).
+5. **Helper diferido:** la función que convierte un error de Zod en `ValidationError` **no existe aún**. Se escribe y se prueba contra una ruta real junto con el primer endpoint de H2 (sin infraestructura sin consumidor).
+Alternativas consideradas: importar `zod` directamente (habría que fijar la versión y podrían convivir dos Zod); Valibot o ArkType (otra dependencia sin ventaja que justifique el costo en un monolito pequeño); validar a mano (más código y más riesgo de omisiones).
+Consecuencias: `astro/zod` sube con Astro: subir de versión mayor de Zod exige revisar este ADR. Si Astro dejara de reexportarlo habría que declarar `zod` como dependencia. `z.object` ignora campos desconocidos, por eso las escrituras usan `z.strictObject`.
 Fecha: 2026-11-22
 
 ## Recomendaciones adoptadas para arrancar
