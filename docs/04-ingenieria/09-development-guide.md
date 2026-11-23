@@ -67,7 +67,7 @@ Drizzle: `src/db/schema.ts` (esquema), `src/db/conexion.ts` (conexión) y `drizz
 ## Scripts
 | Script | Qué hace |
 |---|---|
-| `bun run dev` | `astro dev` en `http://localhost:4321/` |
+| `bun run dev` | `astro dev` bajo Bun (`bunx --bun`, necesario para `bun-sql`) en `http://localhost:4321/` |
 | `bun run build` | `astro build` (no comprueba tipos) |
 | `bun run start` / `preview` | `bun scripts/start.ts`: valida la configuración, sale con código 1 sin escuchar si es inválida y, si no, lanza `dist/server/entry.mjs`. El puerto se cambia con `PORT`. No es `astro preview` (corre con Node, que no carga `.env`) |
 | `bun run check` | `astro check` (tipos; no exige `.env`) |
@@ -96,8 +96,14 @@ Las carpetas se crean cuando reciben su primer archivo. Los archivos privados nu
 ## Convención de commits
 Se recomienda [Conventional Commits](https://www.conventionalcommits.org/): `tipo(scope): descripción` con `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, etc. No hay hook ni validación en CI ([ADR-021](../05-decisiones/11-decisions-and-risks.md)).
 
+## Autenticación del personal
+- **Handler:** `src/pages/api/auth/[...all].ts` delega en Better Auth (`/api/auth/*`, fuera de `/api/v1/`). Registro público cerrado: el personal lo crea `bun run admin:create` (o un admin).
+- **Sesión:** el middleware (`src/middleware.ts`) la resuelve solo en `/admin` y subrutas y la deja en `Astro.locals.user` y `Astro.locals.session` (tipos en `src/env.d.ts`); en las demás rutas quedan sin definir. `auth` se importa de forma dinámica para que `/api/health` no cargue Better Auth ni necesite la base de datos.
+- **Límite de intentos:** Better Auth lo activa por defecto solo con `NODE_ENV=production` (3 intentos por 10 s en `/sign-in` y `/sign-up`, por IP, en memoria del proceso). El handler descarta el `x-forwarded-for` del cliente y lo sustituye por `clientAddress`, que Astro toma del socket (solo lee `x-forwarded-for` si se configura `security.allowedDomains`; no se configura). Sin IP, Better Auth usa un cubo compartido por ruta y sigue limitando. **Detrás de un proxy inverso**, `clientAddress` sería la IP del proxy y todos compartirían cubo: revisarlo al decidir el despliegue ([PEN-08](../05-decisiones/pendientes.md)).
+- **Runtime:** el driver `bun-sql` solo existe bajo Bun. `bun run dev` ejecuta `astro dev` con `bunx --bun`; `build` corre bajo Node y deja `bun` como importación externa (`astro.config.mjs`); `bun run start` ejecuta el build bajo Bun.
+
 ## Salud local
-`GET /api/health` responde `200` con `{ "status": "ok" }` y `Cache-Control: no-store`, sin efectos secundarios y sin exponer configuración. «Ok» significa que el servidor arrancó con configuración válida; no comprueba la base de datos (aún no hay). `HEAD` responde `200`; los demás métodos responden `404` con la página por defecto de Astro.
+`GET /api/health` responde `200` con `{ "status": "ok" }` y `Cache-Control: no-store`, sin efectos secundarios y sin exponer configuración. «Ok» significa que el servidor arrancó con configuración válida; no comprueba la base de datos (aún no hay). `HEAD` responde `200`; los demás métodos responden `404` con la página por defecto de Astro. No carga Better Auth ni resuelve sesión; su prueba usa una base inalcanzable (puerto cerrado) y sigue respondiendo 200.
 
 ## Errores tipados ([ADR-019](../05-decisiones/11-decisions-and-risks.md))
 - **Lanzar:** en cualquier código de un endpoint `/api/`, `throw new ConflictError("No hay capacidad disponible", { code: "capacity_exceeded" })`. Clases en `src/lib/errors.ts`: `ValidationError` 400, `UnauthenticatedError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409, `BusinessRuleError` 422 e `InternalError` 500. `src/middleware.ts` los convierte con `toErrorResponse`; no hay que envolver cada endpoint.

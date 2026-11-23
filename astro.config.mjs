@@ -28,4 +28,7 @@ export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
   integrations: [react(), validarConfiguracion],
+  // `bun` (driver `bun-sql`) solo existe al ejecutar bajo Bun (`bun run start`); el build corre
+  // bajo Node y no puede resolverlo, así que se deja como importación externa.
+  vite: { build: { rolldownOptions: { external: ["bun"] } } },
 });
