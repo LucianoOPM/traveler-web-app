@@ -1,7 +1,7 @@
 # 09 — Guía de desarrollo local
 
 ## Requisitos
-Docker con Compose, Git, Bun y Node.js. Versiones validadas juntas el 2026-11-22 (ver [ADR-015](../05-decisiones/11-decisions-and-risks.md)); se fijan **exactas** (sin `^` ni `~`) en `package.json` y se respaldan con `bun.lock`:
+Hoy hacen falta **Git, Bun y Node.js**; Docker con Compose y PostgreSQL se necesitarán desde H1 y todavía no se usan. Versiones validadas juntas el 2026-11-22 (ver [ADR-015](../05-decisiones/11-decisions-and-risks.md)); se fijan **exactas** (sin `^` ni `~`) en `package.json` y se respaldan con `bun.lock`:
 
 | Componente | Versión | Notas |
 |---|---|---|
@@ -31,6 +31,8 @@ Docker con Compose, Git, Bun y Node.js. Versiones validadas juntas el 2026-11-22
 | globals | 17.14.0 | devDependency; globales de Node/navegador (no viene con ESLint) |
 | PostgreSQL | 17.10 (`postgres:17-alpine` al validar) | Solo en Docker; fijar la etiqueta exacta al crear el `docker-compose` |
 
+**Aún no instalados:** `drizzle-orm`, `drizzle-kit`, `pg`, `auth`, `better-auth`, `@better-auth/drizzle-adapter` y PostgreSQL **no están en `package.json` ni en el entorno**; sus filas son las versiones validadas (ADR-015) para cuando entren en H1. Hoy el proyecto solo instala Astro, React, TypeScript y las herramientas de formato, lint y pruebas.
+
 Detalles verificados al validar: al crear la instancia de Drizzle hay que pasar `{ schema }` (el esquema generado con `auth generate`) o el adaptador de Better Auth falla con "Drizzle schema mismatch"; el handler se monta en `src/pages/api/auth/[...all].ts`.
 
 ## Variables propuestas
@@ -57,15 +59,20 @@ No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `
 
 Los errores nombran la variable y la regla, **nunca el valor**. En servidor se lee con `getConfig()` (`src/lib/config.runtime.ts`, usa `getSecret()` de `astro:env/server`; no puede importarse desde código de cliente). **No leer secretos con `import.meta.env`**: Astro incrusta su valor dentro de `dist/` (verificado). Se valida al iniciar `astro dev`, `astro build` y `bun run start`; `astro check` no valida, para poder comprobar tipos sin secretos. Consecuencia: **`bun run dev` y `bun run build` exigen un `.env` válido o variables de entorno reales** (en CI hay que definir valores ficticios válidos).
 
-## Inicio recomendado (comandos orientativos)
+## Inicio rápido (comandos que existen hoy)
 ```bash
-bun install
-docker compose up -d
-bun run db:migrate
-bun run admin:create
-bun run dev
+git clone https://github.com/LucianoOPM/traveler-web-app.git
+cd traveler-web-app
+bun install                 # o `bun install --frozen-lockfile` (reproducible, como la CI)
+bun run test:health         # prueba de salud local: NO necesita .env
 ```
-Los scripts `db:migrate`, `admin:create` y `demo:seed` se crearán en H1/H6; **no se afirma que existan todavía**.
+Para `bun run dev`, `bun run build` o `bun run start` hace falta una configuración válida: `cp .env.example .env` (en PowerShell, `Copy-Item .env.example .env`) y **reemplazar `AUTH_SECRET`**, cuyo valor de ejemplo es un marcador que se rechaza. Un valor válido (mínimo 32 caracteres): `bun -e "console.log(require('node:crypto').randomBytes(48).toString('base64'))"`. Es el mismo recorrido que el [README](../../README.md) raíz.
+
+### Pendiente: todavía NO existe
+Estos pasos aparecían como orientativos y **no funcionan hoy**; no ejecutarlos ni darlos por hechos:
+- `docker compose up -d`: no hay `docker-compose` ni base de datos todavía (llegan en H1; ver la fila de PostgreSQL en la tabla de versiones).
+- `bun run db:migrate` y `bun run admin:create`: se crearán en H1.
+- `bun run demo:seed`: se creará en H6.
 
 ### Scripts que sí existen (issue #2)
 | Script | Comando | Notas |
@@ -79,9 +86,9 @@ Los scripts `db:migrate`, `admin:create` y `demo:seed` se crearán en H1/H6; **n
 | `bun run format:check` | `prettier . --check` | Sale con 1 si algún archivo no cumple; no modifica nada |
 | `bun run lint` | `eslint . --max-warnings 0` | ESLint sobre `.astro`, `.ts`, `.tsx` y `.mjs`; cualquier advertencia es un fallo |
 | `bun run prepare` | `bun scripts/instalar-hooks.ts` | Lo ejecuta `bun install` solo: configura `core.hooksPath=.githooks` (hook de commits). Idempotente; fuera de un repositorio Git no hace nada y con un `core.hooksPath` ajeno avisa sin pisarlo (ver «Convención de commits») |
-| `bun run test` | `bun run test:unit && bun run test:integration` | Todas las pruebas (84: 55 unitarias y 29 de integración). No requieren `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado); un fallo unitario corta la ejecución antes de la integración |
-| `bun run test:unit` | `bun test ./tests/unit` | Pruebas unitarias (55): `loadConfig`, jerarquía de errores, conversión a respuestas, la utilidad de procesos de prueba (`tests/support/servidor.ts`) y el validador de commits; ~0,8 s |
-| `bun run test:integration` | `bun test ./tests/integration` | Pruebas de integración (29): las 9 de los errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad en dos servidores, producción y desarrollo), las 6 de salud y las 14 del hook de commits (repositorios Git temporales reales); ~14 s |
+| `bun run test` | `bun run test:unit && bun run test:integration` | Todas las pruebas (99: 64 unitarias y 35 de integración). No requieren `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado); un fallo unitario corta la ejecución antes de la integración |
+| `bun run test:unit` | `bun test ./tests/unit` | Pruebas unitarias (64): `loadConfig`, jerarquía de errores, conversión a respuestas, la utilidad de procesos de prueba (`tests/support/servidor.ts`), el validador de commits y la validación de commits de un rango; ~0,8 s |
+| `bun run test:integration` | `bun test ./tests/integration` | Pruebas de integración (35): las 9 de los errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad en dos servidores, producción y desarrollo), las 6 de salud, las 14 del hook de commits y las 6 del CLI de validación de commits de un PR (ambas con repositorios Git temporales reales); ~17 s |
 | `bun run test:health` | `bun test ./tests/integration/health.test.ts` | **Prueba de salud local** (6 pruebas, ~4 s): construye la app real, la arranca con `bun run start` y comprueba `GET /api/health` y el fallo con configuración inválida. No necesita `.env`, PostgreSQL ni servicios; genera el `dist/` de la raíz y sobrescribe el existente; no ejecutarla a la vez que otra prueba de integración ni mientras corre `bun run start` desde otra rama (podría leer archivos a medio escribir; con el mismo código no se reprodujo) |
 
 Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bun.lock`; `dev` (con Node y con `bun --bun`) y `astro preview` respondían 200 (antes de la validación de la issue #4; hoy `preview` es `scripts/start.ts`) y el HTML incluye el marcado de la island React (`astro-island`); la hidratación en un navegador no se comprobó. Desde la issue #4, `bun run dev` requiere antes `cp .env.example .env` y reemplazar `AUTH_SECRET`; sin eso falla a propósito. Hoy los únicos pasos del bloque anterior que funcionan son `bun install`, esa copia del `.env` y `bun run dev`.
@@ -126,7 +133,7 @@ Estado (issue #3): las carpetas de `src/modules/*`, `src/db`, `src/lib`, `script
 - **Qué significa "ok":** que el servidor arrancó con una configuración válida: se valida al arrancar (`bun run start`) y de nuevo en la primera petición, tras la cual `getConfig()` guarda en caché la configuración válida (un fallo no se guarda, así que se reintenta). En producción el entorno del proceso no cambia desde fuera, por lo que no hay un "ok" obsoleto; en `astro dev`, editar el `.env` reinicia el servidor y `/api/health` pasa a `500` (verificado). No comprueba la base de datos, que aún no existe; si en H1 la salud la incluirá o habrá un endpoint de *readiness* aparte, **no está decidido**.
 - **Con configuración inválida nunca responde "ok":** `bun run start` sale con código 1 sin escuchar; si alguien lanza `dist/server/entry.mjs` directamente (no soportado), `/api/health` responde `500 internal_error` genérico.
 - **Otros métodos:** `HEAD` responde `200`; `POST`, `OPTIONS`, `PUT`, `DELETE` y `PATCH` responden `404` con la página HTML por defecto de Astro (no `405` ni el JSON uniforme de ADR-019). Esa página identifica el framework (no su versión ni la configuración) y cada petición deja un aviso `[WARN] No API Route handler exists for the method` en el registro: limitación conocida.
-- **Cómo ejecutarla:** `bun run test:health` (autocontenida, ver la tabla de scripts). Es la prueba de salud local del criterio de salida de H0, que no se cierra hasta completar las demás issues del hito.
+- **Cómo ejecutarla:** `bun run test:health` (autocontenida, ver la tabla de scripts). Es la prueba de salud local del criterio de salida de H0, que está completo en `dev` con todas sus issues; el cierre formal queda pendiente de integrar a `main` (ver [00-estado](../00-estado.md)).
 
 ## Errores tipados (issue #6, [ADR-019](../05-decisiones/11-decisions-and-risks.md))
 - **Lanzar:** en cualquier código de un endpoint `/api/`, `throw new ConflictError("No hay capacidad disponible", { code: "capacity_exceeded" })` (clases en `src/lib/errors.ts`: `ValidationError` 400, `UnauthenticatedError` 401, `ForbiddenError` 403, `NotFoundError` 404, `ConflictError` 409, `BusinessRuleError` 422 e `InternalError` 500). El código debe estar en `snake_case` o el constructor falla con `TypeError`. `src/middleware.ts` los convierte con `toErrorResponse` (`src/lib/error-response.ts`); no hay que envolver cada endpoint.
