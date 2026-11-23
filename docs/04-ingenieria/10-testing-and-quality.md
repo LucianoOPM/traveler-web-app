@@ -31,7 +31,7 @@ El runner oficial es `bun test` (integrado en Bun, TypeScript nativo, API compat
 | Script | Qué ejecuta | Hoy |
 |---|---|---|
 | `bun run test:unit` | `./tests/unit` | Configuración, errores y protección de la base de pruebas |
-| `bun run test:integration` | `./tests/integration` | Errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad), salud, protección de la base de pruebas contra PostgreSQL real (se omite sin `TEST_DATABASE_URL`) |
+| `bun run test:integration` | `./tests/integration` | Errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad), salud, protección de la base de pruebas y esquema de identidad (migración aplicada sobre `traveltech_test` recreado) contra PostgreSQL real (se omiten sin `TEST_DATABASE_URL`) |
 | `bun run test:health` | `./tests/integration/health.test.ts` | Prueba de salud local de la app real (`GET /api/health` y fallo con configuración inválida) |
 | `bun run test` | las dos anteriores, en ese orden | Si falla la unitaria no se ejecuta la integración |
 

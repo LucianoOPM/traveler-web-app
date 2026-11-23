@@ -7,7 +7,7 @@ Notas que no se ven en `package.json`:
 - **Node:** `^22.23.4 || ^24.16.0 || >=26.3.0` (campo `engines`); la CI usa `24.22.0`. `bun run <script>` ejecuta las CLI de Astro con Node.
 - **TypeScript 6.0.3:** no subir a 6.1+ sin comprobar `typescript-eslint` (admite `<6.1.0`) y `@astrojs/check`.
 - **Drizzle 0.45.4:** no usar 1.0 RC. `pg` es devDependency solo porque `drizzle-kit` la necesita; la aplicación usa `drizzle-orm/bun-sql`.
-- **Better Auth 1.7.27** (`auth`, `better-auth`, `@better-auth/drizzle-adapter`): se instalan en la issue #31. Con Drizzle hay que pasar `{ schema }` al crear la instancia o el adaptador falla con «Drizzle schema mismatch».
+- **Better Auth 1.7.27** (`auth`, `better-auth`, `@better-auth/drizzle-adapter`): instaladas con versión exacta (`auth` solo en desarrollo). La instancia está en `src/modules/identity/auth.ts` (UUID, Admin plugin con roles `admin` y `operator`, `defaultRole: "operator"`, registro cerrado; el handler aún no está montado). Con Drizzle hay que pasar `{ schema }` al crear la instancia o el adaptador falla con «Drizzle schema mismatch».
 - **PostgreSQL 17.10** (`postgres:17.10-alpine`): solo en Docker.
 
 ## Variables de entorno
@@ -61,7 +61,7 @@ Drizzle: `src/db/schema.ts` (esquema), `src/db/conexion.ts` (conexión) y `drizz
 - `bun run db:migrate` / `bun run db:migrate:demo`: `drizzle-kit migrate` sobre `DATABASE_URL` (privada) o, con `BASE=demo`, sobre `DEMO_DATABASE_URL`.
 - **Antes de migrar** una base con datos que la migración pueda afectar, hacer una copia: `docker compose exec postgres pg_dump -U traveltech traveltech_private > copia.sql`.
 - No editar una migración ya aplicada; corregir con una migración nueva.
-- **Better Auth no migra:** sus tablas se migran con Drizzle. Nunca `auth migrate`; `auth generate` solo sirve para obtener el esquema de Drizzle, que se revisa, se versiona y se migra con `drizzle-kit`.
+- **Better Auth no migra:** sus tablas se migran con Drizzle. Nunca `auth migrate`; `auth generate` solo sirve para obtener el esquema de Drizzle, que se revisa, se versiona y se migra con `drizzle-kit`. Para regenerar el esquema de identidad (`DATABASE_URL` puede ser ficticia; no se conecta): `bunx --bun auth generate --adapter drizzle --dialect pg --config src/modules/identity/auth.ts --output src/modules/identity/schema.ts --yes`. Después hay que repetir a mano dos correcciones: fechas con `{ withTimezone: true }` (la CLI genera `timestamp` sin zona) y relaciones fuera de `schema.ts`, en `relations.ts`. Validar con `bunx --bun auth check schema --config src/modules/identity/auth.ts`.
 - **Pruebas con PostgreSQL:** `docker compose up -d --wait`, descomentar `TEST_DATABASE_URL` en `.env`. `tests/support/base-de-pruebas.ts` comprueba `current_database()` antes de cualquier operación destructiva y recrea el esquema de `traveltech_test` cuando hace falta.
 
 ## Scripts
