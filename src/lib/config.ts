@@ -78,6 +78,11 @@ export function comprobarConfiguracion(
     );
   }
 
+  // Opcional (24 h por defecto): si está presente, tiene que ser válida. Solo afecta reservas nuevas.
+  if (env.BOOKING_HOLD_HOURS !== undefined && !/^[1-9]\d*$/.test(env.BOOKING_HOLD_HOURS)) {
+    problemas.push("BOOKING_HOLD_HOURS: debe ser un entero positivo (horas)");
+  }
+
   if (presente("PRIVATE_STORAGE_DIR") && presente("DEMO_STORAGE_DIR")) {
     const privado = path.resolve(raiz, env.PRIVATE_STORAGE_DIR!);
     const demoDir = path.resolve(raiz, env.DEMO_STORAGE_DIR!);

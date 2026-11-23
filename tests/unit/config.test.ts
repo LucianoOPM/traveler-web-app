@@ -56,6 +56,17 @@ describe("comprobarConfiguracion", () => {
     expect(problemasCon({ AGENCY_TIMEZONE: "UTC" })).toEqual([]);
   });
 
+  test("BOOKING_HOLD_HOURS es opcional y, si existe, un entero positivo", () => {
+    for (const horas of [undefined, "24", "1", "72"]) {
+      expect(problemasCon({ BOOKING_HOLD_HOURS: horas })).toEqual([]);
+    }
+    for (const horas of ["", "0", "-1", "1.5", "24h", " 24"]) {
+      expect(problemasCon({ BOOKING_HOLD_HOURS: horas })).toEqual([
+        "BOOKING_HOLD_HOURS: debe ser un entero positivo (horas)",
+      ]);
+    }
+  });
+
   test("los archivos privados no pueden estar en public/ ni anidarse entre sí", () => {
     expect(problemasCon({ PRIVATE_STORAGE_DIR: "./public/privado" })).toHaveLength(1);
     expect(problemasCon({ DEMO_STORAGE_DIR: "./storage/private/demo" })).toHaveLength(1);
