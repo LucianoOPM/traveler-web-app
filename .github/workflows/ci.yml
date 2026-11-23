@@ -18,6 +18,22 @@ jobs:
     name: verificar
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TEST_DATABASE_URL: postgresql://traveltech:ci-sin-secreto@localhost:5432/traveltech_test
+    services:
+      postgres:
+        image: postgres:17.10-alpine
+        env:
+          POSTGRES_USER: traveltech
+          POSTGRES_PASSWORD: ci-sin-secreto
+        ports:
+          - 5432:5432
+        # -h 127.0.0.1 fuerza TCP: el servidor temporal de la inicialización solo escucha por socket.
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U traveltech"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2 # versión de Bun: campo packageManager
@@ -28,6 +44,8 @@ jobs:
       - run: bun run format:check
       - run: bun run lint
       - run: bun run check
+      - name: crear bases de PostgreSQL
+        run: psql "postgresql://traveltech:ci-sin-secreto@localhost:5432/postgres" -f docker/postgres/init/01-crear-bases.sql
       - run: bun run test
       - name: build
         run: bun run build

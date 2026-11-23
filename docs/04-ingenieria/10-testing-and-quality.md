@@ -31,16 +31,17 @@ El runner oficial es `bun test` (integrado en Bun, TypeScript nativo, API compat
 | Script | Qué ejecuta | Hoy |
 |---|---|---|
 | `bun run test:unit` | `./tests/unit` | Configuración, errores y protección de la base de pruebas |
-| `bun run test:integration` | `./tests/integration` | Errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad), salud |
+| `bun run test:integration` | `./tests/integration` | Errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad), salud, protección de la base de pruebas contra PostgreSQL real (se omite sin `TEST_DATABASE_URL`) |
 | `bun run test:health` | `./tests/integration/health.test.ts` | Prueba de salud local de la app real (`GET /api/health` y fallo con configuración inválida) |
 | `bun run test` | las dos anteriores, en ese orden | Si falla la unitaria no se ejecuta la integración |
 
-Ninguna prueba actual requiere `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado y sin PostgreSQL). Por defecto `bun test` ejecuta los archivos **en serie**, y las pruebas de un archivo una tras otra; `--parallel` (archivos en procesos) y `--concurrent` (pruebas dentro de un archivo) son opcionales y cambian lo que debe prever la estrategia de bases de datos de abajo. Según la documentación de Bun, `--isolate` aísla el estado global y los registros de módulos entre archivos, de modo que sin él todos los archivos los comparten (p. ej., un pool de conexiones creado como singleton se compartiría), y `test.concurrent` o `--randomize` cambian el orden de ejecución. `tests/e2e/` solo contiene un `.gitkeep`.
+En local ninguna prueba requiere `.env`, PostgreSQL ni servicios externos: las de PostgreSQL se omiten sin `TEST_DATABASE_URL` (verificado en un clon limpio con el entorno saneado y sin PostgreSQL). Por defecto `bun test` ejecuta los archivos **en serie**, y las pruebas de un archivo una tras otra; `--parallel` (archivos en procesos) y `--concurrent` (pruebas dentro de un archivo) son opcionales y cambian lo que debe prever la estrategia de bases de datos de abajo. Según la documentación de Bun, `--isolate` aísla el estado global y los registros de módulos entre archivos, de modo que sin él todos los archivos los comparten (p. ej., un pool de conexiones creado como singleton se compartiría), y `test.concurrent` o `--randomize` cambian el orden de ejecución. `tests/e2e/` solo contiene un `.gitkeep`.
 
 ### Integración con PostgreSQL
 - Base `traveltech_test` independiente de la privada y la demo (Docker Compose, issue #28) y variable `TEST_DATABASE_URL`, solo de pruebas (fuera de las variables de la aplicación).
 - **Protección obligatoria:** `asegurarBaseDePruebas` (`tests/support/base-de-pruebas.ts`) comprueba `select current_database()` en la propia conexión y rechaza cualquier base que no sea `traveltech_test`; se llama antes de cualquier limpieza o recreación. Las bases privada y demo nunca se tocan en pruebas.
-- Las pruebas con PostgreSQL se omiten sin `TEST_DATABASE_URL` en local; en CI fallarán si falta (issue #30).
+- Las pruebas con PostgreSQL se omiten sin `TEST_DATABASE_URL` en local (`describe.skipIf(!url && !process.env.CI)`, sin envoltorio compartido); en CI (`CI=true`) nunca se omiten y fallan con error explícito si falta.
+- **CI:** el job `verificar` levanta un servicio `postgres:17.10-alpine`, crea las tres bases con `docker/postgres/init/01-crear-bases.sql` (el mismo script de Compose) antes de `bun run test` y define `TEST_DATABASE_URL` hacia `traveltech_test`. La prueba `tests/integration/base-de-pruebas.test.ts` comprueba con conexiones reales que `asegurarBaseDePruebas` acepta `traveltech_test` y rechaza `traveltech_private` y `traveltech_demo`.
 - Aislamiento: recrear el esquema de `traveltech_test` (`recrearEsquema`) al empezar un archivo de pruebas; las pruebas de concurrencia (INV-01, BRD-01) usan conexiones separadas con transacciones reales.
 
 ### E2E (pendiente, [PEN-13](../05-decisiones/pendientes.md))

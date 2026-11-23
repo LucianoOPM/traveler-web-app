@@ -14,7 +14,7 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 | Hito | Descripción | Estado |
 |---|---|---|
 | H0 | Preparación y disciplina | **Cerrado** (README, CI, pruebas, errores, configuración, endpoint de salud) |
-| H1 | Plataforma y autenticación | **En curso.** Hecho: Docker Compose con PostgreSQL (#28) y Drizzle con migraciones (#29). Siguen #30 (CI con PostgreSQL) y #31 (identidad con Better Auth) |
+| H1 | Plataforma y autenticación | **En curso.** Hecho: Docker Compose con PostgreSQL (#28) Drizzle con migraciones (#29) y pruebas con PostgreSQL en CI (#30). Sigue #31 (identidad con Better Auth) |
 | H2 | Catálogo y capacidad | Pendiente |
 | H3 | Reservaciones | Pendiente |
 | H4 | Pagos y cuentas | Pendiente |
@@ -24,4 +24,4 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 | H8 | Endurecimiento y entrega | Pendiente |
 
 ## Siguiente paso
-Terminar la simplificación y volver al desarrollo: issues #30 y #31. Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
+Terminar la simplificación y volver al desarrollo: issue #31. Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
