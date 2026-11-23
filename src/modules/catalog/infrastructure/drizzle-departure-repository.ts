@@ -2,7 +2,10 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "@db/schema";
 import { NotFoundError } from "@lib/errors";
-import { pasajerosRetenidos } from "@modules/bookings/infrastructure/reservas-retenidas";
+import {
+  expirarVencidas,
+  pasajerosRetenidos,
+} from "@modules/bookings/infrastructure/reservas-retenidas";
 import type { DepartureRepository, ResultadoPunto } from "../domain/departure-repository";
 import { departureBoardingPoints, departures, packages } from "../schema";
 import { esErrorPg } from "./errores-pg";
@@ -58,7 +61,10 @@ export class DrizzleDepartureRepository implements DepartureRepository {
     cambios: Parameters<DepartureRepository["update"]>[2],
     comprobar: Parameters<DepartureRepository["update"]>[3],
   ) {
-    return this.db.transaction(async (tx) => {
+    // Un rechazo de `comprobar` no se lanza dentro de la transacción: así el commit conserva las
+    // expiraciones materializadas (expiración perezosa) y el rechazo se lanza después del commit.
+    let rechazo: unknown;
+    const salida = await this.db.transaction(async (tx) => {
       // Si otro cambio de estado llegó antes, la fila ya no cumple el filtro tras esperar el bloqueo.
       const [actual] = await tx
         .select()
@@ -66,14 +72,23 @@ export class DrizzleDepartureRepository implements DepartureRepository {
         .where(and(eq(departures.id, id), eq(departures.status, esperado)))
         .for("update");
       if (!actual) return null;
-      comprobar(actual, await pasajerosRetenidos(tx, id, new Date()));
-      const [salida] = await tx
+      const ahora = new Date();
+      await expirarVencidas(tx, id, ahora);
+      try {
+        comprobar(actual, await pasajerosRetenidos(tx, id, ahora));
+      } catch (error) {
+        rechazo = error;
+        return null;
+      }
+      const [actualizada] = await tx
         .update(departures)
         .set(cambios)
         .where(eq(departures.id, id))
         .returning();
-      return salida ?? null;
+      return actualizada ?? null;
     });
+    if (rechazo) throw rechazo;
+    return salida;
   }
 
   retenidos(id: string, ahora: Date) {

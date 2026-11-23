@@ -171,6 +171,7 @@ describe.skipIf(!base && !process.env.CI)("BookingService sobre PostgreSQL real"
     const roto = new BookingService(
       {
         findByTokenHash: real.findByTokenHash.bind(real),
+        listarPorSalida: real.listarPorSalida.bind(real),
         transaction: (fn) =>
           real.transaction((tx) =>
             fn({

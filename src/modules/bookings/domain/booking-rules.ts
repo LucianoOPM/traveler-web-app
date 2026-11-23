@@ -1,7 +1,7 @@
 import { BusinessRuleError, ConflictError } from "@lib/errors";
 import type { Departure, PackageStatus } from "@modules/catalog/types";
 import { CATEGORIAS_TARIFA } from "../schema";
-import type { Booking } from "../types";
+import type { Booking, BookingStatus } from "../types";
 
 /**
  * Única definición de «esta reserva ocupa lugares» (reserva, disponibilidad y reactivación la
@@ -88,4 +88,70 @@ export function comprobarCapacidad(retenidos: number, nuevos: number, capacidad:
       code: "capacity_exceeded",
     });
   }
+}
+
+// Ciclo de vida de la reserva (#70). Reglas puras; el servicio las aplica con la salida bloqueada.
+export const MAX_MOTIVO = 500;
+
+/** El motivo de una acción administrativa: obligatorio (sin solo espacios) y de hasta 500 caracteres. */
+export function comprobarMotivo(texto: string): string {
+  const motivo = typeof texto === "string" ? texto.trim() : "";
+  if (motivo === "") throw new BusinessRuleError("El motivo es obligatorio");
+  if (motivo.length > MAX_MOTIVO) {
+    throw new BusinessRuleError(`El motivo admite hasta ${MAX_MOTIVO} caracteres`);
+  }
+  return motivo;
+}
+
+/** Estado visible: una `pendiente` vencida es `expirada` aunque aún no se haya materializado. */
+export const estadoEfectivo = (
+  reserva: Pick<Booking, "status" | "expiresAt">,
+  ahora: Date,
+): BookingStatus =>
+  reserva.status === "pendiente" && reserva.expiresAt <= ahora ? "expirada" : reserva.status;
+
+/** Cancelar: desde `pendiente` o `en_revision`; repetida sobre `cancelada` es idempotente; `expirada` da 409. */
+export function decidirCancelacion(
+  reserva: Pick<Booking, "status" | "expiresAt">,
+  ahora: Date,
+): "cancelar" | "repetida" {
+  const estado = estadoEfectivo(reserva, ahora);
+  if (estado === "cancelada") return "repetida";
+  if (estado === "expirada") {
+    throw new ConflictError("Una reserva expirada no puede cancelarse; reactívala primero");
+  }
+  return "cancelar";
+}
+
+/** Reactivar: desde `expirada` o `cancelada`; si ya está `pendiente` o `en_revision` es idempotente. */
+export function decidirReactivacion(
+  reserva: Pick<Booking, "status" | "expiresAt">,
+  ahora: Date,
+): "reactivar" | "repetida" {
+  const estado = estadoEfectivo(reserva, ahora);
+  return estado === "expirada" || estado === "cancelada" ? "reactivar" : "repetida";
+}
+
+/** Regenerar el enlace: solo reservas vigentes (las mismas que retienen inventario). */
+export function comprobarTokenRegenerable(
+  reserva: Pick<Booking, "status" | "expiresAt">,
+  ahora: Date,
+) {
+  if (!retieneInventario(reserva, ahora)) {
+    throw new ConflictError("Solo una reserva vigente puede regenerar su enlace");
+  }
+}
+
+export type AccionDeReserva = "cancelar" | "reactivar" | "regenerar";
+
+/** Acciones que la pantalla ofrece; coinciden con lo que las reglas anteriores aceptan. */
+export function accionesPermitidas(
+  reserva: Pick<Booking, "status" | "expiresAt">,
+  ahora: Date,
+): AccionDeReserva[] {
+  const estado = estadoEfectivo(reserva, ahora);
+  const acciones: AccionDeReserva[] = [];
+  if (estado === "pendiente" || estado === "en_revision") acciones.push("cancelar", "regenerar");
+  if (estado === "expirada" || estado === "cancelada") acciones.push("reactivar");
+  return acciones;
 }
