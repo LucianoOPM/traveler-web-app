@@ -122,24 +122,16 @@ Verificado desde un clon limpio: `bun install --frozen-lockfile` no modifica `bu
 src/
   pages/              # Rutas Astro y endpoints
   components/         # UI e islands React
-  modules/
-    catalog/           # schema, domain, service, repository
-    bookings/
-    payments/
-    tickets/
-    operations/
-    marketing/
-    identity/
-    demo/
-    audit/
+  modules/            # se crea uno por dominio (catalog, bookings, payments, tickets,
+                      # operations, identity, marketing, demo, audit) al escribir su primer código
   db/                 # conexiones, migraciones, seed
   lib/                # permisos, errores, storage, utilidades
 scripts/              # administración local
 storage/              # archivos privados ignorados por Git
-tests/                # unit, integration, e2e
+tests/                # unit, integration
 docs/
 ```
-Estado (issue #3): las carpetas de `src/modules/*`, `src/db`, `src/lib`, `scripts/` y `tests/*` existen y se versionan con un `.gitkeep` (Git no guarda carpetas vacías); se borrará el `.gitkeep` de cada una cuando reciba su primer archivo (`src/db/` ya lo recibió en la issue #29). Los módulos aún no tienen subcarpetas internas (`schema`, `domain`...): se crean con el primer código.
+Las carpetas se crean cuando reciben su primer archivo (sin `.gitkeep` ni carpetas vacías).
 
 `storage/` **no existe en el repositorio**: `.gitignore` ignora `/storage/` (solo la carpeta de la raíz; una carpeta `src/lib/storage/` con código sí se versiona). Se prevé que la aplicación cree `storage/private` y `storage/demo` en tiempo de ejecución según `PRIVATE_STORAGE_DIR` y `DEMO_STORAGE_DIR`; esa decisión se confirmará en la issue #4. Las rutas configurables deben quedar bajo `storage/` o fuera del repositorio: cualquier otra ruta dentro del repo no está protegida por `.gitignore`. `.gitignore` también excluye `.env` y `.env.*` (salvo `.env.example`), `node_modules/`, `dist/`, `.astro/` y `*.log`. Los archivos privados nunca van en `public/` (ver [06-security-and-access](../02-diseno/06-security-and-access.md)).
 

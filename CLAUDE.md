@@ -3,7 +3,9 @@
 Plataforma para **una sola agencia de viajes**: catálogo, salidas, reservaciones, pagos SPEI/efectivo, boletos QR, abordaje y marketing (flyers). Dos experiencias: **privada** (admin/operador) y **demo de visitantes** (solo lectura sobre datos ficticios).
 
 ## Estado
-Hay documentación en `docs/` y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; `README.md` de arranque; CI en `.github/workflows/ci.yml` con los checks `verificar` y `commits`, obligatorios en `dev` y `main`; H0 cerrado, ya integrado en `main`). H1 en curso: hay PostgreSQL local con Docker Compose (`docker-compose.yml`, tres bases vacías). Hay Drizzle con `db:generate`, `db:migrate`, `db:migrate:demo` y `db:rollback` (solo `traveltech_test`; `down.sql` por migración, ADR-023), pero aún no hay lógica de negocio, esquema, migraciones reales ni autenticación. Consultar `docs/00-estado.md` antes de asumir que algo existe. Los ejemplos de API/SQL/rutas son propuestas.
+Proyecto Astro mínimo con PostgreSQL local (Docker Compose) y Drizzle, sin lógica de negocio, esquema ni autenticación todavía. **Consultar `docs/00-estado.md` antes de asumir que algo existe.** Los ejemplos de API/SQL/rutas son propuestas.
+
+**Filosofía:** la solución más sencilla que resuelva la necesidad actual; sin infraestructura preventiva ni abstracciones sin uso real; no conservar complejidad solo porque ya existe. Seguridad, integridad de datos y los invariantes P0 no se negocian.
 
 ## Stack (confirmado)
 Astro full-stack + React islands · Bun · PostgreSQL + Drizzle (Docker solo para la BD) · Better Auth + Admin plugin · monolito modular · archivos privados en disco local.
@@ -33,5 +35,5 @@ Astro full-stack + React islands · Bun · PostgreSQL + Drizzle (Docker solo par
 - Al cambiar una regla confirmada: registrar ADR. Al cerrar un hito: actualizar `docs/00-estado.md`.
 - Un hito no se cierra con capturas: exige funcionalidad, prueba automatizada, migración, errores controlados y docs al día.
 - **Migraciones: siempre Drizzle** (`drizzle-kit generate`/`migrate`, con `down.sql` por migración; ADR-023). Nunca `auth migrate` ni nada de Better Auth que cree o altere tablas; como mucho `auth generate` para obtener el esquema de Drizzle, que se revisa y se versiona.
-- No existen aún los scripts `admin:create`, `demo:seed`; no afirmarlo. `db:migrate` existe pero aún no hay migraciones reales.
+- No existen aún los scripts `admin:create`, `demo:seed`; no afirmarlo.
 - Entorno del usuario: sin Python. Usar Node/Bun/bash. Commits en Conventional Commits. Responder en español.
