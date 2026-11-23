@@ -28,11 +28,11 @@ bun run test:health
 1. Copiar la plantilla:
    - Bash: `cp .env.example .env`
    - PowerShell: `Copy-Item .env.example .env`
-2. **Reemplazar `AUTH_SECRET`**: el valor de ejemplo es un marcador y se rechaza. Genere uno de al menos 32 caracteres:
+2. **Reemplazar `BETTER_AUTH_SECRET`**: el valor de ejemplo es un marcador y se rechaza. Genere uno de al menos 32 caracteres:
    ```bash
    bun -e "console.log(require('node:crypto').randomBytes(48).toString('base64'))"
    ```
-   Pegue el resultado como valor de `AUTH_SECRET` en `.env`.
+   Pegue el resultado como valor de `BETTER_AUTH_SECRET` en `.env`.
 3. `bun run dev` sirve en `http://localhost:4321/`.
 
 `.env` está ignorado por Git: no lo suba ni comparta secretos.

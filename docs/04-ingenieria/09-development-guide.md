@@ -15,8 +15,8 @@ Notas que no se ven en `package.json`:
 NODE_ENV=development
 DATABASE_URL=postgresql://traveltech:CHANGE_ME@localhost:5432/traveltech_private
 DEMO_DATABASE_URL=postgresql://traveltech:CHANGE_ME@localhost:5432/traveltech_demo
-AUTH_SECRET=GENERATE_A_LONG_RANDOM_SECRET
-APP_ORIGIN=http://localhost:4321
+BETTER_AUTH_SECRET=GENERATE_A_LONG_RANDOM_SECRET
+BETTER_AUTH_URL=http://localhost:4321
 PRIVATE_STORAGE_DIR=./storage/private
 DEMO_STORAGE_DIR=./storage/demo
 AGENCY_TIMEZONE=America/Mexico_City
@@ -25,13 +25,13 @@ POSTGRES_PASSWORD=CHANGE_ME
 # Opcional (pruebas con PostgreSQL), comentada en .env.example
 # TEST_DATABASE_URL=postgresql://traveltech:CHANGE_ME@localhost:5432/traveltech_test
 ```
-No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` **no arranca tal cual**: hay que copiarlo a `.env` y reemplazar `AUTH_SECRET`.
+No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` **no arranca tal cual**: hay que copiarlo a `.env` y reemplazar `BETTER_AUTH_SECRET`.
 
 `comprobarConfiguracion(env)` en `src/lib/config.ts` ([ADR-017](../05-decisiones/11-decisions-and-risks.md)) se ejecuta al iniciar `astro dev`, `astro build` y `bun run start` (no en `astro check`). Reglas:
 - Todas las variables de arriba (menos `NODE_ENV`, `POSTGRES_PASSWORD` y `TEST_DATABASE_URL`) son obligatorias.
 - `DATABASE_URL` y `DEMO_DATABASE_URL`: URL `postgres://` o `postgresql://` con **nombres de base distintos**.
-- `AUTH_SECRET`: mínimo 32 caracteres y no un valor de ejemplo.
-- `APP_ORIGIN`: URL http(s).
+- `BETTER_AUTH_SECRET`: mínimo 32 caracteres y no un valor de ejemplo.
+- `BETTER_AUTH_URL`: URL http(s).
 - `AGENCY_TIMEZONE`: zona IANA exacta o `UTC`; se rechazan offsets y abreviaturas porque PostgreSQL interpreta los offsets con el signo invertido.
 - `PRIVATE_STORAGE_DIR` / `DEMO_STORAGE_DIR`: nunca dentro de `public/`; distintas y no anidadas entre sí.
 
@@ -44,7 +44,7 @@ cd traveler-web-app
 bun install                 # o `bun install --frozen-lockfile` (como la CI)
 bun run test:health         # prueba de salud local: NO necesita .env
 ```
-Para `bun run dev`, `build` o `start`: `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`) y reemplazar `AUTH_SECRET`. Un valor válido: `bun -e "console.log(require('node:crypto').randomBytes(48).toString('base64'))"`.
+Para `bun run dev`, `build` o `start`: `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`) y reemplazar `BETTER_AUTH_SECRET`. Un valor válido: `bun -e "console.log(require('node:crypto').randomBytes(48).toString('base64'))"`.
 
 **Administrador inicial:** con las migraciones aplicadas, `bun run admin:create` ejecuta `auth create-admin` (Better Auth) sobre la base privada (`DATABASE_URL`): pide correo y contraseña de forma interactiva y guarda la contraseña solo como hash. **No pases `--password`**: queda en el historial y en la lista de procesos. Si ya hay usuarios pide confirmación. Todavía **no existe** `bun run demo:seed` (H6).
 

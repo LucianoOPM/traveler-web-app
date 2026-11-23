@@ -21,8 +21,8 @@ const entornoValido = {
   // Puerto cerrado a propósito: `/api/health` no debe depender de la base de datos.
   DATABASE_URL: `postgresql://traveltech:${SENTINELA}-db@localhost:1/traveltech_private`,
   DEMO_DATABASE_URL: `postgresql://traveltech:${SENTINELA}-db@localhost:1/traveltech_demo`,
-  AUTH_SECRET: `${SENTINELA}-k8Jd-2mQ9xLp-7vRt-4nWz-1bYc`,
-  APP_ORIGIN: "http://localhost:4321",
+  BETTER_AUTH_SECRET: `${SENTINELA}-k8Jd-2mQ9xLp-7vRt-4nWz-1bYc`,
+  BETTER_AUTH_URL: "http://localhost:4321",
   PRIVATE_STORAGE_DIR: "./storage/private",
   DEMO_STORAGE_DIR: "./storage/demo",
   AGENCY_TIMEZONE: "America/Mexico_City",
@@ -112,13 +112,15 @@ describe("GET /api/health con configuración válida (bun run start)", () => {
 });
 
 describe("configuración inválida", () => {
-  test("start con AUTH_SECRET corto sale con código 1 sin escuchar", async () => {
+  test("start con BETTER_AUTH_SECRET corto sale con código 1 sin escuchar", async () => {
     const puerto = await puertoLibre();
-    const proceso = iniciar(["bun", "scripts/start.ts"], puerto, { AUTH_SECRET: SECRETO_INVALIDO });
+    const proceso = iniciar(["bun", "scripts/start.ts"], puerto, {
+      BETTER_AUTH_SECRET: SECRETO_INVALIDO,
+    });
     const codigo = await conLimite(proceso.salio, 30_000);
     expect(codigo).toBe(1);
     const salida = proceso.salida();
-    expect(salida).toContain("AUTH_SECRET:");
+    expect(salida).toContain("BETTER_AUTH_SECRET:");
     expect(salida).not.toContain("Server listening");
     expect(salida).not.toContain(SENTINELA);
     await expect(fetch(`http://127.0.0.1:${puerto}/api/health`)).rejects.toBeDefined();

@@ -40,8 +40,8 @@ describe.skipIf(!base && !process.env.CI)("bun run admin:create", () => {
         env: {
           ...process.env,
           DATABASE_URL: process.env.TEST_DATABASE_URL,
-          AUTH_SECRET: "ci-auth-secret-ficticio-solo-para-ci-0123456789",
-          APP_ORIGIN: "http://localhost:4321",
+          BETTER_AUTH_SECRET: "ci-auth-secret-ficticio-solo-para-ci-0123456789",
+          BETTER_AUTH_URL: "http://localhost:4321",
         },
       },
     );

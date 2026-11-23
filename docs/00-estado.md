@@ -1,9 +1,9 @@
 # 00 — Estado del proyecto
 
-**Última actualización:** 2026-11-22 (H0 y H1 cerrados)
+**Última actualización:** 2026-11-23 (H0 y H1 cerrados; H2 en curso: esquema del catálogo #50)
 
 ## Resumen
-Proyecto Astro mínimo con configuración validada al arrancar (`src/lib/config.ts`), errores tipados (`src/lib/errors.ts`), `GET /api/health`, CI (`verificar`), PostgreSQL local con Docker Compose (tres bases vacías: privada, demo y pruebas) y Drizzle con scripts `db:*`. Hay esquema de identidad con Better Auth (`src/modules/identity/`) y la migración `0000_identidad`; el handler `/api/auth/*` está montado, hay pantalla `/login`, layout administrativo y `/admin` protegida (acceso solo de personal); aún no hay lógica de negocio ni contenido funcional en el panel. `bun run admin:create` crea el administrador inicial; `demo:seed` no existe todavía (H6).
+Proyecto Astro mínimo con configuración validada al arrancar (`src/lib/config.ts`), errores tipados (`src/lib/errors.ts`), `GET /api/health`, CI (`verificar`), PostgreSQL local con Docker Compose (tres bases vacías: privada, demo y pruebas) y Drizzle con scripts `db:*`. Hay esquema de identidad con Better Auth (`src/modules/identity/`) y la migración `0000_identidad`; el esquema del catálogo (`packages`, `departures`, `boarding_points`, `departure_boarding_points`, módulo `src/modules/catalog/`) y su migración `0001_catalogo` (#50); el handler `/api/auth/*` está montado, hay pantalla `/login`, layout administrativo y `/admin` protegida (acceso solo de personal); aún no hay lógica de negocio ni contenido funcional en el panel. `bun run admin:create` crea el administrador inicial; `demo:seed` no existe todavía (H6).
 
 ## Filosofía (2026-11-22)
 La solución más sencilla que resuelva la necesidad actual. Sin infraestructura preventiva ni procesos burocráticos. No se conserva complejidad solo porque ya está hecha. Simplificación integral hecha (documentación, errores, configuración, commits, Drizzle sin rollback, CI y ADR); detalle en los ADR 017 a 023.
@@ -15,7 +15,7 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 |---|---|---|
 | H0 | Preparación y disciplina | **Cerrado** (README, CI, pruebas, errores, configuración, endpoint de salud) |
 | H1 | Plataforma y autenticación | **Cerrado** (Docker Compose con PostgreSQL #28, Drizzle con migraciones #29, pruebas con PostgreSQL en CI #30, esquema de identidad y migración `0000_identidad` #31, administrador inicial #43, handler y sesión #44, login, layout y rutas protegidas #45) |
-| H2 | Catálogo y capacidad | **Planificado** en seis issues secuenciales: esquema (#50), Actions de paquetes (#51), Actions de salidas (#52), pantallas administrativas (#53), catálogo público (#54) e imágenes (#55) |
+| H2 | Catálogo y capacidad | **En curso**. Seis issues secuenciales: esquema (#50, hecho: migración `0001_catalogo` y pruebas), Actions de paquetes (#51), Actions de salidas (#52), pantallas administrativas (#53), catálogo público (#54) e imágenes (#55) |
 | H3 | Reservaciones | Pendiente |
 | H4 | Pagos y cuentas | Pendiente |
 | H5 | Boletos y operaciones | Pendiente |
@@ -24,4 +24,4 @@ Criterios de salida en [02-roadmap](01-producto/02-roadmap.md).
 | H8 | Endurecimiento y entrega | Pendiente |
 
 ## Siguiente paso
-Empezar H2 por la issue #50 (ver el [roadmap](01-producto/02-roadmap.md) y las decisiones de arquitectura ADR-024, ADR-025 y ADR-026). Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).
+Continuar H2 con la issue #51, Actions de paquetes (ver el [roadmap](01-producto/02-roadmap.md) y las decisiones de arquitectura ADR-024, ADR-025 y ADR-026). Antes de asumir decisiones, revisar [pendientes](05-decisiones/pendientes.md).

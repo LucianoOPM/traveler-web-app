@@ -53,8 +53,8 @@ jobs:
           NODE_ENV: production
           DATABASE_URL: postgresql://traveltech:ci-sin-secreto@localhost:5432/traveltech_private
           DEMO_DATABASE_URL: postgresql://traveltech:ci-sin-secreto@localhost:5432/traveltech_demo
-          AUTH_SECRET: ci-auth-secret-ficticio-solo-para-ci-0123456789
-          APP_ORIGIN: http://localhost:4321
+          BETTER_AUTH_SECRET: ci-auth-secret-ficticio-solo-para-ci-0123456789
+          BETTER_AUTH_URL: http://localhost:4321
           PRIVATE_STORAGE_DIR: ./storage/private
           DEMO_STORAGE_DIR: ./storage/demo
           AGENCY_TIMEZONE: America/Mexico_City

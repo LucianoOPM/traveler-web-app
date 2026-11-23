@@ -49,8 +49,8 @@ Fecha: 2026-11-22
 Estado: confirmada (simplificada el 2026-11-22)
 Contexto: la aplicación no debe arrancar con configuración inválida ni filtrar secretos al cliente, a logs o al build (`import.meta.env.X` incrusta el valor del `.env` en `dist/`).
 Decisión: una función `comprobarConfiguracion(env)` en `src/lib/config.ts` (sin Zod, sin objeto `Config`, sin caché) llamada desde `astro.config.mjs` (dev y build) y `scripts/start.ts` (producción, antes de escuchar). Las variables se leen con `process.env`.
-Alternativas descartadas: `env.schema` de Astro — se probó el 2026-11-22: con `validateSecrets: true` un build sin `DATABASE_URL` o con `AUTH_SECRET` corto termina con código 0 y el servidor arranca sin validar, además de no expresar reglas entre variables; validar solo en el middleware (arrancaría con configuración inválida).
-Consecuencias: `bun run dev` y `bun run build` exigen un `.env` válido; `.env.example` falla a propósito hasta generar `AUTH_SECRET`. Esto no resuelve la validación de la API (PEN-10, resuelto en ADR-024).
+Alternativas descartadas: `env.schema` de Astro — se probó el 2026-11-22: con `validateSecrets: true` un build sin `DATABASE_URL` o con `BETTER_AUTH_SECRET` corto termina con código 0 y el servidor arranca sin validar, además de no expresar reglas entre variables; validar solo en el middleware (arrancaría con configuración inválida).
+Consecuencias: `bun run dev` y `bun run build` exigen un `.env` válido; `.env.example` falla a propósito hasta generar `BETTER_AUTH_SECRET`. Esto no resuelve la validación de la API (PEN-10, resuelto en ADR-024).
 Fecha: 2026-11-22
 
 ### ADR-018 — Formato, lint y accesibilidad estática

@@ -8,13 +8,13 @@ import path from "node:path";
 const OBLIGATORIAS = [
   "DATABASE_URL",
   "DEMO_DATABASE_URL",
-  "AUTH_SECRET",
-  "APP_ORIGIN",
+  "BETTER_AUTH_SECRET",
+  "BETTER_AUTH_URL",
   "PRIVATE_STORAGE_DIR",
   "DEMO_STORAGE_DIR",
   "AGENCY_TIMEZONE",
 ];
-const AUTH_SECRET_PLACEHOLDERS = ["GENERATE_A_LONG_RANDOM_SECRET", "CHANGE_ME"];
+const BETTER_AUTH_SECRET_PLACEHOLDERS = ["GENERATE_A_LONG_RANDOM_SECRET", "CHANGE_ME"];
 
 function nombreDeBase(url: string | undefined): string | undefined {
   try {
@@ -52,15 +52,18 @@ export function comprobarConfiguracion(
     problemas.push("DEMO_DATABASE_URL: debe usar una base distinta de DATABASE_URL");
   }
 
-  const secreto = env.AUTH_SECRET ?? "";
-  if (presente("AUTH_SECRET") && secreto.length < 32) {
-    problemas.push("AUTH_SECRET: debe tener al menos 32 caracteres");
-  } else if (AUTH_SECRET_PLACEHOLDERS.includes(secreto)) {
-    problemas.push("AUTH_SECRET: no puede ser un valor de ejemplo");
+  const secreto = env.BETTER_AUTH_SECRET ?? "";
+  if (presente("BETTER_AUTH_SECRET") && secreto.length < 32) {
+    problemas.push("BETTER_AUTH_SECRET: debe tener al menos 32 caracteres");
+  } else if (BETTER_AUTH_SECRET_PLACEHOLDERS.includes(secreto)) {
+    problemas.push("BETTER_AUTH_SECRET: no puede ser un valor de ejemplo");
   }
 
-  if (presente("APP_ORIGIN") && !/^https?:$/.test(URL.parse(env.APP_ORIGIN!)?.protocol ?? "")) {
-    problemas.push("APP_ORIGIN: debe ser una URL http(s)");
+  if (
+    presente("BETTER_AUTH_URL") &&
+    !/^https?:$/.test(URL.parse(env.BETTER_AUTH_URL!)?.protocol ?? "")
+  ) {
+    problemas.push("BETTER_AUTH_URL: debe ser una URL http(s)");
   }
 
   // Zona IANA exacta: `Intl` acepta también offsets, que PostgreSQL interpreta con signo invertido.
