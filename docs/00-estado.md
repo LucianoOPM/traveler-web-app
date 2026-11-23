@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-22 (H0 cerrado; H1 en curso)
 
 ## Resumen
-Proyecto Astro mínimo con configuración validada al arrancar (`src/lib/config.ts`), errores tipados (`src/lib/errors.ts`), `GET /api/health`, CI (`verificar`), PostgreSQL local con Docker Compose (tres bases vacías: privada, demo y pruebas) y Drizzle con scripts `db:*`. Hay esquema de identidad con Better Auth (`src/modules/identity/`) y la migración `0000_identidad`; aún no hay lógica de negocio, handler de autenticación ni inicio de sesión. `admin:create` y `demo:seed` no existen todavía (H1/H6).
+Proyecto Astro mínimo con configuración validada al arrancar (`src/lib/config.ts`), errores tipados (`src/lib/errors.ts`), `GET /api/health`, CI (`verificar`), PostgreSQL local con Docker Compose (tres bases vacías: privada, demo y pruebas) y Drizzle con scripts `db:*`. Hay esquema de identidad con Better Auth (`src/modules/identity/`) y la migración `0000_identidad`; aún no hay lógica de negocio, handler de autenticación ni inicio de sesión. `bun run admin:create` crea el administrador inicial; `demo:seed` no existe todavía (H6).
 
 ## Filosofía (2026-11-22)
 La solución más sencilla que resuelva la necesidad actual. Sin infraestructura preventiva ni procesos burocráticos. No se conserva complejidad solo porque ya está hecha. Simplificación integral hecha (documentación, errores, configuración, commits, Drizzle sin rollback, CI y ADR); detalle en los ADR 017 a 023.
