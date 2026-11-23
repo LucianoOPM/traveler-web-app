@@ -5,7 +5,7 @@
 
 ```mermaid
 flowchart TB
-  B[Comprador / catálogo] --> A[Astro: páginas y API]
+  B[Comprador / catálogo] --> A[Astro: páginas SSR, Actions y API Routes]
   P[Admin / operador] --> A
   V[Visitante demo] --> A
   A --> G[Autenticación y autorización]
@@ -16,12 +16,32 @@ flowchart TB
 ```
 
 ## Separación de responsabilidades
-- **Rutas Astro / endpoints:** parsean entrada, validan sesión, ejecutan política, llaman al caso de uso, construyen respuesta.
-- **React islands:** formularios, filtros, editor, escáner y componentes interactivos; no guardan secretos ni implementan autorización real.
-- **Servicios de aplicación:** transacciones y coordinación de casos de uso.
-- **Dominio:** invariantes, cálculos monetarios, transiciones y políticas.
-- **Repositorios Drizzle:** acceso persistente; no toman decisiones de permisos.
-- **Infraestructura:** Better Auth, storage local, generación de QR, render de flyers.
+([ADR-025](../05-decisiones/11-decisions-and-risks.md) y [ADR-026](../05-decisiones/11-decisions-and-risks.md))
+- **Astro Actions** (`src/actions/`): validan la entrada con Zod, verifican sesión y permiso **en cada handler**, invocan al servicio y devuelven el resultado. No contienen reglas de negocio.
+- **Páginas SSR:** renderizan las lecturas (catálogo público, panel) llamando a los servicios en el servidor.
+- **API Routes:** solo ante una necesidad HTTP específica (archivos privados, QR para clientes externos, integraciones, Better Auth, salud). No hay una API REST paralela a las Actions.
+- **React islands:** formularios, filtros, editor, escáner y componentes interactivos; llaman a Actions; no guardan secretos ni implementan autorización real.
+- **Servicios de aplicación:** clases que implementan casos de uso, coordinan dependencias y gestionan las transacciones.
+- **Dominio:** invariantes, cálculos monetarios, transiciones y políticas; funciones puras cuando basten.
+- **Repositorios:** clases Drizzle para persistencia y consultas; no toman decisiones de permisos.
+- **Infraestructura:** Better Auth, PostgreSQL, storage local, generación de QR, render de flyers.
+- **Composición:** un `container.ts` por módulo, con factories simples que construyen repositorios y servicios.
+
+## Inyección de dependencias y transacciones
+- **Constructor, sin contenedor:** los servicios reciben sus dependencias por constructor. No se usan contenedores de DI, decoradores ni librerías. Se definen interfaces solo para lo que de verdad necesita abstracción (sobre todo repositorios); funciones donde la lógica sea simple y pura.
+- **Sin conexión global:** un servicio no importa la base de datos; la conexión se crea en la composición a partir de la base elegida en el servidor.
+- **Transacciones en el caso de uso:** una operación atómica es una sola transacción en la que pueden participar varios repositorios sobre el mismo ejecutor (`db` o `tx`); no se abren transacciones independientes dentro de ella. Las restricciones de la base son la última defensa.
+- **Estructura de un módulo** (orientativa; se crea cuando recibe su primer archivo):
+
+```text
+src/modules/catalog/
+  domain/           # reglas puras e interfaces de repositorio
+  application/      # servicios (casos de uso)
+  infrastructure/   # repositorios Drizzle
+  container.ts      # factory de repositorios y servicios
+  schema.ts         # tablas Drizzle (compuestas en src/db/schema.ts)
+  relations.ts
+```
 
 ## Módulos
 `identity`, `catalog`, `bookings`, `payments`, `tickets`, `operations`, `marketing`, `demo`, `audit`.
@@ -33,7 +53,7 @@ Se recomienda una misma instancia PostgreSQL Docker con **dos bases distintas** 
 ```mermaid
 sequenceDiagram
   participant C as Comprador
-  participant API as API
+  participant API as Action
   participant B as BookingService
   participant DB as PostgreSQL
   C->>API: Solicitar reserva
