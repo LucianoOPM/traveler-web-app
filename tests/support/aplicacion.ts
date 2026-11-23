@@ -13,7 +13,7 @@ import {
 
 const raiz = path.resolve(import.meta.dir, "../..");
 
-/** `APP_ORIGIN` de la app de prueba: Better Auth rechaza peticiones con otro `Origin`. */
+/** `BETTER_AUTH_URL` de la app de prueba: Better Auth rechaza peticiones con otro `Origin`. */
 export const ORIGEN = "http://localhost:4321";
 export const CONTRASENA = "Contrasena-de-prueba-1";
 
@@ -39,8 +39,8 @@ export async function prepararAplicacion(
     NODE_ENV: "production",
     DATABASE_URL: urlBase,
     DEMO_DATABASE_URL: demo.toString(),
-    AUTH_SECRET: "ci-auth-secret-ficticio-solo-para-ci-0123456789",
-    APP_ORIGIN: ORIGEN,
+    BETTER_AUTH_SECRET: "ci-auth-secret-ficticio-solo-para-ci-0123456789",
+    BETTER_AUTH_URL: ORIGEN,
     PRIVATE_STORAGE_DIR: "./storage/private",
     DEMO_STORAGE_DIR: "./storage/demo",
     AGENCY_TIMEZONE: "America/Mexico_City",

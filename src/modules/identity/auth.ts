@@ -17,8 +17,8 @@ export const roles = { admin: ac.newRole(adminAc.statements), operator: ac.newRo
 /** Better Auth solo para personal. Solo genera el esquema; el handler se monta en una issue posterior. */
 export const auth = betterAuth({
   database: drizzleAdapter(abrirBase(url).db, { provider: "pg", schema }),
-  secret: process.env.AUTH_SECRET,
-  baseURL: process.env.APP_ORIGIN,
+  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: process.env.BETTER_AUTH_URL,
   advanced: { database: { generateId: "uuid" } },
   // Registro cerrado: el personal lo crea un admin (`admin:create` y el plugin Admin).
   emailAndPassword: { enabled: true, disableSignUp: true },
