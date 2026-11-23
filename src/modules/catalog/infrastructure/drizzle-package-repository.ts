@@ -4,17 +4,7 @@ import type * as schema from "../../../db/schema";
 import { ConflictError } from "../../../lib/errors";
 import type { PackageRepository } from "../domain/package-repository";
 import { packages } from "../schema";
-
-/** SQLSTATE `foreign_key_violation`. Bun lo expone en `errno` y Drizzle puede envolverlo en `cause`. */
-function esViolacionFk(error: unknown): boolean {
-  type Anidado = { errno?: unknown; code?: unknown; cause?: unknown };
-  let actual = error as Anidado | undefined;
-  for (let i = 0; actual && i < 3; i++) {
-    if (actual.errno === "23503" || actual.code === "23503") return true;
-    actual = actual.cause as Anidado | undefined;
-  }
-  return false;
-}
+import { esErrorPg } from "./errores-pg";
 
 export class DrizzlePackageRepository implements PackageRepository {
   constructor(private readonly db: BunSQLDatabase<typeof schema>) {}
@@ -50,7 +40,7 @@ export class DrizzlePackageRepository implements PackageRepository {
         .returning({ id: packages.id });
       return filas.length > 0;
     } catch (error) {
-      if (esViolacionFk(error)) throw new ConflictError("El paquete tiene salidas asociadas");
+      if (esErrorPg(error, "23503")) throw new ConflictError("El paquete tiene salidas asociadas");
       throw error;
     }
   }
