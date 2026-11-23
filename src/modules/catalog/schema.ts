@@ -9,6 +9,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { mediaAssets } from "../media/schema";
 
 // Fuente única de los estados: tipos y CHECK salen de aquí. H5 añadirá «en abordaje» y «finalizada».
 export const ESTADOS_PAQUETE = ["borrador", "publicado", "archivado"] as const;
@@ -35,6 +36,8 @@ export const packages = pgTable(
     summary: text("summary").notNull(),
     description: text("description").notNull(),
     status: text("status", { enum: ESTADOS_PAQUETE }).notNull().default("borrador"),
+    // Portada: restrict para que nunca quede un asset borrado con el paquete apuntándole.
+    coverAssetId: uuid("cover_asset_id").references(() => mediaAssets.id, { onDelete: "restrict" }),
     createdAt: creadoEn(),
     updatedAt: actualizadoEn(),
   },

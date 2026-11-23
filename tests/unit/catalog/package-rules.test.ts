@@ -15,6 +15,7 @@ const paquete = (status: PackageStatus, cambios: Partial<Package> = {}): Package
   summary: "Resumen",
   description: "Descripción",
   status,
+  coverAssetId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...cambios,

@@ -1,6 +1,7 @@
 ---
 import { z } from "astro/zod";
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PortadaForm from "../../../components/catalogo/PortadaForm";
 import PaqueteForm from "../../../components/catalogo/PaqueteForm";
 import SalidaAcciones, { NuevoPunto } from "../../../components/catalogo/SalidaAcciones";
 import SalidaForm from "../../../components/catalogo/SalidaForm";
@@ -35,6 +36,18 @@ const zona = process.env.AGENCY_TIMEZONE!;
   <h1>{paquete.name}</h1>
   <p>Estado: {paquete.status}</p>
   <PaqueteForm client:load paquete={paquete} />
+
+  <h2>Portada</h2>
+  {paquete.coverAssetId && (
+    <img
+      src={`/api/media/${paquete.coverAssetId}`}
+      alt={`Portada de ${paquete.name}`}
+      width="320"
+    />
+  )}
+  {paquete.status !== "archivado" && (
+    <PortadaForm client:load paqueteId={paquete.id} tienePortada={!!paquete.coverAssetId} />
+  )}
 
   <h2>Salidas</h2>
   {salidas.length === 0 && <p>Este paquete aún no tiene salidas.</p>}

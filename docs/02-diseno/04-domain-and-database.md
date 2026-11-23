@@ -9,12 +9,14 @@
 | Pagos | `payment_reports`, `payment_evidence`, `payment_reviews`, `cash_payments` | Reportes y revisiones con historial; no confundir reporte con ingreso |
 | Boletos | `tickets` | Pasajero 0..1 boleto vigente por reserva/salida |
 | Operación | `boarding_records` | `ticket_id` único para registro válido |
-| Marketing | `media_assets`, `flyer_templates`, `flyer_projects`, `flyer_exports` | Exportaciones asociadas a proyecto y, si aplica, salida |
+| Medios (módulo `media`) | `media_assets` | Referenciado por `packages.cover_asset_id`; marketing lo reutilizará en H6 |
+| Marketing | `flyer_templates`, `flyer_projects`, `flyer_exports` | Exportaciones asociadas a proyecto y, si aplica, salida |
 | Demo | `demo_invitations`, `demo_sessions` | Invitación 0..1 consumo; sesión ligada a invitación |
 | Control | `audit_events` | Actor, acción, entidad, antes/después saneado, timestamp |
 
 ## Campos de alto valor
-- `packages` (implementado, `0001_catalogo`): `id`, `name`, `summary`, `description`, `status` (`borrador | publicado | archivado`, por defecto `borrador`), `created_at`, `updated_at`. La portada se añade con las imágenes.
+- `packages` (implementado, `0001_catalogo`): `id`, `name`, `summary`, `description`, `status` (`borrador | publicado | archivado`, por defecto `borrador`), `cover_asset_id` (nullable, FK a `media_assets`, `on delete restrict`), `created_at`, `updated_at`.
+- `media_assets` (implementado, `0002_imagenes`): `id`, `storage_key` (único; `media/<uuid>.<ext>` generado por el servidor), `content_type` (`image/jpeg | image/png | image/webp`), `size_bytes` (`> 0`), `created_at`. El nombre del archivo del cliente no se guarda.
 - `departures` (implementado): `package_id` (`on delete restrict`), `starts_at`, `ends_at`, `capacity`, `adult_price_cents`, `child_price_cents`, `infant_price_cents`, `status` (`borrador | publicada | cancelada`, por defecto `borrador`), `created_at`, `updated_at`. `CHECK`: `capacity >= 0`, tarifas `>= 0`, `ends_at > starts_at` y estados limitados; «en abordaje» y «finalizada» se añaden en H5.
 - `boarding_points` (implementado): `id`, `name` (único), `created_at`. `departure_boarding_points`: `departure_id` (cascade) y `boarding_point_id` (restrict), clave primaria compuesta (única por pareja).
 - Tipos TypeScript del catálogo: inferidos con `$inferSelect`/`$inferInsert` en `src/modules/catalog/types.ts` (`Package`, `NewPackage`, `Departure`, ...); no se duplican a mano.

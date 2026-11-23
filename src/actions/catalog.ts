@@ -66,6 +66,15 @@ export const catalog = {
       return (await paquetes()).archive(id);
     }),
   }),
+  uploadCover: defineAction({
+    accept: "form",
+    input: z.object({ id: z.uuid(), file: z.instanceof(File) }),
+    handler: conErrores("catalog.uploadCover", async ({ id, file }, { locals }) => {
+      exigirAdmin(locals);
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return (await paquetes()).setCover(id, bytes);
+    }),
+  }),
   deletePackage: defineAction({
     input: id,
     handler: conErrores("catalog.deletePackage", async ({ id }, { locals }) => {

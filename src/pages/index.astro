@@ -17,6 +17,9 @@ const zona = process.env.AGENCY_TIMEZONE!;
       <h2>
         <a href={`/paquetes/${p.id}`}>{p.name}</a>
       </h2>
+      {p.portadaUrl && (
+        <img src={p.portadaUrl} alt={`Portada de ${p.name}`} width="320" loading="lazy" />
+      )}
       <p>{p.summary}</p>
       {p.salidas.length === 0 ? (
         <p>Sin salidas próximas</p>

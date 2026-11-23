@@ -26,6 +26,8 @@ export async function prepararAplicacion(
   sql: SQL,
   db: BunSQLDatabase<Record<string, unknown>>,
   usuarios: Array<{ correo: string; rol: string }>,
+  /** Directorio de archivos privados; por defecto `./storage/private`. Las pruebas de subida pasan uno temporal. */
+  almacenamiento = "./storage/private",
 ) {
   await recrearEsquema(sql); // comprueba que la base es traveltech_test antes de borrar nada
   await migrate(db, { migrationsFolder: "./src/db/migrations" });
@@ -41,7 +43,7 @@ export async function prepararAplicacion(
     DEMO_DATABASE_URL: demo.toString(),
     BETTER_AUTH_SECRET: "ci-auth-secret-ficticio-solo-para-ci-0123456789",
     BETTER_AUTH_URL: ORIGEN,
-    PRIVATE_STORAGE_DIR: "./storage/private",
+    PRIVATE_STORAGE_DIR: almacenamiento,
     DEMO_STORAGE_DIR: "./storage/demo",
     AGENCY_TIMEZONE: "America/Mexico_City",
     HOST: "127.0.0.1",

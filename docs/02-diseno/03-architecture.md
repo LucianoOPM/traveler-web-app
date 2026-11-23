@@ -44,7 +44,9 @@ src/modules/catalog/
 ```
 
 ## Módulos
-`identity`, `catalog`, `bookings`, `payments`, `tickets`, `operations`, `marketing`, `demo`, `audit`.
+`identity`, `catalog`, `media`, `bookings`, `payments`, `tickets`, `operations`, `marketing`, `demo`, `audit`.
+
+`media` es un módulo **compartido** (#55): dueño de `media_assets`, de la validación de imágenes por firma y de la interfaz `AlmacenArchivos` (implementada en disco). `catalog` lo usa por constructor (`PackageService` recibe un `MediaService`) y `marketing` lo reutilizará en H6; `media` no depende de ningún otro módulo de negocio.
 
 ## Aislamiento de datos
 Se recomienda una misma instancia PostgreSQL Docker con **dos bases distintas** (`traveltech_private`, `traveltech_demo`) y migraciones idénticas. Los datos semilla solo se cargan en la base demo. La selección de conexión ocurre en servidor mediante contexto autenticado y rutas permitidas; nunca se acepta un nombre de base enviado por cliente. El acceso administrativo privado no debe mezclarse con sesiones de visitante.

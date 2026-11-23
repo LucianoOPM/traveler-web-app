@@ -1,5 +1,6 @@
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "../../db/schema";
+import { crearMedia } from "../media/container";
 import { BoardingPointService } from "./application/boarding-point-service";
 import { DepartureService } from "./application/departure-service";
 import { PackageService } from "./application/package-service";
@@ -14,9 +15,11 @@ export function crearCatalogo(db: BunSQLDatabase<typeof schema>) {
   const departureRepo = new DrizzleDepartureRepository(db);
   const boardingPointRepo = new DrizzleBoardingPointRepository(db);
   const departures = new DepartureService(departureRepo);
+  const media = crearMedia(db);
   return {
-    packages: new PackageService(packageRepo),
+    packages: new PackageService(packageRepo, media),
     departures,
+    media,
     boardingPoints: new BoardingPointService(boardingPointRepo),
     publico: new PublicCatalogService(packageRepo, departureRepo, boardingPointRepo, departures),
   };
