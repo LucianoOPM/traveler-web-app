@@ -1,0 +1,68 @@
+---
+import { z } from "astro/zod";
+import CheckoutForm from "@components/reservas/CheckoutForm";
+import PublicLayout from "@layouts/PublicLayout.astro";
+import { baseDelServidor } from "@db/servidor";
+import { NotFoundError } from "@lib/errors";
+import { formatearFecha } from "@lib/fechas";
+import { formatearPesos } from "@lib/importes";
+import { noEncontrado } from "@lib/no-encontrado";
+import { MAX_PASAJEROS } from "@modules/bookings/domain/booking-rules";
+import { crearCatalogo } from "@modules/catalog/container";
+
+// Fuera de `/api/` un error lanzado sería un 500: id inválido, inexistente, no publicado o ya
+// iniciado responden lo mismo (`noEncontrado`). La disponibilidad mostrada es informativa; la
+// capacidad real la decide `BookingService` al reservar.
+const id = z.uuid().safeParse(Astro.params.departureId);
+if (!id.success) return noEncontrado();
+
+let datos;
+try {
+  datos = await crearCatalogo(await baseDelServidor()).publico.salidaReservable(id.data);
+} catch (error) {
+  if (error instanceof NotFoundError) return noEncontrado();
+  throw error;
+}
+const { paquete, salida } = datos;
+const zona = process.env.AGENCY_TIMEZONE!;
+// Solo categorías y tarifas: sin edades (PEN-16 sigue abierto).
+const categorias: { valor: "adulto" | "menor" | "infante"; etiqueta: string; tarifa: string }[] = [
+  { valor: "adulto", etiqueta: "Adulto", tarifa: formatearPesos(salida.adultPriceCents) },
+  { valor: "menor", etiqueta: "Menor", tarifa: formatearPesos(salida.childPriceCents) },
+  { valor: "infante", etiqueta: "Infante", tarifa: formatearPesos(salida.infantPriceCents) },
+];
+const puedeReservar = salida.availableSeats > 0 && salida.boardingPoints.length > 0;
+---
+
+<PublicLayout titulo={`Reservar ${paquete.name}`}>
+  <p class="mb-4">
+    <a href={`/paquetes/${paquete.id}`} class="underline underline-offset-4 hover:no-underline">
+      ← {paquete.name}
+    </a>
+  </p>
+  <h1 class="mb-2 text-3xl font-semibold">Reservar {paquete.name}</h1>
+  <p class="mb-1">
+    Salida:{" "}
+    <time datetime={salida.startsAt.toISOString()}>{formatearFecha(salida.startsAt, zona)}</time> ·
+    Regreso:{" "}
+    <time datetime={salida.endsAt.toISOString()}>{formatearFecha(salida.endsAt, zona)}</time>
+  </p>
+  <p class="mb-1">
+    Tarifas por persona: {categorias.map((c) => `${c.etiqueta} ${c.tarifa}`).join(" · ")}
+  </p>
+  <p class="mb-6 text-muted-foreground">
+    Plazas disponibles (informativo): {salida.availableSeats}. La plaza se confirma al reservar.
+  </p>
+  {puedeReservar ? (
+    <CheckoutForm
+      client:load
+      departureId={salida.id}
+      puntos={salida.boardingPoints}
+      categorias={categorias}
+      maxPasajeros={MAX_PASAJEROS}
+      zona={zona}
+    />
+  ) : (
+    <p role="status">Esta salida ya no tiene plazas disponibles.</p>
+  )}
+</PublicLayout>

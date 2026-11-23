@@ -21,7 +21,12 @@ export type PaqueteEnLista = {
   portadaUrl: string | null;
   salidas: SalidaPublica[];
 };
-export type SalidaDetalle = SalidaPublica & { availableSeats: number; boardingPoints: string[] };
+// Los ids de salida y de punto son identificadores opacos (no credenciales): el checkout los necesita.
+export type SalidaDetalle = SalidaPublica & {
+  id: string;
+  availableSeats: number;
+  boardingPoints: { id: string; name: string }[];
+};
 export type PaqueteDetalle = Omit<PaqueteEnLista, "salidas"> & {
   description: string;
   salidas: SalidaDetalle[];
@@ -70,13 +75,40 @@ export class PublicCatalogService {
       summary: paquete.summary,
       portadaUrl: urlPortada(paquete.coverAssetId),
       description: paquete.description,
-      salidas: await Promise.all(
-        proximas.map(async (s) => ({
-          ...publica(s),
-          availableSeats: await this.seats.availableSeats(s.id),
-          boardingPoints: s.boardingPointIds.flatMap((p) => nombres.get(p) ?? []),
-        })),
-      ),
+      salidas: await Promise.all(proximas.map((s) => this.detalle(s, nombres))),
+    };
+  }
+
+  /**
+   * Salida que puede reservarse hoy, con su paquete. `NotFoundError` (404 uniforme) si no existe,
+   * no está publicada, su paquete no lo está o ya empezó. Es informativa: la capacidad real la
+   * decide `BookingService` dentro de su transacción.
+   */
+  async salidaReservable(id: string, ahora = new Date()) {
+    const base = await this.departures.find(id);
+    const paquete = base && (await this.packages.find(base.packageId));
+    if (!base || paquete?.status !== "publicado") throw new NotFoundError("Salida no encontrada");
+    const salida = (await this.proximas(base.packageId, ahora)).find((s) => s.id === id);
+    if (!salida) throw new NotFoundError("Salida no encontrada");
+    const nombres = new Map((await this.boardingPoints.list()).map((p) => [p.id, p.name]));
+    return {
+      paquete: { id: paquete.id, name: paquete.name },
+      salida: await this.detalle(salida, nombres),
+    };
+  }
+
+  private async detalle(
+    s: DepartureWithPoints,
+    nombres: Map<string, string>,
+  ): Promise<SalidaDetalle> {
+    return {
+      ...publica(s),
+      id: s.id,
+      availableSeats: await this.seats.availableSeats(s.id),
+      boardingPoints: s.boardingPointIds.flatMap((id) => {
+        const name = nombres.get(id);
+        return name ? [{ id, name }] : [];
+      }),
     };
   }
 

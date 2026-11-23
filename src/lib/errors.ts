@@ -73,6 +73,12 @@ export class BusinessRuleError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message: string, options: AppErrorOptions = {}) {
+    super(message, options, { status: 429, code: "rate_limited" });
+  }
+}
+
 /** Fallo interno explícito. Su mensaje nunca se expone: la respuesta es genérica. */
 export class InternalError extends AppError {
   constructor(message: string, options: AppErrorOptions = {}) {

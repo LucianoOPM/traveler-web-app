@@ -141,7 +141,10 @@ describe("PublicCatalogService.get", () => {
       childPriceCents: 100000,
       infantPriceCents: 0,
       availableSeats: 21,
-      boardingPoints: ["Terminal Norte", "Plaza Sur"],
+      boardingPoints: [
+        { id: PUNTO_A, name: "Terminal Norte" },
+        { id: PUNTO_B, name: "Plaza Sur" },
+      ],
     });
     // Plazas solo de lo que se muestra.
     expect(consultadas).toEqual([futura.id]);
@@ -165,6 +168,7 @@ describe("PublicCatalogService.get", () => {
       "boardingPoints",
       "childPriceCents",
       "endsAt",
+      "id",
       "infantPriceCents",
       "startsAt",
     ]);
@@ -201,5 +205,41 @@ describe("portada", () => {
   test("un asset que no es portada de ningún paquete no es visible ni para el admin", async () => {
     const { svc } = servicio([paquete(1, "publicado")], []);
     expect(await svc.visibilidadPortada(PORTADA, true)).toBeNull();
+  });
+});
+
+describe("PublicCatalogService.salidaReservable", () => {
+  const p = paquete(1, "publicado");
+  const futura = { ...salida(1, p.id, "publicada", 10), boardingPointIds: [PUNTO_A, PUNTO_B] };
+  const conFind = (paquetes: Package[], salidas: ReturnType<typeof salida>[]) => {
+    const { svc } = servicio(paquetes, salidas);
+    // El servicio busca la salida por id: el repositorio falso de arriba solo lista por paquete.
+    (svc as unknown as { departures: { find: unknown } }).departures.find = async (id: string) =>
+      salidas.find((s) => s.id === id) ?? null;
+    return svc;
+  };
+
+  test("devuelve paquete y salida con ids de salida y de puntos, y plazas", async () => {
+    const r = await conFind([p], [futura]).salidaReservable(futura.id, AHORA);
+    expect(r.paquete).toEqual({ id: p.id, name: "Paquete 1" });
+    expect(r.salida).toMatchObject({
+      id: futura.id,
+      availableSeats: 21,
+      boardingPoints: [
+        { id: PUNTO_A, name: "Terminal Norte" },
+        { id: PUNTO_B, name: "Plaza Sur" },
+      ],
+    });
+  });
+
+  test("inexistente, no publicada, cancelada, pasada o con paquete no publicado: 404", async () => {
+    const casos: (() => Promise<unknown>)[] = [
+      () => conFind([p], [futura]).salidaReservable(idDe(999), AHORA),
+      () => conFind([p], [salida(2, p.id, "borrador", 10)]).salidaReservable(idDe(102), AHORA),
+      () => conFind([p], [salida(2, p.id, "cancelada", 10)]).salidaReservable(idDe(102), AHORA),
+      () => conFind([p], [salida(2, p.id, "publicada", -1)]).salidaReservable(idDe(102), AHORA),
+      () => conFind([paquete(1, "archivado")], [futura]).salidaReservable(futura.id, AHORA),
+    ];
+    for (const caso of casos) await expect(caso()).rejects.toBeInstanceOf(NotFoundError);
   });
 });

@@ -5,6 +5,12 @@
 - **Comprador:** token de acceso limitado a su reserva; no es usuario de Better Auth.
 - **Visitante demo:** invitación y sesión propias, **sin rol de personal**.
 
+## Enlace de consulta del comprador (#69)
+- El token son 32 bytes aleatorios (`crypto.randomBytes`, base64url de 43 caracteres); en la base solo se guarda su SHA-256 y la consulta busca por hash. Se devuelve **una sola vez** al crear la reserva y no se envía por correo: el enlace `/reservas/<token>` es la única vía del comprador.
+- La consulta es de solo lectura (un GET nunca modifica datos), responde `Cache-Control: no-store` y `Referrer-Policy: no-referrer`, no carga recursos externos y devuelve el mismo `404` para un token inexistente, inválido o malformado.
+- El token no se registra en eventos, errores ni en el log propio. **Límite conocido:** al viajar en la ruta, puede quedar en los registros de acceso de un servidor o proxy inverso; hay que excluir o enmascarar `/reservas/*` al decidir el hosting (PEN-08).
+- Creación abusiva: 5 solicitudes por hora por IP en memoria del proceso, sin confiar en cabeceras reenviadas (ver [07-api-contracts](07-api-contracts.md)).
+
 ## Sesión de visitante
 1. Administrador crea token aleatorio criptográficamente seguro; almacenar hash.
 2. Enlace válido 24 horas, revocable, de un solo uso.

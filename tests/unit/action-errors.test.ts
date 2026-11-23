@@ -6,6 +6,7 @@ import {
   ForbiddenError,
   InternalError,
   NotFoundError,
+  TooManyRequestsError,
   UnauthenticatedError,
   ValidationError,
 } from "@lib/errors";
@@ -26,6 +27,7 @@ describe("toActionErrorData", () => {
     [new NotFoundError("x"), "NOT_FOUND"],
     [new ConflictError("x"), "CONFLICT"],
     [new BusinessRuleError("x"), "UNPROCESSABLE_CONTENT"],
+    [new TooManyRequestsError("x"), "TOO_MANY_REQUESTS"],
   ] as const)("%o → %s con su mensaje público", (error, code) => {
     expect(toActionErrorData(error, contexto)).toEqual({ code, message: "x" });
   });
