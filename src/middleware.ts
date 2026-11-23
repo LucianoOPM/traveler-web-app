@@ -1,5 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
 import { toErrorResponse } from "./lib/error-response";
+import { esAdmin } from "./lib/guards";
 
 // Convierte en una respuesta uniforme cualquier error lanzado por los endpoints de `/api/`.
 // Fuera de `/api/` se relanza para conservar el manejo de errores de Astro.
@@ -8,22 +9,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // La sesión solo se resuelve donde hace falta. `auth` se importa aquí y no arriba: así las demás
     // rutas (p. ej. `/api/health`) no cargan Better Auth ni necesitan la base de datos.
     const ruta = context.url.pathname;
-    const esAdmin = ruta === "/admin" || ruta.startsWith("/admin/");
+    const enAdmin = ruta === "/admin" || ruta.startsWith("/admin/");
     // En `/_actions/` solo se resuelve la sesión: el permiso lo comprueba cada handler (ADR-025).
-    if (esAdmin || ruta === "/login" || ruta.startsWith("/_actions/")) {
+    if (enAdmin || ruta === "/login" || ruta.startsWith("/_actions/")) {
       const { auth, roles } = await import("./modules/identity/auth");
       const sesion = await auth.api.getSession({ headers: context.request.headers });
       context.locals.user = sesion?.user ?? null;
       context.locals.session = sesion?.session ?? null;
 
-      if (esAdmin) {
+      if (enAdmin) {
         // Solo personal (`admin` u `operator`, también si el usuario tiene varios roles separados
-        // por coma) y no vetado. Los permisos por operación se validan en cada endpoint.
+        // por coma) y no vetado. Los permisos por operación se validan en cada endpoint; el
+        // catálogo (CRUD de paquetes y salidas) es solo de `admin`: el operador no lo ve.
         const { user } = context.locals;
         const esPersonal = (user?.role ?? "").split(",").some((rol) => Object.hasOwn(roles, rol));
+        const esCatalogo = ruta === "/admin/catalogo" || ruta.startsWith("/admin/catalogo/");
         const respuesta = !user
           ? context.redirect("/login")
-          : user.banned || !esPersonal
+          : user.banned || !esPersonal || (esCatalogo && !esAdmin(user))
             ? new Response("Prohibido", { status: 403 })
             : await next();
         respuesta.headers.set("Cache-Control", "no-store");
