@@ -33,6 +33,7 @@ Los **pendientes** viven en [pendientes.md](pendientes.md). Las **cifras del see
 | ADR-026 | Servicios como clases con inyección por constructor (sin contenedor de DI); capas `domain`/`application`/`infrastructure` por módulo; transacciones desde el caso de uso | Confirmada |
 | ADR-027 | Interfaz con Tailwind CSS v4 (`@tailwindcss/vite`) y shadcn/ui (componentes propios en `src/components/ui/`, solo en islands React); implementado en #65 (con Base UI) | Confirmada |
 | ADR-028 | Modelo de reservaciones de H3: estados, retención de inventario con `retieneInventario`, plazo `BOOKING_HOLD_HOURS`, expiración perezosa y auditoría con `booking_events`; esquema en #66 (las edades de categorías siguen en PEN-16) | Confirmada |
+| ADR-029 | Pagos parciales, estados `parcial`/`pagada`, contabilidad bancaria (comprometido/reportado/verificado/liberado), asignación al pedir instrucciones SPEI y evidencias; resuelve PEN-01 y PEN-02 | Confirmada |
 
 ### ADR-015 — Versiones del stack y driver de PostgreSQL
 Estado: confirmada
@@ -172,6 +173,21 @@ Decisión:
 Fuera de este ADR: las edades que definen menor e infante y si se validan al reservar siguen en **PEN-16**; `fare_category` es solo una etiqueta declarada.
 Alternativas consideradas: expirar con un cron (infraestructura y estado inconsistente entre ejecuciones); `actor_user_id` obligatorio (los compradores invitados no tienen usuario).
 Consecuencias: toda consulta de disponibilidad debe usar `retieneInventario` (o su equivalente SQL probado contra él); el campo `reference` lo genera el servicio de reservas.
+Fecha: 2026-11-23
+
+### ADR-029 — Pagos, cuentas bancarias y contabilidad operacional de H4
+Estado: confirmada (2026-11-23); resuelve PEN-01 y PEN-02
+Contexto: H4 introduce pagos y límites bancarios; la política de anticipos y la contabilidad del límite mensual estaban pendientes.
+Decisión:
+1. **Pagos:** anticipos y pagos parciales (SPEI o efectivo del admin) sin mínimo; cada SPEI se revisa por separado y solo un admin verifica; liquidación = suma neta de movimientos verificados; sin sobrepagos (verificado <= saldo); devoluciones fuera de H4 (futuros movimientos negativos auditados); rechazar no genera ingreso; reemplazar conserva el historial sin duplicar dinero; todos los SPEI de una reserva usan la misma cuenta; boletos solo con reserva totalmente liquidada y vigente.
+2. **Estados de reserva:** se añaden `parcial` y `pagada` a `en_revision`. Los tres retienen inventario y no expiran; así `retieneInventario` y `expirarVencidas` (ADR-028) siguen sin consultar pagos. Si se rechaza lo último pendiente sin nada verificado, la reserva vuelve a `pendiente` con `expires_at = min(ahora + BOOKING_HOLD_HOURS, starts_at)`.
+3. **Contabilidad:** *comprometido* (asignación vigente, el único consumo del límite mensual), *reportado*, *verificado* y *liberado* según [05-business-rules](../02-diseno/05-business-rules.md). `capacidad_disponible = limite_mensual − comprometido del mes`; nunca se deriva de reportes ni revisiones.
+4. **Asignación:** al pedir las instrucciones SPEI, por el importe completo, idempotente; mes fijado con `AGENCY_TIMEZONE`; snapshot inmutable; sin cuenta elegible, excepción administrativa sin dividir ni inventar instrucciones. Liberación solo en los casos de la tabla de reglas (rechazar, reemplazar y verificar no liberan; cancelar o expirar sin SPEI verificado ni pendiente sí; efectivo total sin transferencias sí; cancelar con SPEI verificado queda para resolución administrativa).
+5. **Concurrencia:** transacciones con bloqueos de PostgreSQL y recálculo de capacidad dentro de la transacción; orden de bloqueos: salida y luego cuentas por `id`.
+6. **Precisiones:** cancelar con comprobantes pendientes mantiene comprometida la asignación hasta resolverlos todos; resolver un comprobante de una reserva cancelada no la reactiva ni habilita boletos. La fuente de verdad financiera son los SPEI verificados y el efectivo del admin, inmutables, sin libro mayor aparte. No se baja el límite mensual de una cuenta por debajo de lo comprometido del mes vigente y las cuentas con historial se deshabilitan, no se borran. El consumo del límite pertenece siempre al mes de la asignación aunque la transferencia se verifique en otro mes. Detalle en [05-business-rules](../02-diseno/05-business-rules.md).
+7. **Evidencias:** se reutiliza `media` (almacén en disco y validación por firma) ampliado a PDF; se sirven solo por una ruta de admin con `no-store`, nunca por `/api/media` (que ya responde `404` a lo que no es portada visible).
+Alternativas consideradas: derivar el estado de los pagos (complica la regla única de retención y la expiración en SQL); asignar la cuenta al crear la reserva (consume límite aunque se pague en efectivo y acopla `BookingService.create` a bancos); conservar el vencimiento original tras un rechazo (puede expirar al instante sin dar opción de reintento).
+Consecuencias: migración Drizzle con `CHECK` ampliados de `bookings` y `booking_events`; H5 emite boletos solo desde `pagada`; la resolución administrativa de cancelaciones con pagos verificados no tiene devolución hasta que se decida (queda registrada, sin automatizar). Un pago verificado en un mes posterior al de la asignación no cambia el consumo de ningún mes.
 Fecha: 2026-11-23
 
 ## Recomendaciones adoptadas para arrancar

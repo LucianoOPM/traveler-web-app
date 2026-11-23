@@ -20,7 +20,7 @@
 
 ## H4 — Pagos y cuentas
 **Entregables:** tres cuentas ficticias configurables, asignación por prioridad/límite mensual, instrucciones inmutables, evidencias privadas, revisión SPEI, reemplazo de comprobantes, efectivo admin, historial y conciliación.
-**Salida:** comprobante rechazado no suma ingresos; ausencia de cuenta elegible crea alerta; concurrencia respeta límites.
+**Salida:** comprobante rechazado no suma ingresos; ausencia de cuenta elegible crea alerta; concurrencia respeta límites; pagos parciales suman neto sin sobrepago; la reserva con pagos verificados no expira; la asignación se libera solo en los casos de [ADR-029](../05-decisiones/11-decisions-and-risks.md).
 
 ## H5 — Boletos y operaciones
 **Entregables:** QR de reserva, emisión de boletos individuales tras pago completo, consulta/validación, manifiestos, escáner móvil, abordaje atómico, historial.
