@@ -14,6 +14,9 @@ const OBLIGATORIAS = [
   "DEMO_STORAGE_DIR",
   "AGENCY_TIMEZONE",
 ];
+/** `BOOKING_HOLD_HOURS`: valor si se omite y máximo permitido (30 días). El servicio de reservas importa el predeterminado de aquí. */
+export const HORAS_RETENCION_POR_DEFECTO = 24;
+export const HORAS_RETENCION_MAXIMA = 720;
 const BETTER_AUTH_SECRET_PLACEHOLDERS = ["GENERATE_A_LONG_RANDOM_SECRET", "CHANGE_ME"];
 
 function nombreDeBase(url: string | undefined): string | undefined {
@@ -75,6 +78,17 @@ export function comprobarConfiguracion(
   ) {
     problemas.push(
       "AGENCY_TIMEZONE: debe ser una zona horaria IANA válida (p. ej. America/Mexico_City)",
+    );
+  }
+
+  // Opcional: si está presente, tiene que ser válida. Solo afecta reservas nuevas.
+  const horas = env.BOOKING_HOLD_HOURS;
+  if (
+    horas !== undefined &&
+    !(/^[1-9]\d*$/.test(horas) && Number(horas) <= HORAS_RETENCION_MAXIMA)
+  ) {
+    problemas.push(
+      `BOOKING_HOLD_HOURS: debe ser un entero positivo de 1 a ${HORAS_RETENCION_MAXIMA} (horas)`,
     );
   }
 

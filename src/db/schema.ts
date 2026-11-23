@@ -4,3 +4,5 @@ export * from "@modules/identity/relations";
 export * from "@modules/catalog/schema";
 export * from "@modules/catalog/relations";
 export * from "@modules/media/schema";
+export * from "@modules/bookings/schema";
+export * from "@modules/bookings/relations";
