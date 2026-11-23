@@ -14,7 +14,6 @@ import {
 // Efecto conocido: genera el `dist/` de la raíz (ignorado por Git) y sobrescribe el existente.
 
 const raiz = path.resolve(import.meta.dir, "../..");
-const entradaServidor = path.join(raiz, "dist/server/entry.mjs");
 const SENTINELA = "SENTINELA-XYZ";
 
 const entornoValido = {
@@ -49,19 +48,6 @@ function iniciar(comando: string[], puerto: number, cambios: Record<string, stri
   const proceso = lanzar(comando, { cwd: raiz, env: entornoDe(puerto, cambios) });
   procesos.push(proceso);
   return proceso;
-}
-
-async function primeraRespuesta(url: string, limiteMs = 30_000): Promise<Response> {
-  const limite = Date.now() + limiteMs;
-  while (Date.now() < limite) {
-    try {
-      return await fetch(url);
-    } catch {
-      // el servidor aún no escucha
-    }
-    await Bun.sleep(250);
-  }
-  throw new Error(`Sin respuesta de ${url} a tiempo`);
 }
 
 async function conLimite(promesa: Promise<number>, ms: number): Promise<number> {
@@ -135,19 +121,5 @@ describe("configuración inválida", () => {
     expect(salida).not.toContain("Server listening");
     expect(salida).not.toContain(SENTINELA);
     await expect(fetch(`http://127.0.0.1:${puerto}/api/health`)).rejects.toBeDefined();
-  }, 60_000);
-
-  test("entry.mjs directo con configuración inválida no responde ok", async () => {
-    const puerto = await puertoLibre();
-    const proceso = iniciar(["bun", entradaServidor], puerto, { AUTH_SECRET: SECRETO_INVALIDO });
-    const response = await primeraRespuesta(`http://127.0.0.1:${puerto}/api/health`);
-    expect(response.status).toBe(500);
-    const cuerpo = await response.json();
-    expect(cuerpo).toEqual({
-      error: { code: "internal_error", message: "Error interno del servidor" },
-    });
-    expect(cuerpo).not.toEqual({ status: "ok" });
-    await Bun.sleep(300);
-    expect(proceso.salida()).not.toContain(SENTINELA);
   }, 60_000);
 });

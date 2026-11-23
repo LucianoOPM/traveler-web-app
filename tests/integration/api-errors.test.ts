@@ -12,16 +12,6 @@ const raiz = path.resolve(import.meta.dir, "../..");
 const fixture = "tests/fixtures/api-errors";
 const entrada = path.join(raiz, fixture, "dist/server/entry.mjs");
 
-const entornoValido = {
-  DATABASE_URL: "postgresql://traveltech:clave-db@localhost:5432/traveltech_private",
-  DEMO_DATABASE_URL: "postgresql://traveltech:clave-db@localhost:5432/traveltech_demo",
-  AUTH_SECRET: "k8Jd-2mQ9xLp-7vRt-4nWz-1bYc-6hGf-3sAe",
-  APP_ORIGIN: "http://localhost:4321",
-  PRIVATE_STORAGE_DIR: "./storage/private",
-  DEMO_STORAGE_DIR: "./storage/demo",
-  AGENCY_TIMEZONE: "America/Mexico_City",
-};
-
 type Servidor = ProcesoPrueba & { base: string };
 
 const servidores: Servidor[] = [];
@@ -34,7 +24,6 @@ async function arrancar(): Promise<Servidor> {
     cwd: raiz,
     env: {
       ...process.env,
-      ...entornoValido,
       NODE_ENV: "production",
       HOST: "127.0.0.1",
       PORT: String(puerto),

@@ -2,27 +2,23 @@ import node from "@astrojs/node";
 import react from "@astrojs/react";
 import { defineConfig } from "astro/config";
 import { loadEnv } from "vite";
-import { ConfigError, loadConfig } from "./src/lib/config.ts";
+import { comprobarConfiguracion } from "./src/lib/config.ts";
 
-// Valida la configuración al iniciar `astro dev` y `astro build`. No se valida en
-// `astro check` ni `astro sync`, para poder comprobar tipos sin secretos (CI).
+// Comprueba la configuración al iniciar `astro dev` y `astro build` (no en `astro check`, para
+// poder comprobar tipos sin secretos). En producción lo hace `scripts/start.ts`.
+// Nota: `env.schema` de Astro no sirve aquí: no falla el build ni el arranque si falta una variable.
 const validarConfiguracion = {
   name: "validar-configuracion",
   hooks: {
     "astro:config:setup": ({ command }) => {
       if (command !== "dev" && command !== "build") return;
-      const raw = {
+      const env = {
         ...loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), ""),
         ...process.env,
       };
-      try {
-        loadConfig(raw);
-      } catch (error) {
-        if (error instanceof ConfigError) {
-          // Solo nombres de variable y reglas; nunca valores.
-          throw new Error(error.message, { cause: error });
-        }
-        throw error;
+      const problemas = comprobarConfiguracion(env);
+      if (problemas.length > 0) {
+        throw new Error(`Configuración inválida:\n- ${problemas.join("\n- ")}`);
       }
     },
   },

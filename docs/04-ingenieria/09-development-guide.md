@@ -45,23 +45,23 @@ APP_ORIGIN=http://localhost:4321
 PRIVATE_STORAGE_DIR=./storage/private
 DEMO_STORAGE_DIR=./storage/demo
 AGENCY_TIMEZONE=America/Mexico_City
-# Solo para Docker Compose (no la valida loadConfig); debe coincidir con la contraseña de las URLs
+# Solo para Docker Compose (no la valida la aplicación); debe coincidir con la contraseña de las URLs
 POSTGRES_PASSWORD=CHANGE_ME
-# Opcional y comentada en .env.example: pruebas con PostgreSQL (no la valida loadConfig)
+# Opcional y comentada en .env.example: pruebas con PostgreSQL (no la valida la aplicación)
 # TEST_DATABASE_URL=postgresql://traveltech:CHANGE_ME@localhost:5432/traveltech_test
 ```
 No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `.env.example` solo contiene valores ilustrativos y **no arranca tal cual**: hay que copiarlo a `.env` y reemplazar `AUTH_SECRET` (y las contraseñas `CHANGE_ME`).
 
 ### Validación de la configuración (issue #4, [ADR-017](../05-decisiones/11-decisions-and-risks.md))
-`src/lib/config.ts` exporta `loadConfig(raw, options?)` (función pura, con `astro/zod`), `Config` y `ConfigError`. Reglas:
-- Todas las variables son obligatorias; `NODE_ENV` ∈ `development` | `test` | `production`.
+`comprobarConfiguracion(env)` en `src/lib/config.ts` devuelve la lista de problemas (vacía si todo está bien). Se ejecuta al iniciar `astro dev`, `astro build` y `bun run start` (no en `astro check`). Reglas:
+- Todas las variables de la tabla son obligatorias.
 - `DATABASE_URL` y `DEMO_DATABASE_URL`: URL `postgres://` o `postgresql://`, con **nombres de base distintos**.
-- `AUTH_SECRET`: mínimo 32 caracteres y no puede ser un valor de ejemplo (`GENERATE_A_LONG_RANDOM_SECRET`, `CHANGE_ME`).
-- `APP_ORIGIN`: origen http(s) sin ruta, parámetros ni credenciales (se normaliza).
-- `AGENCY_TIMEZONE`: zona IANA canónica con formato `Región/Ciudad` (sensible a mayúsculas) o `UTC`. Se rechazan offsets (`+03:00`) y abreviaturas (`EST`): PostgreSQL interpreta los offsets numéricos con el signo POSIX invertido.
-- `PRIVATE_STORAGE_DIR` / `DEMO_STORAGE_DIR`: bajo `<raíz>/storage` o fuera del repositorio; nunca en `public/` ni en otras carpetas del repo; distintas y no anidadas entre sí.
+- `AUTH_SECRET`: mínimo 32 caracteres y no un valor de ejemplo.
+- `APP_ORIGIN`: URL http(s).
+- `AGENCY_TIMEZONE`: zona IANA exacta (`Región/Ciudad`) o `UTC`; se rechazan offsets y abreviaturas porque PostgreSQL interpreta los offsets con el signo invertido.
+- `PRIVATE_STORAGE_DIR` / `DEMO_STORAGE_DIR`: nunca dentro de `public/`; distintas y no anidadas entre sí.
 
-Los errores nombran la variable y la regla, **nunca el valor**. En servidor se lee con `getConfig()` (`src/lib/config.runtime.ts`, usa `getSecret()` de `astro:env/server`; no puede importarse desde código de cliente). **No leer secretos con `import.meta.env`**: Astro incrusta su valor dentro de `dist/` (verificado). Se valida al iniciar `astro dev`, `astro build` y `bun run start`; `astro check` no valida, para poder comprobar tipos sin secretos. Consecuencia: **`bun run dev` y `bun run build` exigen un `.env` válido o variables de entorno reales** (en CI hay que definir valores ficticios válidos).
+Los mensajes nombran la variable y la regla, **nunca el valor**. Las variables se leen con `process.env` (`bun run` carga `.env`). **No leer secretos con `import.meta.env`**: Astro incrusta su valor dentro de `dist/`. Consecuencia: `bun run dev` y `bun run build` exigen un `.env` válido (`cp .env.example .env` y reemplazar `AUTH_SECRET`); la CI usa valores ficticios válidos.
 
 ## Inicio rápido (comandos que existen hoy)
 ```bash
@@ -111,7 +111,7 @@ Código en `src/db/` (`guardia.ts`, `migraciones.ts`, `conexion.ts`, `rollback.t
 | `bun run lint` | `eslint . --max-warnings 0` | ESLint sobre `.astro`, `.ts`, `.tsx` y `.mjs`; cualquier advertencia es un fallo |
 | `bun run prepare` | `bun scripts/instalar-hooks.ts` | Lo ejecuta `bun install` solo: configura `core.hooksPath=.githooks` (hook de commits). Idempotente; fuera de un repositorio Git no hace nada y con un `core.hooksPath` ajeno avisa sin pisarlo (ver «Convención de commits») |
 | `bun run test` | `bun run test:unit && bun run test:integration` | Todas las pruebas (99: 64 unitarias y 35 de integración). No requieren `.env`, PostgreSQL ni servicios externos (verificado en un clon limpio con el entorno saneado); un fallo unitario corta la ejecución antes de la integración |
-| `bun run test:unit` | `bun test ./tests/unit` | Pruebas unitarias (64): `loadConfig`, jerarquía de errores, conversión a respuestas, la utilidad de procesos de prueba (`tests/support/servidor.ts`), el validador de commits y la validación de commits de un rango; ~0,8 s |
+| `bun run test:unit` | `bun test ./tests/unit` | Pruebas unitarias: configuración, jerarquía de errores y conversión a respuestas, el validador de commits y la validación de commits de un rango; ~0,8 s |
 | `bun run test:integration` | `bun test ./tests/integration` | Pruebas de integración (35): las 9 de los errores de `/api/` (construyen `tests/fixtures/api-errors/` con `astro build --root` y lo sirven de verdad en dos servidores, producción y desarrollo), las 6 de salud, las 14 del hook de commits y las 6 del CLI de validación de commits de un PR (ambas con repositorios Git temporales reales); ~17 s |
 | `bun run test:health` | `bun test ./tests/integration/health.test.ts` | **Prueba de salud local** (6 pruebas, ~4 s): construye la app real, la arranca con `bun run start` y comprueba `GET /api/health` y el fallo con configuración inválida. No necesita `.env`, PostgreSQL ni servicios; genera el `dist/` de la raíz y sobrescribe el existente; no ejecutarla a la vez que otra prueba de integración ni mientras corre `bun run start` desde otra rama (podría leer archivos a medio escribir; con el mismo código no se reprodujo) |
 
