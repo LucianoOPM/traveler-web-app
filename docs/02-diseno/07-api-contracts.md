@@ -29,6 +29,9 @@
 ## Salud
 `GET /api/health` (fuera de `/api/v1/`, implementado en la issue #8): `200` con `{ "status": "ok" }` y `Cache-Control: no-store`; sin efectos secundarios y sin exponer configuración, secretos ni versiones. Indica que el servidor arrancó con configuración válida; con configuración inválida responde `500 internal_error` (ver [ADR-019](../05-decisiones/11-decisions-and-risks.md)). No comprueba la base de datos: si la salud la incluirá o habrá un endpoint de *readiness* aparte (H1) **no está decidido**.
 
+## Autenticación de personal
+`/api/auth/*` (fuera de `/api/v1/`, issue #44) lo atiende Better Auth: `POST /api/auth/sign-in/email`, `POST /api/auth/sign-out`, `GET /api/auth/get-session`, etc. **Sus respuestas de error usan el formato de Better Auth, no el JSON uniforme de [ADR-019](../05-decisiones/11-decisions-and-risks.md).** El registro público (`/api/auth/sign-up/*`) está cerrado. Con `NODE_ENV=production` aplica un límite de intentos por IP (`429`); ver la [guía de desarrollo](../04-ingenieria/09-development-guide.md).
+
 ## Ejemplo de validación de boleto
 Solicitud `GET /api/v1/demo/tickets/validate?code=...` (código ficticio opaco, sin datos personales).
 

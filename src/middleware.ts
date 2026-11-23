@@ -5,6 +5,15 @@ import { toErrorResponse } from "./lib/error-response";
 // Fuera de `/api/` se relanza para conservar el manejo de errores de Astro.
 export const onRequest = defineMiddleware(async (context, next) => {
   try {
+    // La sesión solo se resuelve donde hace falta. `auth` se importa aquí y no arriba: así las demás
+    // rutas (p. ej. `/api/health`) no cargan Better Auth ni necesitan la base de datos.
+    const ruta = context.url.pathname;
+    if (ruta === "/admin" || ruta.startsWith("/admin/")) {
+      const { auth } = await import("./modules/identity/auth");
+      const sesion = await auth.api.getSession({ headers: context.request.headers });
+      context.locals.user = sesion?.user ?? null;
+      context.locals.session = sesion?.session ?? null;
+    }
     return await next();
   } catch (error) {
     const path = context.url.pathname;

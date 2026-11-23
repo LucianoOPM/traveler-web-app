@@ -18,8 +18,9 @@ const SENTINELA = "SENTINELA-XYZ";
 
 const entornoValido = {
   NODE_ENV: "production",
-  DATABASE_URL: `postgresql://traveltech:${SENTINELA}-db@localhost:5432/traveltech_private`,
-  DEMO_DATABASE_URL: `postgresql://traveltech:${SENTINELA}-db@localhost:5432/traveltech_demo`,
+  // Puerto cerrado a propósito: `/api/health` no debe depender de la base de datos.
+  DATABASE_URL: `postgresql://traveltech:${SENTINELA}-db@localhost:1/traveltech_private`,
+  DEMO_DATABASE_URL: `postgresql://traveltech:${SENTINELA}-db@localhost:1/traveltech_demo`,
   AUTH_SECRET: `${SENTINELA}-k8Jd-2mQ9xLp-7vRt-4nWz-1bYc`,
   APP_ORIGIN: "http://localhost:4321",
   PRIVATE_STORAGE_DIR: "./storage/private",
