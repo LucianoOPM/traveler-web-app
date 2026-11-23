@@ -82,6 +82,7 @@ Drizzle: `src/db/schema.ts` (esquema), `src/db/conexion.ts` (conexión) y `drizz
 src/
   pages/        # Rutas Astro y endpoints
   components/   # UI e islands React
+  layouts/      # layouts Astro (AdminLayout: área privada)
   modules/      # un módulo por dominio (catalog, bookings, payments, tickets, operations,
                 # identity, marketing, demo, audit), creado al escribir su primer código
   db/           # esquema, conexión y migraciones
@@ -100,6 +101,8 @@ Se recomienda [Conventional Commits](https://www.conventionalcommits.org/): `tip
 - **Handler:** `src/pages/api/auth/[...all].ts` delega en Better Auth (`/api/auth/*`, fuera de `/api/v1/`). Registro público cerrado: el personal lo crea `bun run admin:create` (o un admin).
 - **Sesión:** el middleware (`src/middleware.ts`) la resuelve solo en `/admin` y subrutas y la deja en `Astro.locals.user` y `Astro.locals.session` (tipos en `src/env.d.ts`); en las demás rutas quedan sin definir. `auth` se importa de forma dinámica para que `/api/health` no cargue Better Auth ni necesite la base de datos.
 - **Límite de intentos:** Better Auth lo activa por defecto solo con `NODE_ENV=production` (3 intentos por 10 s en `/sign-in` y `/sign-up`, por IP, en memoria del proceso). El handler descarta el `x-forwarded-for` del cliente y lo sustituye por `clientAddress`, que Astro toma del socket (solo lee `x-forwarded-for` si se configura `security.allowedDomains`; no se configura). Sin IP, Better Auth usa un cubo compartido por ruta y sigue limitando. **Detrás de un proxy inverso**, `clientAddress` sería la IP del proxy y todos compartirían cubo: revisarlo al decidir el despliegue ([PEN-08](../05-decisiones/pendientes.md)).
+- **Rutas protegidas:** el middleware también resuelve la sesión en `/login`. Para `/admin` y subrutas: sin sesión → `302` a `/login`; usuario vetado o sin rol `admin`/`operator` → `403`; todas con `Cache-Control: no-store`. Los roles salen de `roles` en `auth.ts` (un usuario puede tener varios separados por coma). Los permisos por operación se validan aparte, en cada endpoint.
+- **Pantallas:** `/login` (formulario Astro con un `<script>` mínimo que llama a `/api/auth/sign-in/email`; error genérico) y `/admin` (bienvenida) con `src/layouts/AdminLayout.astro`, que incluye «Cerrar sesión» (`POST /api/auth/sign-out`). La primera cuenta se crea con `bun run admin:create`.
 - **Runtime:** el driver `bun-sql` solo existe bajo Bun. `bun run dev` ejecuta `astro dev` con `bunx --bun`; `build` corre bajo Node y deja `bun` como importación externa (`astro.config.mjs`); `bun run start` ejecuta el build bajo Bun.
 
 ## Salud local

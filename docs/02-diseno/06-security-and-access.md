@@ -26,6 +26,8 @@
 | Crear flyer | Sí | Según permiso explícito | No | No |
 | Editar cuentas | Sí | No | No | No |
 
+**Acceso al área privada (`/admin`, issue #45):** `admin` y `operator` comparten `/admin`; la guardia está en el middleware, en el servidor: sin sesión → `302` a `/login`; usuario vetado o sin rol de personal → `403`; las respuestas llevan `Cache-Control: no-store`. Entrar a `/admin` **no** concede permisos por operación: cada endpoint o página valida el rol en el servidor (por ejemplo, el operador no accede a pagos) y nunca confía en el rol enviado por el cliente.
+
 ## Aislamiento
 - Dos bases de datos separadas para privado y demo, mismo esquema.
 - No elegir base desde parámetros enviados por cliente.

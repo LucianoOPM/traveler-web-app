@@ -8,11 +8,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // La sesión solo se resuelve donde hace falta. `auth` se importa aquí y no arriba: así las demás
     // rutas (p. ej. `/api/health`) no cargan Better Auth ni necesitan la base de datos.
     const ruta = context.url.pathname;
-    if (ruta === "/admin" || ruta.startsWith("/admin/")) {
-      const { auth } = await import("./modules/identity/auth");
+    const esAdmin = ruta === "/admin" || ruta.startsWith("/admin/");
+    if (esAdmin || ruta === "/login") {
+      const { auth, roles } = await import("./modules/identity/auth");
       const sesion = await auth.api.getSession({ headers: context.request.headers });
       context.locals.user = sesion?.user ?? null;
       context.locals.session = sesion?.session ?? null;
+
+      if (esAdmin) {
+        // Solo personal (`admin` u `operator`, también si el usuario tiene varios roles separados
+        // por coma) y no vetado. Los permisos por operación se validan en cada endpoint.
+        const { user } = context.locals;
+        const esPersonal = (user?.role ?? "").split(",").some((rol) => Object.hasOwn(roles, rol));
+        const respuesta = !user
+          ? context.redirect("/login")
+          : user.banned || !esPersonal
+            ? new Response("Prohibido", { status: 403 })
+            : await next();
+        respuesta.headers.set("Cache-Control", "no-store");
+        return respuesta;
+      }
     }
     return await next();
   } catch (error) {

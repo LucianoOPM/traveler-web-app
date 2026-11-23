@@ -2,7 +2,7 @@
 
 Plataforma para una sola agencia de viajes: catálogo, salidas, reservaciones, pagos, boletos QR, abordaje y marketing. Tiene una experiencia privada (admin/operador) y una demo de visitantes de solo lectura con datos ficticios.
 
-**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Hay Drizzle para las migraciones (ADR-023), el esquema de identidad con Better Auth (migración `0000_identidad`) y `bun run admin:create`, pero todavía **no hay** lógica de negocio, handler de autenticación ni inicio de sesión. Detalle en [docs/00-estado.md](docs/00-estado.md).
+**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 (plataforma y autenticación) está cerrado: existe PostgreSQL local con Docker Compose. Hay Drizzle para las migraciones (ADR-023), identidad con Better Auth (migración `0000_identidad`, `bun run admin:create`, handler `/api/auth/*`), `/login` y el área `/admin` protegida, pero todavía **no hay** lógica de negocio ni contenido funcional en el panel. Detalle en [docs/00-estado.md](docs/00-estado.md).
 
 ## Requisitos
 - [Git](https://git-scm.com/)
