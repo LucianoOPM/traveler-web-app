@@ -1,8 +1,11 @@
 ---
+import { esAdmin } from "../lib/guards";
 // Layout del área privada. Solo se usa en páginas bajo `/admin`, donde el middleware ya garantiza
 // que `Astro.locals.user` existe y es personal.
 const { titulo = "Panel" } = Astro.props;
 const usuario = Astro.locals.user;
+// Ocultar el enlace no protege nada: el middleware devuelve 403 al operador en `/admin/catalogo`.
+const verCatalogo = esAdmin(usuario);
 ---
 
 <html lang="es">
@@ -19,6 +22,7 @@ const usuario = Astro.locals.user;
       </a>
       <nav aria-label="Principal">
         <a href="/admin">Inicio</a>
+        {verCatalogo && <a href="/admin/catalogo">Catálogo</a>}
       </nav>
       <span>
         {usuario?.name} ({usuario?.role})

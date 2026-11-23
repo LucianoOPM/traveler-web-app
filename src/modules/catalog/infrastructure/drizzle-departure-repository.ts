@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "../../../db/schema";
 import { NotFoundError } from "../../../lib/errors";
@@ -20,6 +20,30 @@ export class DrizzleDepartureRepository implements DepartureRepository {
       .from(packages)
       .where(eq(packages.id, packageId));
     return fila?.status ?? null;
+  }
+
+  async listByPackage(packageId: string) {
+    const lista = await this.db
+      .select()
+      .from(departures)
+      .where(eq(departures.packageId, packageId))
+      .orderBy(asc(departures.startsAt));
+    if (lista.length === 0) return [];
+    const asignados = await this.db
+      .select()
+      .from(departureBoardingPoints)
+      .where(
+        inArray(
+          departureBoardingPoints.departureId,
+          lista.map((s) => s.id),
+        ),
+      );
+    return lista.map((salida) => ({
+      ...salida,
+      boardingPointIds: asignados
+        .filter((a) => a.departureId === salida.id)
+        .map((a) => a.boardingPointId),
+    }));
   }
 
   async create(datos: Parameters<DepartureRepository["create"]>[0]) {

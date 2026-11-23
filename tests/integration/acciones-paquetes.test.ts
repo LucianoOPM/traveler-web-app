@@ -110,6 +110,12 @@ describe.skipIf(!base && !process.env.CI)("Actions de paquetes", () => {
     expect(await estado(borrador)).toBeUndefined();
   });
 
+  test("crear con nombre vacío → 400 con el error del campo en español", async () => {
+    const respuesta = await llamar("createPackage", { name: "  " }, cookies.admin);
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.texto).toContain("El nombre es obligatorio");
+  });
+
   test("un campo desconocido → 400", async () => {
     const respuesta = await llamar("createPackage", { name: "A", role: "admin" }, cookies.admin);
     expect(respuesta.status).toBe(400);

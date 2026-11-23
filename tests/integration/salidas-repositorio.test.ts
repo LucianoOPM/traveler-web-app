@@ -129,6 +129,32 @@ describe.skipIf(!base && !process.env.CI)("repositorio de salidas en traveltech_
     ]);
   });
 
+  test("listByPackage devuelve solo las salidas del paquete, por fecha, con sus puntos", async () => {
+    const [{ id: otro }] = await sql`insert into packages (name, summary, description)
+      values ('Otro', 's', 'd') returning id`;
+    const tarde = await salidas.create({
+      packageId: paquete,
+      ...contenido,
+      startsAt: new Date("2027-03-10T10:00:00Z"),
+      endsAt: new Date("2027-03-12T10:00:00Z"),
+    });
+    const temprano = await salidas.create({ packageId: paquete, ...contenido });
+    await salidas.create({ packageId: otro, ...contenido });
+    const punto = await puntos.create("Terminal Norte");
+    await salidas.assignBoardingPoint(temprano.id, punto.id);
+
+    const lista = await salidas.listByPackage(paquete);
+    expect(lista.map((s) => s.id)).toEqual([temprano.id, tarde.id]);
+    expect(lista.map((s) => s.boardingPointIds)).toEqual([[punto.id], []]);
+    expect(await salidas.listByPackage(crypto.randomUUID())).toEqual([]);
+  });
+
+  test("los puntos de abordaje se listan por nombre", async () => {
+    await puntos.create("Terminal Sur");
+    await puntos.create("Terminal Norte");
+    expect((await puntos.list()).map((p) => p.name)).toEqual(["Terminal Norte", "Terminal Sur"]);
+  });
+
   test("eliminar una salida borrador borra sus asignaciones (cascade)", async () => {
     const { id } = await salidas.create({ packageId: paquete, ...contenido });
     await salidas.assignBoardingPoint(id, (await puntos.create("Terminal Norte")).id);

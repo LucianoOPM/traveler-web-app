@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "../../../db/schema";
 import { ConflictError } from "../../../lib/errors";
@@ -10,6 +10,10 @@ const nombreRepetido = () => new ConflictError("Ya existe un punto de abordaje c
 
 export class DrizzleBoardingPointRepository implements BoardingPointRepository {
   constructor(private readonly db: BunSQLDatabase<typeof schema>) {}
+
+  list() {
+    return this.db.select().from(boardingPoints).orderBy(asc(boardingPoints.name));
+  }
 
   async create(name: string) {
     try {

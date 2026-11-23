@@ -31,7 +31,7 @@ const salidaYPunto = z.strictObject({ departureId: z.uuid(), boardingPointId: z.
 export const catalog = {
   createPackage: defineAction({
     input: z.strictObject({
-      name: z.string().trim().min(1),
+      name: z.string().trim().min(1, "El nombre es obligatorio"),
       summary: z.string().trim().optional(),
       description: z.string().trim().optional(),
     }),

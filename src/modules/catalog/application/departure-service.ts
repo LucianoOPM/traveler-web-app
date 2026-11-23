@@ -13,6 +13,10 @@ import type { Departure } from "../types";
 export class DepartureService {
   constructor(private readonly repo: DepartureRepository) {}
 
+  listByPackage(packageId: string) {
+    return this.repo.listByPackage(packageId);
+  }
+
   async create(entrada: DepartureContent & { packageId: string }): Promise<Departure> {
     comprobarContenido(entrada);
     if ((await this.repo.findPackageStatus(entrada.packageId)) === null) {

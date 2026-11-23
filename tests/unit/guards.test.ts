@@ -1,9 +1,24 @@
 import { describe, expect, test } from "bun:test";
 import { ForbiddenError, UnauthenticatedError } from "../../src/lib/errors";
-import { exigirAdmin } from "../../src/lib/guards";
+import { esAdmin, exigirAdmin } from "../../src/lib/guards";
 
 const con = (user: Record<string, unknown> | null | undefined) =>
   ({ user }) as Parameters<typeof exigirAdmin>[0];
+
+describe("esAdmin", () => {
+  test("sin sesión, operador, sin rol o vetado → false", () => {
+    expect(esAdmin(null)).toBe(false);
+    expect(esAdmin(undefined)).toBe(false);
+    expect(esAdmin({ role: "operator" })).toBe(false);
+    expect(esAdmin({ role: null })).toBe(false);
+    expect(esAdmin({ role: "admin", banned: true })).toBe(false);
+  });
+
+  test("admin, también con varios roles → true", () => {
+    expect(esAdmin({ role: "admin" })).toBe(true);
+    expect(esAdmin({ role: "operator,admin" })).toBe(true);
+  });
+});
 
 describe("exigirAdmin", () => {
   test("sin sesión → 401", () => {

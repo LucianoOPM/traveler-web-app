@@ -1,0 +1,12 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PaqueteForm from "../../../components/catalogo/PaqueteForm";
+---
+
+<AdminLayout titulo="Nuevo paquete">
+  <p>
+    <a href="/admin/catalogo">← Paquetes</a>
+  </p>
+  <h1>Nuevo paquete</h1>
+  <PaqueteForm client:load />
+</AdminLayout>

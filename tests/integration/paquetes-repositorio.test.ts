@@ -41,6 +41,13 @@ describe.skipIf(!base && !process.env.CI)("repositorio de paquetes en traveltech
     expect((await servicio.archive(creado.id)).status).toBe("archivado");
   });
 
+  test("list devuelve primero el paquete creado más recientemente", async () => {
+    const viejo = await servicio.create({ name: "Viejo" });
+    await sql`update packages set created_at = created_at - interval '1 day' where id = ${viejo.id}`;
+    const nuevo = await servicio.create({ name: "Nuevo" });
+    expect((await servicio.list()).map((p) => p.id)).toEqual([nuevo.id, viejo.id]);
+  });
+
   test("update y delete son condicionales por estado", async () => {
     const { id } = await repo.create({ name: "A", summary: "s", description: "d" });
     expect(await repo.update(id, "publicado", { name: "B" })).toBeNull();

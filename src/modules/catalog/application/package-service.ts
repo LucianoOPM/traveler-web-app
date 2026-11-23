@@ -13,6 +13,14 @@ import type { Package } from "../types";
 export class PackageService {
   constructor(private readonly repo: PackageRepository) {}
 
+  list(): Promise<Package[]> {
+    return this.repo.list();
+  }
+
+  get(id: string): Promise<Package> {
+    return this.cargar(id);
+  }
+
   async create(entrada: Pick<PackageContent, "name"> & Partial<PackageContent>): Promise<Package> {
     comprobarCrear(entrada);
     return this.repo.create({
