@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-22 (H0 cerrado; H1 en curso, issue #28)
 
 ## Resumen
-Existe documentación, un [README](../README.md) de arranque y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; workflow de CI en `.github/workflows/ci.yml` con los jobs `verificar` y `commits`, fusionado en `dev` con el PR #22 y exigido por los rulesets de `dev` y `main`). Desde la issue #28 (H1) hay un `docker-compose.yml` con PostgreSQL local (tres bases vacías: privada, demo y pruebas). Desde la issue #29 hay Drizzle (`src/db/`), `db:generate`, `db:migrate` y `db:rollback` (solo en `traveltech_test`), con `down.sql` por migración (ADR-023). Aún no hay lógica de negocio, esquema, migraciones reales ni autenticación.
+Existe documentación, un [README](../README.md) de arranque y un proyecto Astro mínimo (página de inicio con una island React; scripts `dev`, `build`, `preview`, `check`, `start`, `format`, `format:check`, `lint`, `test`, `test:unit`, `test:integration`, `test:health`; configuración validada al arrancar en `src/lib/config.ts`; errores tipados en `src/lib/errors.ts`; `GET /api/health`; hook `commit-msg` de Conventional Commits en `.githooks/`, instalado por `bun install`; workflow de CI en `.github/workflows/ci.yml` con los jobs `verificar` y `commits`, fusionado en `dev` con el PR #22 y exigido por los rulesets de `dev` y `main`). Desde la issue #28 (H1) hay un `docker-compose.yml` con PostgreSQL local (tres bases vacías: privada, demo y pruebas). Desde la issue #29 hay Drizzle (`src/db/`), `db:generate`, `db:migrate`, `db:migrate:demo` (los dos de `drizzle-kit`) y `db:rollback` (solo en `traveltech_test`), con `down.sql` por migración (ADR-023). Aún no hay lógica de negocio, esquema, migraciones reales ni autenticación.
 
 ## Hitos
 Criterios de salida de cada hito en [02-roadmap](01-producto/02-roadmap.md).
@@ -47,7 +47,7 @@ Esa integración comprobó la CI en `main`, pero H0 seguía abierto porque falta
 **H0 cerrado (2026-11-22).** Se cumplieron las condiciones fijadas: issue #11 fusionada en `dev`, integración `dev → main` y CI de `main` en verde (PR y push). Este cambio de estado se registra en `dev` y llegará a `main` con la siguiente integración. Siguen vigentes los límites de la verificación: no se probó en otra máquina ni sistema operativo, ni la hidratación de la island en un navegador.
 
 ## Scripts y comandos
-`db:generate`, `db:migrate` y `db:rollback` existen desde la issue #29. `admin:create` y `demo:seed`: **no existen todavía** (se crean en H1/H6).
+`db:generate`, `db:migrate`, `db:migrate:demo` y `db:rollback` existen desde la issue #29. `admin:create` y `demo:seed`: **no existen todavía** (se crean en H1/H6).
 
 ## Siguiente paso sugerido
 Continuar H1 con la issue #30 (CI con PostgreSQL y fallo obligatorio; ver [02-roadmap](01-producto/02-roadmap.md) y el diseño de H1). H0 está cerrado (ver «Cierre de H0»). Antes de asumir decisiones de H1, revisar [pendientes](05-decisiones/pendientes.md). Desde la issue #10, todo PR hacia `dev` o `main` necesita que `verificar` y `commits` pasen. PEN-11 resuelto: versiones fijadas en [ADR-015](05-decisiones/11-decisions-and-risks.md) y [guía de desarrollo](04-ingenieria/09-development-guide.md).

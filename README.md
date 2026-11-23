@@ -62,7 +62,7 @@ docker compose down -v        # detiene y BORRA todos los datos locales
 | `bun run test` | Pruebas unitarias y de integración |
 | `bun run test:health` | Prueba de salud local |
 | `bun run db:generate` | Genera migraciones con `drizzle-kit` (aún no hay esquema) |
-| `bun run db:migrate [private\|demo]` | Aplica las migraciones a la base privada (por defecto) o a la demo |
+| `bun run db:migrate` / `bun run db:migrate:demo` | `drizzle-kit migrate` sobre la base privada / la demo |
 | `bun run db:rollback` | Revierte la última migración **solo** en `traveltech_test` (`TEST_DATABASE_URL`) |
 
 **Aún no existen** `admin:create` ni `demo:seed` (se crearán en H1 y H6). `db:migrate` existe, pero todavía no hay migraciones reales. Lista completa y notas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).

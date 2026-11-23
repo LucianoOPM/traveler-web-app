@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-22-h1-issues-1-4-base-de-datos-design.md` (sección «Issue 2»). Issue de GitHub: #29. Plantilla del flujo: `docs/superpowers/plans/2026-11-22-issue-28-docker-compose.md`.
 
+> **Revisión (mismo PR, 2026-11-22):** este plan se escribió con una premisa falsa («`drizzle-kit` no carga `.env`»; el experimento no tenía `.env`). Tras revisarlo con la documentación de Drizzle, `db:migrate` pasó a ser `drizzle-kit migrate` con `pg` 8.23.1 instalado, y se añadió `db:migrate:demo` (`drizzle.demo.config.ts`). Se eliminaron `scripts/db-migrar.ts`, `src/db/objetivo.ts`, `src/db/migrar.ts` y sus pruebas; las pruebas usan `migrate()` de `bun-sql` en `tests/support/base-de-pruebas.ts` (`migrarCarpeta`). Donde este plan habla de migrador programático, `objetivo` o «sin `pg`», manda ADR-023.
+
 ## Hechos verificados antes de escribir este plan
 Experimento en un proyecto desechable con PostgreSQL 17 del `docker-compose.yml` (ya desmontado):
 - `drizzle-kit generate --name <n>` crea `NNNN_<n>.sql`, `meta/NNNN_snapshot.json` y `meta/_journal.json` (`{ version: "7", dialect: "postgresql", entries: [{ idx, version: "7", when, tag, breakpoints: true }] }`). Funciona **sin** `pg` instalado.

@@ -21,7 +21,8 @@
     "format:check": "prettier . --check",
     "lint": "eslint . --max-warnings 0",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun scripts/db-migrar.ts",
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:demo": "drizzle-kit migrate --config=drizzle.demo.config.ts",
     "db:rollback": "bun scripts/db-rollback.ts"
   },
   "dependencies": {
@@ -43,6 +44,7 @@
     "eslint-plugin-astro": "3.2.1",
     "eslint-plugin-jsx-a11y-x": "0.2.0",
     "globals": "17.14.0",
+    "pg": "8.23.1",
     "prettier": "3.10.1",
     "prettier-plugin-astro": "1.1.2",
     "typescript": "6.0.3",

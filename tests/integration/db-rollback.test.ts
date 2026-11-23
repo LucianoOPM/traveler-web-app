@@ -4,10 +4,13 @@ import { appendFileSync, cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { abrirBase } from "../../src/db/conexion";
-import { CARPETA_MIGRACIONES } from "../../src/db/migraciones";
-import { migrar } from "../../src/db/migrar";
 import { RollbackError, revertirUltimaMigracion } from "../../src/db/rollback";
-import { abrirBaseDePruebas, reiniciarEsquema, urlDePruebas } from "../support/base-de-pruebas";
+import {
+  abrirBaseDePruebas,
+  migrarCarpeta,
+  reiniciarEsquema,
+  urlDePruebas,
+} from "../support/base-de-pruebas";
 
 const fixture = (caso: string) => path.resolve(import.meta.dir, "../fixtures/migraciones", caso);
 
@@ -38,25 +41,25 @@ describe.skipIf(!urlDePruebas())(
     });
 
     test("migrar aplica la carpeta y registra una fila en el historial", async () => {
-      expect(await migrar(db, fixture("reversible"))).toBe(1);
+      await migrarCarpeta(db, fixture("reversible"));
       expect(await existeTabla()).toBe(true);
       expect(await filasDeHistorial()).toBe(1);
     });
 
     test("ciclo: migrar → revertir → migrar de nuevo", async () => {
-      await migrar(db, fixture("reversible"));
+      await migrarCarpeta(db, fixture("reversible"));
       const revertida = await revertirUltimaMigracion(sql, fixture("reversible"));
       expect(revertida).toEqual({ tag: "0000_prueba" });
       expect(await existeTabla()).toBe(false);
       expect(await filasDeHistorial()).toBe(0);
 
-      await migrar(db, fixture("reversible"));
+      await migrarCarpeta(db, fixture("reversible"));
       expect(await existeTabla()).toBe(true);
       expect(await filasDeHistorial()).toBe(1);
     });
 
     test("una migración irreversible se rechaza sin tocar nada", async () => {
-      await migrar(db, fixture("irreversible"));
+      await migrarCarpeta(db, fixture("irreversible"));
       const error = await revertirUltimaMigracion(sql, fixture("irreversible")).catch((e) => e);
       expect(error).toBeInstanceOf(RollbackError);
       expect(error.message).toContain("IRREVERSIBLE");
@@ -66,14 +69,14 @@ describe.skipIf(!urlDePruebas())(
     });
 
     test("si el down falla a mitad no cambia la tabla ni el historial", async () => {
-      await migrar(db, fixture("down-roto"));
+      await migrarCarpeta(db, fixture("down-roto"));
       await expect(revertirUltimaMigracion(sql, fixture("down-roto"))).rejects.toThrow();
       expect(await existeTabla()).toBe(true);
       expect(await filasDeHistorial()).toBe(1);
     });
 
     test("si el .sql cambió desde que se aplicó, no se revierte", async () => {
-      await migrar(db, fixture("reversible"));
+      await migrarCarpeta(db, fixture("reversible"));
       const copia = mkdtempSync(path.join(tmpdir(), "traveltech-fixture-"));
       try {
         cpSync(fixture("reversible"), copia, { recursive: true });
@@ -90,12 +93,6 @@ describe.skipIf(!urlDePruebas())(
       await expect(revertirUltimaMigracion(sql, fixture("reversible"))).rejects.toBeInstanceOf(
         RollbackError,
       );
-    });
-
-    test("con la carpeta real sin migraciones, migrar no hace nada", async () => {
-      expect(await migrar(db, CARPETA_MIGRACIONES)).toBe(0);
-      const [{ t }] = await sql`select to_regnamespace('drizzle') as t`;
-      expect(t).toBeNull();
     });
   },
 );

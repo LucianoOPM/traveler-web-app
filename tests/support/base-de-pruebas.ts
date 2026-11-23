@@ -1,4 +1,5 @@
 import type { SQL } from "bun";
+import { migrate } from "drizzle-orm/bun-sql/migrator";
 import { abrirBase } from "../../src/db/conexion";
 import { asegurarBaseDePruebas } from "../../src/db/guardia";
 
@@ -28,4 +29,12 @@ export async function reiniciarEsquema(sql: SQL): Promise<void> {
   await sql.unsafe(
     "drop schema if exists public cascade; create schema public; drop schema if exists drizzle cascade;",
   );
+}
+
+/** Aplica las migraciones de `carpeta` con `migrate()` de bun-sql (la forma documentada de probar migraciones). */
+export async function migrarCarpeta(
+  db: ReturnType<typeof abrirBase>["db"],
+  carpeta: string,
+): Promise<void> {
+  await migrate(db, { migrationsFolder: carpeta });
 }
