@@ -2,14 +2,14 @@
 
 Plataforma para una sola agencia de viajes: catálogo, salidas, reservaciones, pagos, boletos QR, abordaje y marketing. Tiene una experiencia privada (admin/operador) y una demo de visitantes de solo lectura con datos ficticios.
 
-**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). Todavía **no hay** lógica de negocio, base de datos ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
+**Estado:** el hito H0 (preparación y disciplina) está cerrado (ya integrado en `main`, con la CI en verde). H1 está en curso: existe PostgreSQL local con Docker Compose. Todavía **no hay** lógica de negocio, esquema, migraciones ni autenticación. Detalle en [docs/00-estado.md](docs/00-estado.md).
 
 ## Requisitos
 - [Git](https://git-scm.com/)
 - [Bun](https://bun.sh/) **1.4.4** (runtime y gestor de paquetes)
 - [Node.js](https://nodejs.org/) `^22.23.4 || ^24.16.0 || >=26.3.0` (las CLI de Astro, ESLint y Prettier corren con Node; versión validada: 24.22.0)
 
-Docker y PostgreSQL **aún no se usan**: llegan con el hito H1.
+- [Docker](https://www.docker.com/) con Compose, solo para la base de datos local (H1; no hace falta para `bun run test` ni `bun run test:health`).
 
 ## Instalación y prueba de salud
 ```bash
@@ -36,6 +36,19 @@ bun run test:health
 3. `bun run dev` sirve en `http://localhost:4321/`.
 
 `.env` está ignorado por Git: no lo suba ni comparta secretos.
+
+## Base de datos local
+PostgreSQL corre en Docker solo para desarrollo (imagen `postgres:17.10-alpine`, puerto publicado únicamente en `127.0.0.1:5432`). Con el `.env` ya creado:
+```bash
+docker compose up -d --wait   # arranca y espera a que las tres bases existan
+docker compose down           # detiene; conserva los datos (volumen persistente)
+docker compose down -v        # detiene y BORRA todos los datos locales
+```
+- Crea `traveltech_private`, `traveltech_demo` y `traveltech_test`.
+- **`POSTGRES_PASSWORD` (solo para Compose) debe coincidir con la contraseña de las URLs** de `DATABASE_URL` y `DEMO_DATABASE_URL`; sin ella, Compose se niega a arrancar.
+- El script de inicialización solo corre con el volumen vacío: para añadir una base a una instalación existente hay que recrear el volumen con `down -v`.
+- `TEST_DATABASE_URL` es opcional y está comentada en `.env.example`; su uso llega con las pruebas con PostgreSQL.
+- Más detalles y solución de problemas: [guía de desarrollo](docs/04-ingenieria/09-development-guide.md).
 
 ## Comandos disponibles
 | Comando | Qué hace |
