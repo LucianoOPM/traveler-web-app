@@ -30,7 +30,7 @@ No subir `.env`, contraseñas, cookies, tokens ni comprobantes al repositorio. `
 
 `comprobarConfiguracion(env)` en `src/lib/config.ts` ([ADR-017](../05-decisiones/11-decisions-and-risks.md)) se ejecuta al iniciar `astro dev`, `astro build` y `bun run start` (no en `astro check`). Reglas:
 - Todas las variables de arriba (menos `NODE_ENV`, `POSTGRES_PASSWORD`, `TEST_DATABASE_URL` y `BOOKING_HOLD_HOURS`) son obligatorias.
-- `BOOKING_HOLD_HOURS` (opcional, 24 si se omite): horas que una reserva `pendiente` retiene lugares; solo afecta a reservas nuevas. Si está presente debe ser un entero positivo (`""`, `0`, `1.5` o `24h` impiden arrancar). Aún no la lee ningún código: la usará el servicio de reservas.
+- `BOOKING_HOLD_HOURS` (opcional, 24 si se omite): horas que una reserva `pendiente` retiene lugares; solo afecta a reservas nuevas. Si está presente debe ser un entero de 1 a 720 horas, es decir, 30 días como máximo (`""`, `0`, `1.5`, `24h` o `721` impiden arrancar). Aún no la lee ningún código: el servicio de reservas importará `HORAS_RETENCION_POR_DEFECTO` de `src/lib/config.ts` en lugar de repetir el 24.
 - `DATABASE_URL` y `DEMO_DATABASE_URL`: URL `postgres://` o `postgresql://` con **nombres de base distintos**.
 - `BETTER_AUTH_SECRET`: mínimo 32 caracteres y no un valor de ejemplo.
 - `BETTER_AUTH_URL`: URL http(s).

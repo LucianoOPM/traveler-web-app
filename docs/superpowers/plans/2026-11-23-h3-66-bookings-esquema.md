@@ -16,7 +16,7 @@
 - Migración solo con `bun run db:generate --name reservaciones` → `0003_reservaciones`; solo hacia adelante, sin `down.sql`; sin `organization_id`.
 - UUID con `pg_catalog.gen_random_uuid()`, `timestamp` con zona, dinero en centavos `integer`.
 - `ESTADOS_RESERVA = ["pendiente", "en_revision", "expirada", "cancelada"]`; categorías `adulto | menor | infante`; eventos `creada | expirada | cancelada | reactivada | token_regenerado`; actores `comprador | admin | sistema`.
-- `BOOKING_HOLD_HOURS`: opcional (24 por defecto); si está presente debe ser entero positivo (`/^[1-9]\d*$/`), si no, el arranque falla.
+- `BOOKING_HOLD_HOURS`: opcional (24 por defecto); si está presente debe ser entero positivo (`/^[1-9]\d*$/`), si no, el arranque falla. Máximo 720 (ajuste final aprobado); constantes `HORAS_RETENCION_POR_DEFECTO` y `HORAS_RETENCION_MAXIMA` en `src/lib/config.ts`.
 - No tocar `pendientes.md` ni quitar PEN-16; ADR-028 no declara cerradas las edades de categorías.
 
 ## Review Focus

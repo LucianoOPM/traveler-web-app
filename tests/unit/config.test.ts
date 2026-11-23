@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { comprobarConfiguracion } from "@lib/config";
+import { HORAS_RETENCION_POR_DEFECTO, comprobarConfiguracion } from "@lib/config";
 
 const raiz = path.resolve(import.meta.dir, "../..");
 
@@ -56,15 +56,22 @@ describe("comprobarConfiguracion", () => {
     expect(problemasCon({ AGENCY_TIMEZONE: "UTC" })).toEqual([]);
   });
 
-  test("BOOKING_HOLD_HOURS es opcional y, si existe, un entero positivo", () => {
-    for (const horas of [undefined, "24", "1", "72"]) {
+  test("BOOKING_HOLD_HOURS es opcional y, si existe, un entero de 1 a 720", () => {
+    for (const horas of [undefined, "24", "1", "72", "720"]) {
       expect(problemasCon({ BOOKING_HOLD_HOURS: horas })).toEqual([]);
     }
-    for (const horas of ["", "0", "-1", "1.5", "24h", " 24"]) {
+    for (const horas of ["", "0", "-1", "1.5", "24h", " 24", "721", "99999999999999999999"]) {
       expect(problemasCon({ BOOKING_HOLD_HOURS: horas })).toEqual([
-        "BOOKING_HOLD_HOURS: debe ser un entero positivo (horas)",
+        "BOOKING_HOLD_HOURS: debe ser un entero positivo de 1 a 720 (horas)",
       ]);
     }
+  });
+
+  test(".env.example usa el valor predeterminado de BOOKING_HOLD_HOURS", () => {
+    const linea = readFileSync(path.join(raiz, ".env.example"), "utf8").match(
+      /^BOOKING_HOLD_HOURS=(.*)$/m,
+    );
+    expect(Number(linea?.[1])).toBe(HORAS_RETENCION_POR_DEFECTO);
   });
 
   test("los archivos privados no pueden estar en public/ ni anidarse entre sí", () => {
