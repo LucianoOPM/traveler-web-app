@@ -70,6 +70,7 @@ function crear(
     salidaDeReserva: async () => null,
     buscarReserva: async () => null,
     cambiarReserva: async () => false,
+    liberarAsignacion: async () => {},
     expirarVencidas: async () => {},
   };
   const repo: BookingRepository = {

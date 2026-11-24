@@ -1,5 +1,6 @@
 import type { SQL } from "bun";
 import { utcALocal } from "@lib/fechas";
+import { generarToken, hashDeToken } from "@modules/bookings/domain/access-token";
 import { sembrarSalida } from "./reservas";
 
 // Utilidades de las pruebas de cuentas bancarias. Todo se siembra por SQL (todavía no existe el
@@ -69,4 +70,69 @@ export async function sembrarAsignacion(
     values (${reservaId}, ${cuentaId}, ${monto}, ${mes}, ${estado},
             ${{ clabe: CLABE, accountHolder: TITULAR }}::jsonb, ${liberada}) returning id`;
   return a.id as string;
+}
+
+// --- Asignación bancaria (#84): reservas con token real para ejercer el servicio ---
+
+/**
+ * Reserva con un token real (se devuelve en claro; en la base solo está su hash). Con `departureId`
+ * comparte salida con otras reservas; si no, siembra una salida propia.
+ */
+export async function sembrarReservaConToken(
+  sql: SQL,
+  {
+    monto,
+    estado = "pendiente",
+    expiraEn = new Date(Date.now() + 86_400_000),
+    departureId,
+  }: { monto: number; estado?: string; expiraEn?: Date; departureId?: string },
+) {
+  let salida = departureId;
+  let punto: string;
+  if (salida) {
+    [{ id: punto }] = await sql`select boarding_point_id as id from departure_boarding_points
+      where departure_id = ${salida} limit 1`;
+  } else {
+    const s = await sembrarSalida(sql, { capacity: 10 });
+    salida = s.departureId;
+    punto = s.boardingPointId;
+  }
+  const token = generarToken();
+  const n = ++contador;
+  const [r] = await sql`insert into bookings
+    (reference, departure_id, buyer_name, buyer_phone, buyer_email, boarding_point_id, status,
+     expires_at, total_cents, access_token_hash)
+    values (${"TT-ASG" + n}, ${salida}, 'Ana', '5551234567', 'ana@example.com', ${punto},
+            ${estado}, ${expiraEn}, ${monto}, ${hashDeToken(token)}) returning id`;
+  return { id: r.id as string, token, departureId: salida };
+}
+
+/** Asignación directa para una reserva ya sembrada. */
+export async function sembrarAsignacionDe(
+  sql: SQL,
+  reservaId: string,
+  cuentaId: string,
+  monto: number,
+  mes = mesVigente(),
+) {
+  const [a] = await sql`insert into bank_allocations
+    (booking_id, bank_account_id, amount_cents, calendar_month, instruction_snapshot)
+    values (${reservaId}, ${cuentaId}, ${monto}, ${mes}, ${{ clabe: CLABE, accountHolder: TITULAR }}::jsonb)
+    returning id`;
+  return a.id as string;
+}
+
+/** Comprobante `pendiente` o `verificado` (con su revisión) de una reserva con asignación. */
+export async function sembrarReporte(
+  sql: SQL,
+  reservaId: string,
+  asignacionId: string,
+  estado: "pendiente" | "verificado" | "rechazado",
+) {
+  const [m] = await sql`insert into media_assets (storage_key, content_type, size_bytes)
+    values (${"media/asg-" + ++contador + ".png"}, 'image/png', 10) returning id`;
+  const [r] = await sql`insert into payment_reports
+    (booking_id, bank_allocation_id, reported_amount_cents, evidence_asset_id, status)
+    values (${reservaId}, ${asignacionId}, 100, ${m.id}, ${estado}) returning id`;
+  return r.id as string;
 }
