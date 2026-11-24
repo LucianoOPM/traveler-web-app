@@ -148,7 +148,7 @@ describe.skipIf(!base && !process.env.CI)("esquema de reservaciones en traveltec
   });
 
   test("rechaza estado inválido y total negativo", async () => {
-    await expect(nuevaReserva({ status: "pagada" })).rejects.toThrow(/bookings_status_check/);
+    await expect(nuevaReserva({ status: "inexistente" })).rejects.toThrow(/bookings_status_check/);
     await expect(nuevaReserva({ total_cents: -1 })).rejects.toThrow(/bookings_total_check/);
   });
 
@@ -173,16 +173,16 @@ describe.skipIf(!base && !process.env.CI)("esquema de reservaciones en traveltec
 
   test("eventos: tipo, actor y estados limitados", async () => {
     const r = await nuevaReserva();
-    await expect(nuevoEvento(r.id, { type: "pagada" })).rejects.toThrow(
+    await expect(nuevoEvento(r.id, { type: "inexistente" })).rejects.toThrow(
       /booking_events_type_check/,
     );
     await expect(nuevoEvento(r.id, { actor_type: "operador" })).rejects.toThrow(
       /booking_events_actor_type_check/,
     );
-    await expect(nuevoEvento(r.id, { from_status: "pagada" })).rejects.toThrow(
+    await expect(nuevoEvento(r.id, { from_status: "inexistente" })).rejects.toThrow(
       /booking_events_from_status_check/,
     );
-    await expect(nuevoEvento(r.id, { to_status: "pagada" })).rejects.toThrow(
+    await expect(nuevoEvento(r.id, { to_status: "inexistente" })).rejects.toThrow(
       /booking_events_to_status_check/,
     );
     await expect(

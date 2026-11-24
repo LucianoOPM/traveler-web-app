@@ -7,15 +7,15 @@ import type { Booking, BookingStatus } from "../types";
  * Única definición de «esta reserva ocupa lugares» (reserva, disponibilidad y reactivación la
  * reutilizan). Ocupa lugares todo pasajero de la reserva, infantes incluidos.
  * - `pendiente`: solo mientras `expiresAt > ahora`, aunque su estado aún no sea `expirada`.
- * - `en_revision`: siempre; no expira, y `expiresAt` se ignora.
+ * - `en_revision`, `parcial` y `pagada` (ADR-029): siempre; no expiran, y `expiresAt` se ignora.
  * - `expirada` y `cancelada`: nunca.
  */
 export function retieneInventario(
   reserva: Pick<Booking, "status" | "expiresAt">,
   ahora: Date,
 ): boolean {
-  if (reserva.status === "en_revision") return true;
-  return reserva.status === "pendiente" && reserva.expiresAt > ahora;
+  if (reserva.status === "pendiente") return reserva.expiresAt > ahora;
+  return reserva.status !== "expirada" && reserva.status !== "cancelada";
 }
 
 // Reglas de la reserva nueva: funciones puras. Los mensajes son públicos (sin datos del cliente).
@@ -110,7 +110,7 @@ export const estadoEfectivo = (
 ): BookingStatus =>
   reserva.status === "pendiente" && reserva.expiresAt <= ahora ? "expirada" : reserva.status;
 
-/** Cancelar: desde `pendiente` o `en_revision`; repetida sobre `cancelada` es idempotente; `expirada` da 409. */
+/** Cancelar: desde cualquier estado vigente (con pagos también); repetida sobre `cancelada` es idempotente; `expirada` da 409. */
 export function decidirCancelacion(
   reserva: Pick<Booking, "status" | "expiresAt">,
   ahora: Date,
@@ -123,7 +123,7 @@ export function decidirCancelacion(
   return "cancelar";
 }
 
-/** Reactivar: desde `expirada` o `cancelada`; si ya está `pendiente` o `en_revision` es idempotente. */
+/** Reactivar: desde `expirada` o `cancelada`; en cualquier estado vigente es idempotente. */
 export function decidirReactivacion(
   reserva: Pick<Booking, "status" | "expiresAt">,
   ahora: Date,
@@ -151,7 +151,7 @@ export function accionesPermitidas(
 ): AccionDeReserva[] {
   const estado = estadoEfectivo(reserva, ahora);
   const acciones: AccionDeReserva[] = [];
-  if (estado === "pendiente" || estado === "en_revision") acciones.push("cancelar", "regenerar");
   if (estado === "expirada" || estado === "cancelada") acciones.push("reactivar");
+  else acciones.push("cancelar", "regenerar");
   return acciones;
 }

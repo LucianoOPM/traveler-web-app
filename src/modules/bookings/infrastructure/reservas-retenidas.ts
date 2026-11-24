@@ -7,7 +7,7 @@ import { bookingEvents, bookingPassengers, bookings } from "../schema";
 // Acepta la base o una transacción: dentro de una, ve las escrituras y los bloqueos de esa transacción.
 type Consulta = Pick<BunSQLDatabase<typeof schema>, "select">;
 
-/** Reservas `pendiente` y `en_revision` de la salida con su número de pasajeros. */
+/** Reservas candidatas a retener (`pendiente`, `en_revision`, `parcial`, `pagada`) con su número de pasajeros. */
 export function reservasCandidatas(q: Consulta, departureId: string) {
   return q
     .select({
@@ -20,7 +20,7 @@ export function reservasCandidatas(q: Consulta, departureId: string) {
     .where(
       and(
         eq(bookings.departureId, departureId),
-        inArray(bookings.status, ["pendiente", "en_revision"]),
+        inArray(bookings.status, ["pendiente", "en_revision", "parcial", "pagada"]),
       ),
     )
     .groupBy(bookings.id);

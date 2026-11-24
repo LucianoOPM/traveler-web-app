@@ -15,7 +15,7 @@ export interface BookingTx {
   /** `SELECT … FOR UPDATE` de la salida (con el estado de su paquete); `null` si no existe. */
   bloquearSalida(id: string): Promise<SalidaBloqueada | null>;
   puntoAsignado(departureId: string, boardingPointId: string): Promise<boolean>;
-  /** Reservas `pendiente` y `en_revision` de la salida con su número de pasajeros. */
+  /** Reservas candidatas a retener (`pendiente`, `en_revision`, `parcial`, `pagada`) con su número de pasajeros. */
   reservasCandidatas(
     departureId: string,
   ): Promise<(Pick<Booking, "status" | "expiresAt"> & { pasajeros: number })[]>;

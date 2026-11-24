@@ -29,6 +29,13 @@
       "when": 1795465547925,
       "tag": "0003_reservaciones",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795479454299,
+      "tag": "0004_pagos",
+      "breakpoints": true
     }
   ]
 }
