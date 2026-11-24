@@ -175,6 +175,7 @@ function crear(
       reservas.set(id, { ...r, ...cambios });
       return true;
     },
+    liberarAsignacion: async () => {},
     expirarVencidas: async (_s, ahora) => {
       for (const r of reservas.values()) {
         if (r.status === "pendiente" && r.expiresAt <= ahora) {

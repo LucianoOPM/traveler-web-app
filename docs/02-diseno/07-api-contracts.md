@@ -66,6 +66,12 @@ Actions **solo admin** de `src/actions/payments.ts` (sin sesión `401`, operador
 - Cuenta inexistente: `404`. Todo ocurre en una transacción que bloquea la fila de `bank_accounts` con `FOR UPDATE` (el mismo protocolo que usará la asignación bancaria); si falla la auditoría se revierte el cambio, y lo rechazado no deja registro.
 - Páginas SSR solo admin (middleware: sin sesión `302 /login`, operador `403`): `/admin/cuentas` (límite, comprometido del mes y disponible por cuenta, sin datos bancarios), `/admin/cuentas/nueva` y `/admin/cuentas/<id>` (`404` si el id no es UUID o no existe). Son de solo lectura al cargarse.
 
+## Instrucciones SPEI (#84)
+- **Action pública `payments.requestInstructions`** (`/_actions/payments.requestInstructions`, sin sesión; la única credencial es el token de consulta). Entrada `z.strictObject({ token })`; cualquier otra clave es `400`. Límite propio de 20 solicitudes por hora por IP (en memoria; `429`). Respuesta: `{ instructions: { bankName, accountHolder, clabe, reference, amountCents, calendarMonth }, pendingCents }`: `instructions` es el snapshot congelado (`amountCents` = importe comprometido) y `pendingCents` el saldo por pagar.
+- Idempotente: una asignación vigente por reserva; repetir devuelve el mismo snapshot sin evento ni auditoría. Errores: `404` uniforme (token mal formado, inexistente o regenerado, también si se regenera durante la solicitud), `409` si la reserva no admite instrucciones (`pagada`, `expirada`, `cancelada`; `en_revision` sin asignación) o `409 no_eligible_account` si ninguna cuenta soporta el importe completo (queda una alerta abierta, sin instrucciones inventadas).
+- `GET /reservas/<token>` muestra las instrucciones ya emitidas mientras la reserva admita pagar y, si no hay ninguna, el botón que llama a la Action; es de solo lectura (no asigna, no materializa expiraciones, no abre alertas).
+- Alertas: sección «Reservas sin cuenta elegible» en `/admin/cuentas` (solo admin).
+
 ## Salud
 `GET /api/health` (fuera de `/api/v1/`, implementado en la issue #8): `200` con `{ "status": "ok" }` y `Cache-Control: no-store`; sin efectos secundarios y sin exponer configuración, secretos ni versiones. Indica que el servidor arrancó con configuración válida; con configuración inválida responde `500 internal_error` (ver [ADR-019](../05-decisiones/11-decisions-and-risks.md)). No comprueba la base de datos: si la salud la incluirá o habrá un endpoint de *readiness* aparte (H1) **no está decidido**.
 

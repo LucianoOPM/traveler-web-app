@@ -1,3 +1,4 @@
+import type { ActorLiberacion } from "@modules/payments/infrastructure/liberar-asignaciones";
 import type { Departure, PackageStatus } from "@modules/catalog/types";
 import type {
   Booking,
@@ -32,6 +33,11 @@ export interface BookingTx {
     esperado: BookingStatus,
     cambios: Partial<Pick<NewBooking, "status" | "expiresAt" | "accessTokenHash">>,
   ): Promise<boolean>;
+  /**
+   * Libera la asignación bancaria de la reserva (salida ya bloqueada). Condicional e idempotente:
+   * no hace nada sin asignación vigente o con comprobantes pendientes o un SPEI verificado.
+   */
+  liberarAsignacion(departureId: string, bookingId: string, actor: ActorLiberacion): Promise<void>;
   /** Materializa las pendientes vencidas de la salida (ya bloqueada) con su evento `sistema`. */
   expirarVencidas(departureId: string, ahora: Date): Promise<void>;
 }

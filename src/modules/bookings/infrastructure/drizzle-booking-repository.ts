@@ -9,6 +9,7 @@ import {
 } from "@modules/catalog/schema";
 import type { BookingRepository, BookingTx } from "../domain/booking-repository";
 import { bookingEvents, bookingPassengers, bookings } from "../schema";
+import { liberarAsignaciones } from "@modules/payments/infrastructure/liberar-asignaciones";
 import { expirarVencidas, reservasCandidatas } from "./reservas-retenidas";
 
 type Tx = Parameters<Parameters<BunSQLDatabase<typeof schema>["transaction"]>[0]>[0];
@@ -155,6 +156,9 @@ const operaciones = (tx: Tx): BookingTx => ({
       .returning({ id: bookings.id });
     return filas.length > 0;
   },
+
+  liberarAsignacion: (departureId, bookingId, actor) =>
+    liberarAsignaciones(tx, departureId, [bookingId], actor),
 
   expirarVencidas: (departureId, ahora) => expirarVencidas(tx, departureId, ahora),
 });

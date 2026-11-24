@@ -1,6 +1,7 @@
 import { and, count, eq, inArray, lte } from "drizzle-orm";
 import type { BunSQLDatabase } from "drizzle-orm/bun-sql";
 import type * as schema from "@db/schema";
+import { liberarAsignaciones } from "@modules/payments/infrastructure/liberar-asignaciones";
 import { retieneInventario } from "../domain/booking-rules";
 import { bookingEvents, bookingPassengers, bookings } from "../schema";
 
@@ -37,10 +38,11 @@ export async function pasajerosRetenidos(q: Consulta, departureId: string, ahora
  * Expiración perezosa: materializa como `expirada` las `pendiente` vencidas de la salida y deja el
  * evento `expirada` (actor `sistema`). Se llama con la salida bloqueada, dentro de la transacción
  * de quien la bloquea. Es la misma condición que `retieneInventario` (`expires_at <= ahora`), así
- * que no cambia el inventario retenido. `en_revision` nunca expira.
+ * que no cambia el inventario retenido. `en_revision` nunca expira. Libera la asignación bancaria de
+ * cada reserva expirada (si no tiene comprobantes pendientes ni SPEI verificado).
  */
 export async function expirarVencidas(
-  q: Pick<BunSQLDatabase<typeof schema>, "update" | "insert">,
+  q: Pick<BunSQLDatabase<typeof schema>, "select" | "update" | "insert">,
   departureId: string,
   ahora: Date,
 ) {
@@ -64,5 +66,11 @@ export async function expirarVencidas(
       fromStatus: "pendiente" as const,
       toStatus: "expirada" as const,
     })),
+  );
+  await liberarAsignaciones(
+    q,
+    departureId,
+    vencidas.map((v) => v.id),
+    { tipo: "sistema" },
   );
 }

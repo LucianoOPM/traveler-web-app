@@ -4,15 +4,20 @@ import { baseDelServidor } from "@db/servidor";
 import { formatearFecha } from "@lib/fechas";
 import { formatearPesos } from "@lib/importes";
 import { noEncontrado } from "@lib/no-encontrado";
+import PedirInstrucciones from "@components/pagos/PedirInstrucciones";
 import { crearReservas } from "@modules/bookings/container";
+import { crearPagos } from "@modules/payments/container";
 
 // Solo lectura: un GET nunca modifica datos. El middleware añade `Cache-Control: no-store` y
 // `Referrer-Policy: no-referrer` a toda `/reservas/*`. Token inexistente, inválido o malformado
 // responden el mismo `404`: no se revela si la reserva existe. No se registra el token ni la URL.
-const reserva = await crearReservas(await baseDelServidor()).bookings.findByToken(
-  Astro.params.token ?? "",
-);
+const base = await baseDelServidor();
+const token = Astro.params.token ?? "";
+const reserva = await crearReservas(base).bookings.findByToken(token);
 if (!reserva) return noEncontrado();
+// Lectura pura: muestra las instrucciones ya emitidas; pedirlas (escritura) es una Action.
+const pago = await crearPagos(base).allocations.find(token);
+const puedePedir = !pago && (reserva.status === "pendiente" || reserva.status === "parcial");
 
 const zona = process.env.AGENCY_TIMEZONE!;
 const ESTADOS = {
@@ -91,7 +96,44 @@ const CATEGORIAS = { adulto: "Adulto", menor: "Menor", infante: "Infante" } as c
       ))}
     </tbody>
   </table>
-  <p class="text-lg">
+  <p class="mb-6 text-lg">
     <strong>Total: {formatearPesos(reserva.totalCents)}</strong>
   </p>
+  {pago && (
+    <section aria-labelledby="pago-titulo">
+      <h2 id="pago-titulo" class="mb-2 text-2xl font-semibold">
+        Instrucciones de pago SPEI
+      </h2>
+      <dl class="mb-2 grid gap-1">
+        <div>
+          <dt class="mr-1 inline font-medium">Banco:</dt>
+          <dd class="inline">{pago.instructions.bankName}</dd>
+        </div>
+        <div>
+          <dt class="mr-1 inline font-medium">Titular:</dt>
+          <dd class="inline">{pago.instructions.accountHolder}</dd>
+        </div>
+        <div>
+          <dt class="mr-1 inline font-medium">CLABE:</dt>
+          <dd class="inline">{pago.instructions.clabe}</dd>
+        </div>
+        <div>
+          <dt class="mr-1 inline font-medium">Concepto:</dt>
+          <dd class="inline">{pago.instructions.reference}</dd>
+        </div>
+        <div>
+          <dt class="mr-1 inline font-medium">Saldo por pagar:</dt>
+          <dd class="inline">{formatearPesos(pago.pendingCents)}</dd>
+        </div>
+      </dl>
+    </section>
+  )}
+  {puedePedir && (
+    <section aria-labelledby="pago-titulo">
+      <h2 id="pago-titulo" class="mb-2 text-2xl font-semibold">
+        Pago por transferencia
+      </h2>
+      <PedirInstrucciones client:load token={token} />
+    </section>
+  )}
 </PublicLayout>

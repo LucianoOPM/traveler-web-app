@@ -170,7 +170,7 @@ export class BookingService {
    */
   async cancel(bookingId: string, { actorUserId, reason }: AccionAdmin) {
     const motivo = comprobarMotivo(reason);
-    return this.sobreReserva(bookingId, async (tx, { reserva, ahora }) => {
+    return this.sobreReserva(bookingId, async (tx, { reserva, salida, ahora }) => {
       const decision = probar(() => decidirCancelacion(reserva, ahora));
       if ("error" in decision) return decision;
       if (decision.valor === "repetida") {
@@ -184,6 +184,12 @@ export class BookingService {
         actorUserId,
         fromStatus: reserva.status,
         toStatus: "cancelada",
+        reason: motivo,
+      });
+      // Sin SPEI verificado ni comprobante pendiente la asignación deja de consumir el límite.
+      await tx.liberarAsignacion(salida.id, bookingId, {
+        tipo: "admin",
+        actorUserId,
         reason: motivo,
       });
       return { valor: { status: "cancelada" as BookingStatus, cambio: true } };
