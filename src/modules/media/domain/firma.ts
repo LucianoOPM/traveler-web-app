@@ -5,10 +5,15 @@
 export const TIPOS_IMAGEN = ["image/jpeg", "image/png", "image/webp"] as const;
 export type TipoImagen = (typeof TIPOS_IMAGEN)[number];
 
-export const EXTENSION: Record<TipoImagen, string> = {
+// Evidencias de pago (#85): imágenes y PDF. Las portadas siguen aceptando solo imágenes.
+export const TIPOS_ARCHIVO = [...TIPOS_IMAGEN, "application/pdf"] as const;
+export type TipoArchivo = (typeof TIPOS_ARCHIVO)[number];
+
+export const EXTENSION: Record<TipoArchivo, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
+  "application/pdf": "pdf",
 };
 
 const empieza = (b: Uint8Array, ...bytes: number[]) => bytes.every((x, i) => b[i] === x);
@@ -35,4 +40,25 @@ export function detectarTipoImagen(b: Uint8Array): TipoImagen | null {
     return "image/webp";
   }
   return null;
+}
+
+const COLA_PDF = 1024;
+
+/**
+ * PDF por cabecera `%PDF-` y marcador `%%EOF` en el último kilobyte.
+ * shortcut: no analiza la estructura; un archivo con cabecera y cierre pero contenido corrupto o
+ * malicioso pasa. Por eso solo lo ve el admin, como descarga y con `nosniff`; revisarlo si se
+ * abre a más usuarios.
+ */
+function esPdf(b: Uint8Array): boolean {
+  if (b.length < 20 || !ascii(b, 0, "%PDF-")) return false;
+  const cola = b.subarray(Math.max(0, b.length - COLA_PDF));
+  const marca = "%%EOF";
+  for (let i = 0; i + marca.length <= cola.length; i++) if (ascii(cola, i, marca)) return true;
+  return false;
+}
+
+/** Tipo real de una evidencia de pago (imagen o PDF) por sus bytes. */
+export function detectarTipoEvidencia(b: Uint8Array): TipoArchivo | null {
+  return detectarTipoImagen(b) ?? (esPdf(b) ? "application/pdf" : null);
 }

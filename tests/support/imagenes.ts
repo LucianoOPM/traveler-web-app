@@ -18,3 +18,15 @@ export const jpegDe = (bytes: number) => {
   datos.set([0xff, 0xd9], bytes - 2);
   return datos;
 };
+
+/** Un PDF mínimo con cabecera `%PDF-` y marcador `%%EOF` (válido solo para la comprobación básica). */
+export const pdf = () =>
+  new TextEncoder().encode("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n");
+/** Un PDF válido relleno hasta `bytes` de tamaño exacto (el cierre queda en el último kilobyte). */
+export const pdfDe = (bytes: number) => {
+  const base = pdf();
+  const datos = new Uint8Array(bytes).fill(0x20);
+  datos.set(base.slice(0, 9));
+  datos.set(base.slice(-8), bytes - 8);
+  return datos;
+};

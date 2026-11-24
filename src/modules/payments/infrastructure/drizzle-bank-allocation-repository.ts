@@ -23,6 +23,32 @@ import { cuentasDeSalida } from "./liberar-asignaciones";
 type Tx = Parameters<Parameters<BunSQLDatabase<typeof schema>["transaction"]>[0]>[0];
 type Consulta = Pick<BunSQLDatabase<typeof schema>, "select">;
 
+/** `SELECT … FOR UPDATE` de la salida (el bloqueo de H3). */
+export async function bloquearSalidaDe(q: Consulta, departureId: string) {
+  const filas = await q
+    .select({ id: departures.id })
+    .from(departures)
+    .where(eq(departures.id, departureId))
+    .for("update");
+  return filas.length > 0;
+}
+
+/** Total − SPEI verificados − efectivo. SQL a mano con alias: con una sola tabla Drizzle omite el prefijo de columna y `id` sería ambiguo. */
+export async function saldoPendienteDe(
+  q: Pick<BunSQLDatabase<typeof schema>, "execute">,
+  bookingId: string,
+) {
+  const filas = await q.execute<{ saldo: number }>(sql`
+      select b.total_cents
+        - coalesce((select sum(v.verified_amount_cents)
+            from ${paymentReviews} v join ${paymentReports} r on r.id = v.payment_report_id
+            where r.booking_id = b.id and v.decision = 'verificado'), 0)
+        - coalesce((select sum(c.amount_cents) from ${cashPayments} c
+            where c.booking_id = b.id), 0) as saldo
+      from ${bookings} b where b.id = ${bookingId}`);
+  return Number(filas[0]?.saldo ?? 0);
+}
+
 const columnasReserva = {
   id: bookings.id,
   reference: bookings.reference,
@@ -32,7 +58,7 @@ const columnasReserva = {
   departureId: bookings.departureId,
 };
 
-const reservaPorToken = async (q: Consulta, hash: string) => {
+export const reservaPorToken = async (q: Consulta, hash: string) => {
   const [fila] = await q
     .select(columnasReserva)
     .from(bookings)
@@ -40,7 +66,7 @@ const reservaPorToken = async (q: Consulta, hash: string) => {
   return fila ?? null;
 };
 
-const asignacionVigente = async (q: Consulta, bookingId: string) => {
+export const asignacionVigente = async (q: Consulta, bookingId: string) => {
   const [fila] = await q
     .select()
     .from(bankAllocations)
@@ -52,14 +78,7 @@ const operaciones = (tx: Tx): BankAllocationTx => ({
   async salidaPorToken(hash) {
     return (await reservaPorToken(tx, hash))?.departureId ?? null;
   },
-  async bloquearSalida(departureId) {
-    const filas = await tx
-      .select({ id: departures.id })
-      .from(departures)
-      .where(eq(departures.id, departureId))
-      .for("update");
-    return filas.length > 0;
-  },
+  bloquearSalida: (departureId) => bloquearSalidaDe(tx, departureId),
   bloquearCuentas(departureId) {
     return tx
       .select()
@@ -143,17 +162,8 @@ export class DrizzleBankAllocationRepository implements BankAllocationRepository
     return asignacionVigente(this.db, bookingId);
   }
 
-  async saldoPendiente(bookingId: string) {
-    // SQL a mano con alias: con una sola tabla Drizzle omite el prefijo de columna y `id` sería ambiguo.
-    const filas = await this.db.execute<{ saldo: number }>(sql`
-      select b.total_cents
-        - coalesce((select sum(v.verified_amount_cents)
-            from ${paymentReviews} v join ${paymentReports} r on r.id = v.payment_report_id
-            where r.booking_id = b.id and v.decision = 'verificado'), 0)
-        - coalesce((select sum(c.amount_cents) from ${cashPayments} c
-            where c.booking_id = b.id), 0) as saldo
-      from ${bookings} b where b.id = ${bookingId}`);
-    return Number(filas[0]?.saldo ?? 0);
+  saldoPendiente(bookingId: string) {
+    return saldoPendienteDe(this.db, bookingId);
   }
 
   async alertasAbiertas(): Promise<AlertaAdmin[]> {

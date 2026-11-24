@@ -4,7 +4,7 @@ import { MediaService, TAMANO_MAXIMO } from "@modules/media/application/media-se
 import type { AlmacenArchivos } from "@modules/media/domain/almacen-archivos";
 import type { MediaRepository } from "@modules/media/domain/media-repository";
 import type { MediaAsset } from "@modules/media/types";
-import { jpeg, jpegDe, png } from "../../support/imagenes";
+import { jpeg, jpegDe, pdf, pdfDe, png } from "../../support/imagenes";
 
 function montar(fallaCrear = false) {
   const archivos = new Map<string, Uint8Array>();
@@ -72,5 +72,49 @@ describe("MediaService", () => {
     await servicio.eliminar(asset.id);
     await servicio.eliminar(asset.id);
     expect(archivos.size + filas.size).toBe(0);
+  });
+});
+
+describe("MediaService: evidencias de pago", () => {
+  test("acepta un PDF y una imagen sin insertar fila, con clave generada por el servidor", async () => {
+    const { servicio, archivos, filas } = montar();
+    const a = await servicio.almacenarEvidencia(pdf());
+    const b = await servicio.almacenarEvidencia(jpeg());
+    expect(a.contentType).toBe("application/pdf");
+    expect(a.storageKey).toMatch(/^media\/[0-9a-f-]{36}\.pdf$/);
+    expect(b.contentType).toBe("image/jpeg");
+    expect(archivos.size).toBe(2);
+    expect(filas.size).toBe(0); // la fila la inserta quien lo usa, en su transacción
+  });
+
+  test("5 MiB exactos se aceptan y 5 MiB más un byte se rechazan sin escribir", async () => {
+    const { servicio, archivos } = montar();
+    await servicio.almacenarEvidencia(pdfDe(TAMANO_MAXIMO));
+    expect(archivos.size).toBe(1);
+    await expect(servicio.almacenarEvidencia(pdfDe(TAMANO_MAXIMO + 1))).rejects.toBeInstanceOf(
+      BusinessRuleError,
+    );
+    expect(archivos.size).toBe(1);
+  });
+
+  test("rechaza vacío, firma falsa y archivos truncados sin escribir", async () => {
+    const { servicio, archivos } = montar();
+    for (const bytes of [new Uint8Array(), new TextEncoder().encode("hola"), pdf().slice(0, 12)]) {
+      await expect(servicio.almacenarEvidencia(bytes)).rejects.toBeInstanceOf(BusinessRuleError);
+    }
+    expect(archivos.size).toBe(0);
+  });
+
+  test("descartar borra el archivo escrito", async () => {
+    const { servicio, archivos } = montar();
+    const { storageKey } = await servicio.almacenarEvidencia(pdf());
+    await servicio.descartar(storageKey);
+    expect(archivos.size).toBe(0);
+  });
+
+  test("una portada sigue siendo solo imagen: un PDF no puede usarse como portada", async () => {
+    const { servicio, archivos } = montar();
+    await expect(servicio.guardar(pdf())).rejects.toBeInstanceOf(BusinessRuleError);
+    expect(archivos.size).toBe(0);
   });
 });

@@ -13,6 +13,8 @@ import { conErrores } from "./con-errores";
 // Pedir instrucciones es público (solo el token del comprador). Límite propio por IP, independiente
 // del de reservas; cuenta toda solicitud con forma válida.
 const limiteInstrucciones = new LimiteDeSolicitudes(20, 60 * 60 * 1000);
+// Reportar un pago: más pesado (sube un archivo), 10 solicitudes por hora por IP, independiente de las demás.
+const limiteReportes = new LimiteDeSolicitudes(10, 60 * 60 * 1000);
 const pagos = async () => crearPagos(await baseDelServidor());
 const cuentas = async () => crearPagos(await baseDelServidor()).bankAccounts;
 
@@ -29,6 +31,28 @@ const datosCuenta = {
 };
 
 export const payments = {
+  reportPayment: defineAction({
+    accept: "form",
+    // Estricta: una clave desconocida (role, database…) es 400. El importe llega en centavos enteros;
+    // la validación del archivo (firma y tamaño) y las reglas del reporte son del servicio.
+    input: z.strictObject({
+      token: z.string().max(200),
+      requestKey: z.uuid(),
+      amountCents: z.number().int().max(2_147_483_647),
+      trackingReference: z.string().max(200).optional(),
+      file: z.instanceof(File),
+    }),
+    handler: conErrores(
+      "payments.reportPayment",
+      async ({ token, file, ...datos }, { clientAddress }) => {
+        if (!limiteReportes.intentar(clientAddress)) {
+          throw new TooManyRequestsError("Demasiadas solicitudes; inténtalo de nuevo más tarde");
+        }
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        return (await pagos()).reports.report(token, datos, bytes);
+      },
+    ),
+  }),
   requestInstructions: defineAction({
     // El token mide 43 caracteres; el tope evita procesar entradas enormes. El formato lo valida el servicio.
     input: z.strictObject({ token: z.string().max(200) }),
