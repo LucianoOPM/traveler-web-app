@@ -1,0 +1,37 @@
+---
+import { z } from "astro/zod";
+import AdminLayout from "@layouts/AdminLayout.astro";
+import CuentaForm from "@components/cuentas/CuentaForm";
+import { baseDelServidor } from "@db/servidor";
+import { NotFoundError } from "@lib/errors";
+import { crearPagos } from "@modules/payments/container";
+
+// El middleware ya exige rol `admin` en /admin/cuentas (403 al operador).
+// Fuera de `/api/` un error lanzado sería un 500: un id inválido o inexistente se responde 404 aquí.
+const id = z.uuid().safeParse(Astro.params.id);
+if (!id.success) return new Response("No encontrado", { status: 404 });
+
+let cuenta;
+try {
+  cuenta = await crearPagos(await baseDelServidor()).bankAccounts.get(id.data);
+} catch (error) {
+  if (error instanceof NotFoundError) return new Response("No encontrado", { status: 404 });
+  throw error;
+}
+---
+
+<AdminLayout titulo={cuenta.name}>
+  <p class="mb-4">
+    <a
+      href="/admin/cuentas"
+      class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+    >
+      ← Cuentas
+    </a>
+  </p>
+  <h1 class="mb-2 text-2xl font-semibold">{cuenta.name}</h1>
+  <p class="mb-4 text-muted-foreground">
+    Estado: {cuenta.isEligible ? "habilitada" : "deshabilitada"}
+  </p>
+  <CuentaForm client:load cuenta={cuenta} />
+</AdminLayout>

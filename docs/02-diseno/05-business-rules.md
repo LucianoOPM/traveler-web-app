@@ -72,4 +72,4 @@ Asignar, liberar y verificar son transaccionales, idempotentes y auditados. Orde
 - No exponer datos bancarios reales, contactos reales, recibos reales ni secretos.
 
 ## Auditoría mínima
-Verificación/rechazo de pagos, movimientos de cuentas, cancelación/reactivación, emisión/invalidez de boletos, check-in, cambios de permisos, invitaciones y revocaciones. El log no almacena tokens, contraseñas ni archivos sensibles.
+Verificación/rechazo de pagos, movimientos de cuentas, cancelación/reactivación, emisión/invalidez de boletos, check-in, cambios de permisos, invitaciones y revocaciones. El log no almacena tokens, contraseñas ni archivos sensibles. Los cambios de cuentas bancarias se registran en `audit_events` (#83) con la CLABE enmascarada (últimos 4 dígitos) y sin titular.

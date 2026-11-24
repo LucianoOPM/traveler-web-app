@@ -36,6 +36,13 @@
       "when": 1795479454299,
       "tag": "0004_pagos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795481546782,
+      "tag": "0005_auditoria",
+      "breakpoints": true
     }
   ]
 }

@@ -56,6 +56,16 @@ Actions **solo admin** (sin sesión `401`, operador o vetado `403`; el permiso s
 - `bookings.regenerateToken`: solo reservas vigentes (`pendiente` no vencida o `en_revision`; si no, `409`). Respuesta `{ token }`: **se muestra una sola vez**; el hash anterior queda reemplazado en la misma operación y el evento `token_regenerado` no guarda token ni hash.
 - Pantalla `/admin/catalogo/salidas/<id>/reservas` (solo admin por el middleware de `/admin/catalogo`; operador `403`): estado, vencimiento, contacto completo, pasajeros, total, punto de abordaje y las acciones permitidas, cada una con su motivo. Es de solo lectura al cargarse.
 
+## Cuentas bancarias (#83)
+Actions **solo admin** de `src/actions/payments.ts` (sin sesión `401`, operador o vetado `403`; el permiso se comprueba en cada handler). Entrada `z.strictObject`: cualquier otra clave (`role`, `actorUserId`…) es `400`; el actor de la auditoría sale de la sesión del servidor. Importes en centavos enteros (`<= 2147483647`); la conversión pesos → centavos la hace la pantalla con `pesosACentavos`.
+- Datos de cuenta (`createAccount` y `editAccount`): `name`, `bankName`, `accountHolder` (texto no vacío), `clabe` (texto de 18 dígitos, sin dígito verificador), `priority` (entero `>= 0`; menor = primero) y `monthlyLimitCents` (entero `> 0`). Regla inválida: `422` con mensaje fijo que nunca repite la CLABE ni el titular.
+- `payments.createAccount`: crea la cuenta habilitada y devuelve la fila. Audita `bank_account.created`.
+- `payments.editAccount` (`id` + datos): sin cambios efectivos `200` sin escribir ni auditar. Bajar `monthlyLimitCents` por debajo de lo comprometido por la cuenta en el mes vigente (`AGENCY_TIMEZONE`) → `409`; hasta lo comprometido, inclusive, se permite. Audita `bank_account.updated`. No modifica asignaciones ni `instruction_snapshot`.
+- `payments.setAccountEligible` (`id`, `isEligible`): habilita o deshabilita. Idempotente: repetir el estado actual es `200` sin evento. Audita `bank_account.enabled` / `bank_account.disabled`.
+- `payments.deleteAccount` (`id`): solo sin asignaciones; con cualquiera (también liberada) → `409` pidiendo deshabilitar la cuenta (la FK `restrict` es la última defensa). Respuesta `{ id }`. Audita `bank_account.deleted` conservando `entity_id`.
+- Cuenta inexistente: `404`. Todo ocurre en una transacción que bloquea la fila de `bank_accounts` con `FOR UPDATE` (el mismo protocolo que usará la asignación bancaria); si falla la auditoría se revierte el cambio, y lo rechazado no deja registro.
+- Páginas SSR solo admin (middleware: sin sesión `302 /login`, operador `403`): `/admin/cuentas` (límite, comprometido del mes y disponible por cuenta, sin datos bancarios), `/admin/cuentas/nueva` y `/admin/cuentas/<id>` (`404` si el id no es UUID o no existe). Son de solo lectura al cargarse.
+
 ## Salud
 `GET /api/health` (fuera de `/api/v1/`, implementado en la issue #8): `200` con `{ "status": "ok" }` y `Cache-Control: no-store`; sin efectos secundarios y sin exponer configuración, secretos ni versiones. Indica que el servidor arrancó con configuración válida; con configuración inválida responde `500 internal_error` (ver [ADR-019](../05-decisiones/11-decisions-and-risks.md)). No comprueba la base de datos: si la salud la incluirá o habrá un endpoint de *readiness* aparte (H1) **no está decidido**.
 
