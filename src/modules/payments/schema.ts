@@ -112,6 +112,11 @@ export const paymentReports = pgTable(
       .notNull()
       .references(() => bankAllocations.id, { onDelete: "restrict" }),
     reportedAmountCents: integer("reported_amount_cents").notNull(),
+    // Clave de rastreo o referencia SPEI que escribe el comprador; opcional, sin formato ni unicidad.
+    trackingReference: text("tracking_reference"),
+    // UUID de un intento de reporte: reintentar el MISMO envío no crea otro reporte. Nulo en los
+    // reportes que no vienen de un envío del comprador (p. ej. los sembrados por otras issues).
+    idempotencyKey: uuid("idempotency_key"),
     evidenceAssetId: uuid("evidence_asset_id")
       .notNull()
       .references(() => mediaAssets.id, { onDelete: "restrict" }),
@@ -123,6 +128,11 @@ export const paymentReports = pgTable(
   },
   (t) => [
     index("payment_reports_booking_id_status_idx").on(t.bookingId, t.status),
+    uniqueIndex("payment_reports_booking_key_idx").on(t.bookingId, t.idempotencyKey),
+    check(
+      "payment_reports_tracking_reference_check",
+      sql`${t.trackingReference} is null or char_length(${t.trackingReference}) between 1 and 40`,
+    ),
     check("payment_reports_amount_check", sql`${t.reportedAmountCents} > 0`),
     check("payment_reports_status_check", enLista(t.status, ESTADOS_REPORTE)),
   ],

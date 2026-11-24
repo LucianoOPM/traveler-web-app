@@ -5,6 +5,7 @@ import { formatearFecha } from "@lib/fechas";
 import { formatearPesos } from "@lib/importes";
 import { noEncontrado } from "@lib/no-encontrado";
 import PedirInstrucciones from "@components/pagos/PedirInstrucciones";
+import ReportarPago from "@components/pagos/ReportarPago";
 import { crearReservas } from "@modules/bookings/container";
 import { crearPagos } from "@modules/payments/container";
 
@@ -16,7 +17,17 @@ const token = Astro.params.token ?? "";
 const reserva = await crearReservas(base).bookings.findByToken(token);
 if (!reserva) return noEncontrado();
 // Lectura pura: muestra las instrucciones ya emitidas; pedirlas (escritura) es una Action.
-const pago = await crearPagos(base).allocations.find(token);
+const pagos = crearPagos(base);
+const pago = await pagos.allocations.find(token);
+const reportes = await pagos.reports.list(token);
+// Mismas condiciones que la Action: instrucciones vigentes y saldo por pagar (el servidor revalida).
+const puedeReportar = pago !== null && pago.pendingCents > 0;
+const ESTADOS_REPORTE = {
+  pendiente: "En revisión",
+  verificado: "Verificado",
+  rechazado: "Rechazado",
+  reemplazado: "Reemplazado",
+} as const;
 const puedePedir = !pago && (reserva.status === "pendiente" || reserva.status === "parcial");
 
 const zona = process.env.AGENCY_TIMEZONE!;
@@ -126,6 +137,55 @@ const CATEGORIAS = { adulto: "Adulto", menor: "Menor", infante: "Infante" } as c
           <dd class="inline">{formatearPesos(pago.pendingCents)}</dd>
         </div>
       </dl>
+    </section>
+  )}
+  {puedeReportar && (
+    <section aria-labelledby="reportar-titulo" class="mt-6">
+      <h2 id="reportar-titulo" class="mb-2 text-2xl font-semibold">
+        Reportar un pago
+      </h2>
+      <p class="mb-4 text-sm">
+        Enviar un comprobante no confirma el pago: la agencia lo revisa y, solo cuando lo verifica,
+        se descuenta de tu saldo.
+      </p>
+      <ReportarPago client:load token={token} />
+    </section>
+  )}
+  {reportes.length > 0 && (
+    <section aria-labelledby="reportes-titulo" class="mt-6">
+      <h2 id="reportes-titulo" class="mb-2 text-2xl font-semibold">
+        Tus reportes de pago
+      </h2>
+      <table class="w-full max-w-xl text-sm">
+        <thead>
+          <tr>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Fecha de reporte
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Importe reportado
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Importe verificado
+            </th>
+            <th scope="col" class="border-b px-3 py-2 text-left font-medium">
+              Estado
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {reportes.map((r) => (
+            <tr>
+              <td class="border-b px-3 py-2">{formatearFecha(r.submittedAt, zona)}</td>
+              <td class="border-b px-3 py-2">{formatearPesos(r.reportedAmountCents)}</td>
+              <td class="border-b px-3 py-2">
+                {r.verifiedAmountCents === null ? "—" : formatearPesos(r.verifiedAmountCents)}
+              </td>
+              <td class="border-b px-3 py-2">{ESTADOS_REPORTE[r.status]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   )}
   {puedePedir && (

@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { check, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { TIPOS_IMAGEN } from "./domain/firma";
+import { TIPOS_ARCHIVO } from "./domain/firma";
 
-// Archivo privado (hoy solo portadas de paquete; marketing lo reutilizará en H6). El nombre real
+// Archivo privado (portadas de paquete y evidencias de pago; marketing lo reutilizará en H6). El nombre real
 // en disco es `storage_key`, generado por el servidor; el del cliente no se guarda.
 export const mediaAssets = pgTable(
   "media_assets",
@@ -11,14 +11,14 @@ export const mediaAssets = pgTable(
       .default(sql`pg_catalog.gen_random_uuid()`)
       .primaryKey(),
     storageKey: text("storage_key").notNull().unique(),
-    contentType: text("content_type", { enum: TIPOS_IMAGEN }).notNull(),
+    contentType: text("content_type", { enum: TIPOS_ARCHIVO }).notNull(),
     sizeBytes: integer("size_bytes").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     check(
       "media_assets_content_type_check",
-      sql`${t.contentType} in ('image/jpeg', 'image/png', 'image/webp')`,
+      sql`${t.contentType} in ('image/jpeg', 'image/png', 'image/webp', 'application/pdf')`,
     ),
     check("media_assets_size_check", sql`${t.sizeBytes} > 0`),
   ],

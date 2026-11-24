@@ -1,6 +1,6 @@
 import { BusinessRuleError, NotFoundError } from "@lib/errors";
 import type { AlmacenArchivos } from "../domain/almacen-archivos";
-import { detectarTipoImagen, EXTENSION } from "../domain/firma";
+import { detectarTipoEvidencia, detectarTipoImagen, EXTENSION } from "../domain/firma";
 import type { MediaRepository } from "../domain/media-repository";
 import type { MediaAsset } from "../types";
 
@@ -33,6 +33,33 @@ export class MediaService {
       await this.almacen.borrar(clave);
       throw error;
     }
+  }
+
+  /**
+   * Evidencia de pago (imagen o PDF de hasta 5 MiB): valida por firma y escribe SOLO el archivo, con
+   * clave generada por el servidor. La fila de `media_assets` la inserta quien la usa, dentro de su
+   * propia transacción; si esa operación no prospera, debe llamar a `descartar`.
+   * shortcut: si el proceso muere entre escribir el archivo y confirmar la transacción queda un
+   * archivo huérfano; no hay limpieza automática (se documenta, no se programa).
+   */
+  async almacenarEvidencia(bytes: Uint8Array) {
+    if (bytes.length === 0) throw new BusinessRuleError("El archivo está vacío");
+    if (bytes.length > TAMANO_MAXIMO) throw new BusinessRuleError("El archivo supera los 5 MiB");
+    const tipo = detectarTipoEvidencia(bytes);
+    if (!tipo) {
+      throw new BusinessRuleError(
+        "Solo se admiten imágenes JPEG, PNG o WebP y documentos PDF válidos",
+      );
+    }
+    const id = crypto.randomUUID();
+    const storageKey = `media/${id}.${EXTENSION[tipo]}`;
+    await this.almacen.guardar(storageKey, bytes);
+    return { id, storageKey, contentType: tipo, sizeBytes: bytes.length };
+  }
+
+  /** Borra un archivo escrito por `almacenarEvidencia` que no llegó a usarse. */
+  descartar(storageKey: string) {
+    return this.almacen.borrar(storageKey);
   }
 
   async abrir(id: string): Promise<{ asset: MediaAsset; bytes: Uint8Array }> {

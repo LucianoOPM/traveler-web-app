@@ -26,10 +26,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
       if (enAdmin) {
         // Solo personal (`admin` u `operator`, también si el usuario tiene varios roles separados
         // por coma) y no vetado. Los permisos por operación se validan en cada endpoint; el
-        // catálogo (CRUD de paquetes y salidas) y las cuentas bancarias son solo de `admin`.
+        // catálogo (CRUD de paquetes y salidas), las cuentas bancarias y los pagos son solo de `admin`.
         const { user } = context.locals;
         const esPersonal = (user?.role ?? "").split(",").some((rol) => Object.hasOwn(roles, rol));
-        const soloAdmin = ["/admin/catalogo", "/admin/cuentas"].some(
+        const soloAdmin = ["/admin/catalogo", "/admin/cuentas", "/admin/pagos"].some(
           (base) => ruta === base || ruta.startsWith(`${base}/`),
         );
         const respuesta = !user

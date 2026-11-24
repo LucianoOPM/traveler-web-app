@@ -34,7 +34,7 @@ Esta tabla es la propuesta original en forma de rutas REST. Con el [ADR-025](../
 | POST | `/api/v1/bookings` | Crear reserva | Comprador / admin |
 | GET | `/api/v1/bookings/access` | Consulta con credencial limitada | Comprador |
 | POST | `/api/v1/bookings/:id/cancel` | Cancelar | Admin |
-| POST | `/api/v1/payments/reports` | Reportar SPEI y evidencia | Comprador autorizado |
+| — | *(propuesta original `POST /api/v1/payments/reports`; implementado como la Action `payments.reportPayment`, ver «Reporte de pago»)* | | |
 | POST | `/api/v1/payments/:id/review` | Aprobar/rechazar | Admin |
 | POST | `/api/v1/payments/cash` | Registrar efectivo | Admin |
 | GET | `/api/v1/departures/:id/manifest` | Manifiesto | Admin/operador; demo ficticia por ruta separada |
@@ -71,6 +71,13 @@ Actions **solo admin** de `src/actions/payments.ts` (sin sesión `401`, operador
 - Idempotente: una asignación vigente por reserva; repetir devuelve el mismo snapshot sin evento ni auditoría. Errores: `404` uniforme (token mal formado, inexistente o regenerado, también si se regenera durante la solicitud), `409` si la reserva no admite instrucciones (`pagada`, `expirada`, `cancelada`; `en_revision` sin asignación) o `409 no_eligible_account` si ninguna cuenta soporta el importe completo (queda una alerta abierta, sin instrucciones inventadas).
 - `GET /reservas/<token>` muestra las instrucciones ya emitidas mientras la reserva admita pagar y, si no hay ninguna, el botón que llama a la Action; es de solo lectura (no asigna, no materializa expiraciones, no abre alertas).
 - Alertas: sección «Reservas sin cuenta elegible» en `/admin/cuentas` (solo admin).
+
+## Reporte de pago (#85)
+- **Action pública `payments.reportPayment`** (`/_actions/payments.reportPayment`, sin sesión, `multipart/form-data`; la protección CSRF de Astro sigue activa: un origen distinto es `403`). Entrada estricta: `token`, `requestKey` (UUID del intento), `amountCents` (entero, centavos), `trackingReference` (opcional, hasta 40 caracteres tras recortar; vacía = `null`) y `file` (JPEG, PNG, WebP o PDF de hasta 5 MiB, validado por firma). Claves desconocidas, clave de intento inválida o sin archivo: `400`. Límite propio de 10 solicitudes por hora por IP (`429`; en memoria, PEN-08). Respuesta: `{ amountCents, status, submittedAt, pendingCents }` (el saldo no cambia hasta que un admin verifique).
+- **Errores:** `404` uniforme (token inválido, inexistente o regenerado, también durante la solicitud); `422` archivo inválido o demasiado grande, importe `<= 0` o por encima del saldo, referencia de más de 40 caracteres; `409` reserva en un estado que no admite reportes (`pagada`, `expirada`, `cancelada`), `no_allocation` sin asignación vigente o `idempotency_key_reused` (misma clave con otros datos).
+- **Idempotencia:** el mismo envío (misma clave, importe, referencia y **mismos bytes** de la evidencia, comparados por SHA-256) devuelve el mismo reporte sin otro archivo, evento ni auditoría; con la misma clave y otro contenido, aunque tenga el mismo tipo y tamaño, `409 idempotency_key_reused`. Claves distintas con evidencia idéntica crean reportes independientes.
+- `GET /admin/pagos/evidencias/<id del archivo>`: solo admin (sin sesión → `/login`, operador `403`); `no-store`, `nosniff`; el PDF se descarga (`attachment`) con nombre generado por el servidor. Una portada, un id inexistente o inválido: `404`. `/api/media/<id>` nunca sirve evidencias.
+- `GET /reservas/<token>` muestra, solo lectura, el formulario (si hay instrucciones vigentes y saldo) y los reportes propios: fecha de reporte, importe reportado, importe verificado y estado; sin ids de archivo ni enlaces administrativos y sin motivos de rechazo (los decide #86).
 
 ## Salud
 `GET /api/health` (fuera de `/api/v1/`, implementado en la issue #8): `200` con `{ "status": "ok" }` y `Cache-Control: no-store`; sin efectos secundarios y sin exponer configuración, secretos ni versiones. Indica que el servidor arrancó con configuración válida; con configuración inválida responde `500 internal_error` (ver [ADR-019](../05-decisiones/11-decisions-and-risks.md)). No comprueba la base de datos: si la salud la incluirá o habrá un endpoint de *readiness* aparte (H1) **no está decidido**.
