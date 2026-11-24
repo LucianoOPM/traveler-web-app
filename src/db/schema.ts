@@ -6,3 +6,4 @@ export * from "@modules/catalog/relations";
 export * from "@modules/media/schema";
 export * from "@modules/bookings/schema";
 export * from "@modules/bookings/relations";
+export * from "@modules/payments/schema";

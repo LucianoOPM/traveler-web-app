@@ -29,10 +29,20 @@ describe("reglas del ciclo de vida", () => {
     ["en_revision con plazo pasado", { status: "en_revision", expiresAt: hora(-48) }],
     ["expirada", { status: "expirada", expiresAt: hora(-1) }],
     ["cancelada", { status: "cancelada", expiresAt: hora(1) }],
+    ["parcial con plazo pasado", { status: "parcial", expiresAt: hora(-48) }],
+    ["pagada con plazo pasado", { status: "pagada", expiresAt: hora(-48) }],
   ];
 
   test("matriz: cancelar", () => {
-    const esperado = ["cancelar", "409", "cancelar", "409", "repetida"] as const;
+    const esperado = [
+      "cancelar",
+      "409",
+      "cancelar",
+      "409",
+      "repetida",
+      "cancelar",
+      "cancelar",
+    ] as const;
     estados.forEach(([, reserva], i) => {
       if (esperado[i] === "409") {
         expect(() => decidirCancelacion(reserva, AHORA)).toThrow(ConflictError);
@@ -43,14 +53,22 @@ describe("reglas del ciclo de vida", () => {
   });
 
   test("matriz: reactivar", () => {
-    const esperado = ["repetida", "reactivar", "repetida", "reactivar", "reactivar"] as const;
+    const esperado = [
+      "repetida",
+      "reactivar",
+      "repetida",
+      "reactivar",
+      "reactivar",
+      "repetida",
+      "repetida",
+    ] as const;
     estados.forEach(([, reserva], i) => {
       expect(decidirReactivacion(reserva, AHORA)).toBe(esperado[i]!);
     });
   });
 
-  test("matriz: regenerar enlace solo en vigentes (pendiente no vencida o en_revision)", () => {
-    const vigente = [true, false, true, false, false];
+  test("matriz: regenerar enlace solo en vigentes (pendiente no vencida, en_revision, parcial o pagada)", () => {
+    const vigente = [true, false, true, false, false, true, true];
     estados.forEach(([, reserva], i) => {
       if (vigente[i]) expect(() => comprobarTokenRegenerable(reserva, AHORA)).not.toThrow();
       else expect(() => comprobarTokenRegenerable(reserva, AHORA)).toThrow(ConflictError);
@@ -64,7 +82,10 @@ describe("reglas del ciclo de vida", () => {
       ["cancelar", "regenerar"],
       ["reactivar"],
       ["reactivar"],
+      ["cancelar", "regenerar"],
+      ["cancelar", "regenerar"],
     ]);
+    expect(estadoEfectivo(estados[5]![1], AHORA)).toBe("parcial");
     expect(estadoEfectivo(estados[1]![1], AHORA)).toBe("expirada");
     expect(estadoEfectivo(estados[2]![1], AHORA)).toBe("en_revision");
   });
@@ -137,7 +158,9 @@ function crear(
     bloquearSalida: async (id) => (id === salida.id ? salida : null),
     puntoAsignado: async () => true,
     reservasCandidatas: async () =>
-      [...reservas.values()].filter((r) => r.status === "pendiente" || r.status === "en_revision"),
+      [...reservas.values()].filter((r) =>
+        ["pendiente", "en_revision", "parcial", "pagada"].includes(r.status),
+      ),
     insertarReserva: async () => null,
     insertarPasajeros: async () => {},
     insertarEvento: async (e) => {

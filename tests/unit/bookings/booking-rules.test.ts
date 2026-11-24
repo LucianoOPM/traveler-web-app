@@ -30,6 +30,13 @@ describe("retieneInventario", () => {
     expect(retieneInventario({ status: "en_revision", expiresAt: enHoras(48) }, ahora)).toBe(true);
   });
 
+  test("parcial y pagada retienen siempre, como en_revision (ADR-029)", () => {
+    for (const status of ["parcial", "pagada"] as const) {
+      expect(retieneInventario({ status, expiresAt: enHoras(-48) }, ahora)).toBe(true);
+      expect(retieneInventario({ status, expiresAt: enHoras(48) }, ahora)).toBe(true);
+    }
+  });
+
   test("expirada y cancelada nunca retienen, aunque expires_at sea futuro", () => {
     for (const status of ["expirada", "cancelada"] as const) {
       expect(retieneInventario({ status, expiresAt: enHoras(48) }, ahora)).toBe(false);

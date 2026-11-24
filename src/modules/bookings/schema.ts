@@ -4,7 +4,14 @@ import { boardingPoints, departures } from "@modules/catalog/schema";
 import { user } from "@modules/identity/schema";
 
 // Fuente única de los valores permitidos: tipos y CHECK salen de aquí.
-export const ESTADOS_RESERVA = ["pendiente", "en_revision", "expirada", "cancelada"] as const;
+export const ESTADOS_RESERVA = [
+  "pendiente",
+  "en_revision",
+  "parcial",
+  "pagada",
+  "expirada",
+  "cancelada",
+] as const;
 export const CATEGORIAS_TARIFA = ["adulto", "menor", "infante"] as const;
 export const TIPOS_EVENTO_RESERVA = [
   "creada",
@@ -12,6 +19,13 @@ export const TIPOS_EVENTO_RESERVA = [
   "cancelada",
   "reactivada",
   "token_regenerado",
+  "pago_reportado",
+  "pago_verificado",
+  "pago_rechazado",
+  "pago_reemplazado",
+  "pago_efectivo",
+  "cuenta_asignada",
+  "cuenta_liberada",
 ] as const;
 export const TIPOS_ACTOR = ["comprador", "admin", "sistema"] as const;
 
