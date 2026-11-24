@@ -5,8 +5,8 @@ import { esAdmin } from "@lib/guards";
 // que `Astro.locals.user` existe y es personal.
 const { titulo = "Panel" } = Astro.props;
 const usuario = Astro.locals.user;
-// Ocultar el enlace no protege nada: el middleware devuelve 403 al operador en `/admin/catalogo`.
-const verCatalogo = esAdmin(usuario);
+// Ocultar el enlace no protege nada: el middleware devuelve 403 al operador en `/admin/catalogo` y `/admin/cuentas`.
+const verAdmin = esAdmin(usuario);
 const enlace =
   "rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50";
 ---
@@ -27,10 +27,15 @@ const enlace =
         <a href="/admin" class={enlace}>
           Inicio
         </a>
-        {verCatalogo && (
-          <a href="/admin/catalogo" class={enlace}>
-            Catálogo
-          </a>
+        {verAdmin && (
+          <>
+            <a href="/admin/catalogo" class={enlace}>
+              Catálogo
+            </a>
+            <a href="/admin/cuentas" class={enlace}>
+              Cuentas
+            </a>
+          </>
         )}
       </nav>
       <span class="text-sm text-muted-foreground">

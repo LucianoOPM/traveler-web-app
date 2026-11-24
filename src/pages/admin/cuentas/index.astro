@@ -1,0 +1,56 @@
+---
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { baseDelServidor } from "@db/servidor";
+import { formatearPesos } from "@lib/importes";
+import { crearPagos } from "@modules/payments/container";
+
+// El middleware ya exige rol `admin` en /admin/cuentas (403 al operador). Solo lectura: GET no muta.
+const cuentas = await crearPagos(await baseDelServidor()).bankAccounts.list();
+const enlace =
+  "underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm";
+---
+
+<AdminLayout titulo="Cuentas bancarias">
+  <h1 class="mb-4 text-2xl font-semibold">Cuentas bancarias</h1>
+  <p class="mb-4">
+    <a href="/admin/cuentas/nueva" class={enlace}>
+      Nueva cuenta
+    </a>
+  </p>
+  {cuentas.length === 0 ? (
+    <p>Aún no hay cuentas.</p>
+  ) : (
+    <table class="w-full text-sm">
+      <thead>
+        <tr>
+          <th class="border-b px-3 py-2 text-left font-medium">Prioridad</th>
+          <th class="border-b px-3 py-2 text-left font-medium">Nombre</th>
+          <th class="border-b px-3 py-2 text-left font-medium">Banco</th>
+          <th class="border-b px-3 py-2 text-left font-medium">Estado</th>
+          <th class="border-b px-3 py-2 text-right font-medium">Límite mensual</th>
+          <th class="border-b px-3 py-2 text-right font-medium">Comprometido este mes</th>
+          <th class="border-b px-3 py-2 text-right font-medium">Disponible</th>
+        </tr>
+      </thead>
+      <tbody>
+        {cuentas.map((c) => (
+          <tr>
+            <td class="border-b px-3 py-2">{c.priority}</td>
+            <td class="border-b px-3 py-2">
+              <a href={`/admin/cuentas/${c.id}`} class={enlace}>
+                {c.name}
+              </a>
+            </td>
+            <td class="border-b px-3 py-2">{c.bankName}</td>
+            <td class="border-b px-3 py-2">{c.isEligible ? "Habilitada" : "Deshabilitada"}</td>
+            <td class="border-b px-3 py-2 text-right">{formatearPesos(c.monthlyLimitCents)}</td>
+            <td class="border-b px-3 py-2 text-right">{formatearPesos(c.committedCents)}</td>
+            <td class="border-b px-3 py-2 text-right">
+              {formatearPesos(c.monthlyLimitCents - c.committedCents)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</AdminLayout>

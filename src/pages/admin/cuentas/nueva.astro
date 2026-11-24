@@ -1,0 +1,17 @@
+---
+import AdminLayout from "@layouts/AdminLayout.astro";
+import CuentaForm from "@components/cuentas/CuentaForm";
+---
+
+<AdminLayout titulo="Nueva cuenta">
+  <p class="mb-4">
+    <a
+      href="/admin/cuentas"
+      class="underline underline-offset-4 outline-none hover:no-underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-sm"
+    >
+      ← Cuentas
+    </a>
+  </p>
+  <h1 class="mb-4 text-2xl font-semibold">Nueva cuenta</h1>
+  <CuentaForm client:load />
+</AdminLayout>

@@ -26,13 +26,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
       if (enAdmin) {
         // Solo personal (`admin` u `operator`, también si el usuario tiene varios roles separados
         // por coma) y no vetado. Los permisos por operación se validan en cada endpoint; el
-        // catálogo (CRUD de paquetes y salidas) es solo de `admin`: el operador no lo ve.
+        // catálogo (CRUD de paquetes y salidas) y las cuentas bancarias son solo de `admin`.
         const { user } = context.locals;
         const esPersonal = (user?.role ?? "").split(",").some((rol) => Object.hasOwn(roles, rol));
-        const esCatalogo = ruta === "/admin/catalogo" || ruta.startsWith("/admin/catalogo/");
+        const soloAdmin = ["/admin/catalogo", "/admin/cuentas"].some(
+          (base) => ruta === base || ruta.startsWith(`${base}/`),
+        );
         const respuesta = !user
           ? context.redirect("/login")
-          : user.banned || !esPersonal || (esCatalogo && !esAdmin(user))
+          : user.banned || !esPersonal || (soloAdmin && !esAdmin(user))
             ? new Response("Prohibido", { status: 403 })
             : await next();
         respuesta.headers.set("Cache-Control", "no-store");
