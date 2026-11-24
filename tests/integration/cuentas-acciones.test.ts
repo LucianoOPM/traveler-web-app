@@ -243,7 +243,7 @@ describe.skipIf(!base && !process.env.CI)("cuentas bancarias: Actions y pantalla
       [{ monthlyLimitCents: 1.5 }, 400],
       [{ monthlyLimitCents: 2_147_483_648 }, 400],
       [{ priority: "uno" }, 400],
-      [{ clabe: 123456789012345678 }, 400], // la CLABE es texto, no número
+      [{ clabe: 12345678 }, 400], // la CLABE es texto, no número
       [{ clabe: "0123456789012345" }, 422],
       [{ clabe: "01234567890123456x" }, 422],
       [{ monthlyLimitCents: 0 }, 422],

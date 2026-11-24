@@ -8,7 +8,6 @@ import { abrirBaseDePruebas, recrearEsquema } from "../support/base-de-pruebas";
 import {
   CLABE,
   mesAnterior,
-  mesVigente,
   sembrarAsignacion,
   sembrarCuenta,
   TITULAR,
