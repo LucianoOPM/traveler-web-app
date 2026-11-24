@@ -128,11 +128,11 @@ describe.skipIf(!base && !process.env.CI)("cuentas bancarias: concurrencia", () 
    * soltarse. Las operaciones del servicio se lanzan con la cuenta bloqueada, se espera (con
    * `pg_stat_activity`) a que de verdad estén bloqueadas y solo entonces se libera.
    */
-  async function conAsignacionEnCurso<T>(
+  const conAsignacionEnCurso = async <T>(
     cuentaId: string,
     monto: number,
     operacion: () => Promise<T>,
-  ): Promise<PromiseSettledResult<T>> {
+  ): Promise<PromiseSettledResult<T>> => {
     const reservaId = await sembrarReserva(sql, monto);
     const propia = abrirPropia();
     let soltar!: () => void;
@@ -157,7 +157,7 @@ describe.skipIf(!base && !process.env.CI)("cuentas bancarias: concurrencia", () 
     soltar();
     await terminada;
     return pendiente;
-  }
+  };
 
   test("bajar el límite espera a una asignación en curso y la cuenta como comprometida", async () => {
     const id = await sembrarCuenta(sql, { limite: 500_000 });
